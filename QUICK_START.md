@@ -10,7 +10,7 @@
 **Already have a Pi with Bookworm Lite installed?** Just run this:
 
 ```bash
-ssh pi@YOUR-PI-HOSTNAME.local
+ssh pi@adsb-pi-92882.local  # Use your zip code!
 wget https://raw.githubusercontent.com/cfd2474/TAK-ADSB-Feeder/main/adsb_feeder_installer_v2.sh
 chmod +x adsb_feeder_installer_v2.sh
 ./adsb_feeder_installer_v2.sh
@@ -28,17 +28,22 @@ Enter your location when prompted, wait 15-20 minutes, done! ✈️
 
 1. Download **Raspberry Pi Imager**: https://www.raspberrypi.com/software/
 2. Insert SD card (16GB+ recommended)
-3. Click **"Choose OS"** → **"Raspberry Pi OS (other)"** → **"Raspberry Pi OS Lite (64-bit)"**
+3. Click **"Choose OS"** → **"Raspberry Pi OS (other)"** → **"Raspberry Pi OS Lite Bookworm (64-bit)"**
 4. Click **"Choose Storage"** → Select your SD card
 5. Click **⚙️ (Settings)**:
-   - ✅ Set hostname: `adsb-pi-01` (increment for each feeder)
+   - ✅ Set hostname: `adsb-pi-92882` (use the feeder's zip code!)
    - ✅ Enable SSH
    - ✅ Set username/password (default: `pi` / your password)
    - ✅ Configure WiFi (if using wireless)
    - ✅ Set locale settings
 6. Click **"Write"** and wait for completion
 
-**Important:** Note the hostname you set - you'll need it to SSH in!
+**💡 Naming Convention:** Use `adsb-pi-ZIPCODE` format
+- Example: Corona, CA 92882 → `adsb-pi-92882`
+- Example: Beverly Hills, CA 90210 → `adsb-pi-90210`
+- Example: New York, NY 10001 → `adsb-pi-10001`
+
+This makes it easy to identify feeder locations at a glance!
 
 ---
 
@@ -52,8 +57,8 @@ Enter your location when prompted, wait 15-20 minutes, done! ✈️
 
 **Find your Pi's IP address:**
 ```bash
-# On your Mac/Linux:
-ping adsb-pi-01.local
+# On your Mac/Linux (replace with your zip code):
+ping adsb-pi-92882.local
 
 # Or check your router's DHCP table
 # Or use: nmap -sn 192.168.1.0/24
@@ -66,8 +71,8 @@ ping adsb-pi-01.local
 **Method 1: Direct Download from GitHub (Recommended)**
 
 ```bash
-# SSH into the Pi
-ssh pi@adsb-pi-01.local
+# SSH into the Pi (replace with your zip code)
+ssh pi@adsb-pi-92882.local
 
 # Download installer directly from GitHub
 wget https://raw.githubusercontent.com/cfd2474/TAK-ADSB-Feeder/main/adsb_feeder_installer_v2.sh
@@ -80,11 +85,11 @@ chmod +x adsb_feeder_installer_v2.sh
 **Method 2: Copy from Your Computer**
 
 ```bash
-# From your Mac/computer - copy installer to the Pi
-scp adsb_feeder_installer_v2.sh pi@adsb-pi-01.local:~/
+# From your Mac/computer - copy installer to the Pi (replace with your zip code)
+scp adsb_feeder_installer_v2.sh pi@adsb-pi-92882.local:~/
 
 # SSH into the Pi
-ssh pi@adsb-pi-01.local
+ssh pi@adsb-pi-92882.local
 
 # Make executable and run
 chmod +x adsb_feeder_installer_v2.sh
@@ -94,7 +99,8 @@ chmod +x adsb_feeder_installer_v2.sh
 **Method 3: One-Liner Install (Easiest!)**
 
 ```bash
-ssh pi@adsb-pi-01.local "wget -qO- https://raw.githubusercontent.com/cfd2474/TAK-ADSB-Feeder/main/adsb_feeder_installer_v2.sh | bash"
+# Replace 92882 with your zip code
+ssh pi@adsb-pi-92882.local "wget -qO- https://raw.githubusercontent.com/cfd2474/TAK-ADSB-Feeder/main/adsb_feeder_installer_v2.sh | bash"
 ```
 
 **The installer will:**
@@ -251,41 +257,63 @@ lsusb | grep RTL
 
 ### Naming Convention
 
-For each new feeder:
-1. Change hostname in Pi Imager: `adsb-pi-01`, `adsb-pi-02`, etc.
-2. Each gets unique Tailscale IP automatically
-3. Each auto-generates unique feeder name
+For each new feeder, use the **zip code** as the identifier:
+- `adsb-pi-92882` (Corona, CA)
+- `adsb-pi-90210` (Beverly Hills, CA)
+- `adsb-pi-10001` (New York, NY)
+
+**Benefits:**
+- Instantly know where each feeder is located
+- Easy to correlate with coverage maps
+- Simpler inventory management
+
+Each Pi still gets a unique feeder name combining hostname + MAC: `adsb-pi-92882_d31d2f`
 
 ### Parallel Deployment
 
 **You can run multiple installations simultaneously:**
 
 ```bash
-# Terminal 1
-scp adsb_feeder_installer_v2.sh pi@adsb-pi-01.local:~/
-ssh pi@adsb-pi-01.local "./adsb_feeder_installer_v2.sh"
+# Terminal 1 - Corona, CA
+ssh pi@adsb-pi-92882.local
+wget https://raw.githubusercontent.com/cfd2474/TAK-ADSB-Feeder/main/adsb_feeder_installer_v2.sh
+chmod +x adsb_feeder_installer_v2.sh
+./adsb_feeder_installer_v2.sh
 
-# Terminal 2
-scp adsb_feeder_installer_v2.sh pi@adsb-pi-02.local:~/
-ssh pi@adsb-pi-02.local "./adsb_feeder_installer_v2.sh"
+# Terminal 2 - Riverside, CA  
+ssh pi@adsb-pi-92501.local
+wget https://raw.githubusercontent.com/cfd2474/TAK-ADSB-Feeder/main/adsb_feeder_installer_v2.sh
+chmod +x adsb_feeder_installer_v2.sh
+./adsb_feeder_installer_v2.sh
 
-# etc...
+# Terminal 3 - San Bernardino, CA
+ssh pi@adsb-pi-92401.local
+wget https://raw.githubusercontent.com/cfd2474/TAK-ADSB-Feeder/main/adsb_feeder_installer_v2.sh
+chmod +x adsb_feeder_installer_v2.sh
+./adsb_feeder_installer_v2.sh
 ```
 
 ### Inventory Tracking
 
 **Create a spreadsheet with:**
-- Hostname
+- Hostname (zip code based)
+- Zip Code / Area
 - Tailscale IP
 - Feeder Name
 - Location (lat/lon/alt)
 - MAC address
 - Installation date
-- Serial number (if labeled)
+- Physical location notes
+
+**Example:**
+| Hostname | Zip | Tailscale IP | Feeder Name | Lat/Lon | Installed |
+|----------|-----|--------------|-------------|---------|-----------|
+| adsb-pi-92882 | 92882 | 100.86.32.113 | adsb-pi-92882_d31d2f | 33.834,-117.573 | 12/28/24 |
+| adsb-pi-92501 | 92501 | 100.92.14.205 | adsb-pi-92501_a4f2c1 | 33.981,-117.376 | 12/28/24 |
 
 **Or pull from each Pi:**
 ```bash
-ssh pi@adsb-pi-01.local "cat /etc/adsb-feeder-info.txt"
+ssh pi@adsb-pi-92882.local "cat /etc/adsb-feeder-info.txt"
 ```
 
 ---
@@ -295,14 +323,14 @@ ssh pi@adsb-pi-01.local "cat /etc/adsb-feeder-info.txt"
 **For maximum efficiency:**
 
 1. **Batch flash SD cards** (5-10 at a time)
-   - Use unique hostnames
+   - Use zip code hostnames: `adsb-pi-92882`, `adsb-pi-92501`, etc.
    - Same WiFi/SSH settings
-   - Label cards with hostname
+   - Label cards with zip code
 
 2. **Physical assembly**
    - Attach antenna to dongle
-   - Label each Pi with hostname
-   - Pre-position for deployment
+   - Label each Pi with zip code (on case or label)
+   - Pre-position for deployment location
 
 3. **Parallel installation**
    - Power on all Pis
@@ -311,8 +339,8 @@ ssh pi@adsb-pi-01.local "cat /etc/adsb-feeder-info.txt"
 
 4. **Verification**
    - Check aggregator shows all feeders
-   - Record Tailscale IPs
-   - Add to inventory
+   - Record Tailscale IPs in spreadsheet
+   - Map coverage by zip code
 
 **Time per feeder:** ~20 minutes (can overlap multiple)
 
@@ -335,13 +363,14 @@ TAILSCALE_AUTH_KEY="tskey-auth-kSQ4LgPRaL11CNTRL-KP6wnd6pnXLdGtYjBp5TYL4YkkvS5hK
 **Then download and run with one command:**
 
 ```bash
-ssh pi@adsb-pi-01.local "wget -qO- https://raw.githubusercontent.com/cfd2474/TAK-ADSB-Feeder/main/adsb_feeder_installer_v2.sh | bash"
+# Replace 92882 with your zip code
+ssh pi@adsb-pi-92882.local "wget -qO- https://raw.githubusercontent.com/cfd2474/TAK-ADSB-Feeder/main/adsb_feeder_installer_v2.sh | bash"
 ```
 
 **Or download, then run (recommended for safety):**
 
 ```bash
-ssh pi@adsb-pi-01.local
+ssh pi@adsb-pi-92882.local
 wget https://raw.githubusercontent.com/cfd2474/TAK-ADSB-Feeder/main/adsb_feeder_installer_v2.sh
 chmod +x adsb_feeder_installer_v2.sh
 ./adsb_feeder_installer_v2.sh
@@ -366,7 +395,8 @@ sudo dd if=adsb-feeder-master.img of=/dev/diskX bs=4M status=progress
 ```
 
 **Important after cloning:**
-- Must change hostname (or Tailscale conflicts)
+- Must change hostname to new zip code (or Tailscale conflicts)
+- Each Pi needs unique hostname: `adsb-pi-92882`, `adsb-pi-92501`, etc.
 - Tailscale will auto-reconnect with same auth key
 - Each clone gets unique feeder name (based on MAC)
 
@@ -498,4 +528,38 @@ sudo journalctl -u readsb -n 100 # Last 100 readsb lines
 
 *Ready to build your ADS-B network!* ✈️🛰️
 
-**Next feeder:** Just repeat steps 1-6 with a new hostname!
+**Next feeder:** Just repeat steps 1-6 with a new zip code hostname!
+
+---
+
+## 📍 Why Zip Code Naming?
+
+Using zip codes as hostnames provides several advantages:
+
+**Instant Geographic Identification**
+- Know exactly where each feeder is located
+- Useful when analyzing coverage maps
+- Easier coordination with multiple deployment sites
+
+**Example Coverage Map:**
+```
+adsb-pi-92882 (Corona)      ─┐
+adsb-pi-92501 (Riverside)   ─┼─► Covers Inland Empire
+adsb-pi-92401 (San Bern.)   ─┘
+
+adsb-pi-90210 (Bev. Hills) ─┐
+adsb-pi-90028 (Hollywood)   ─┼─► Covers LA Basin  
+adsb-pi-90013 (Downtown LA) ─┘
+```
+
+**Simplified Troubleshooting**
+- "The 92882 feeder is offline" vs "feeder #7 is offline"
+- Quickly correlate issues with geographic areas
+- Easy to reference in coverage discussions
+
+**Better Inventory Management**
+- Sort by region automatically
+- Group feeders by area code
+- Plan expansion based on zip code gaps
+
+---
