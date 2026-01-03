@@ -7,9 +7,9 @@ Automated installer for Raspberry Pi ADS-B feeders with Tailscale integration. F
 On a Raspberry Pi running Bookworm Lite:
 
 ```bash
-wget https://raw.githubusercontent.com/cfd2474/TAK-ADSB-Feeder/main/adsb_feeder_installer_v2.sh
-chmod +x adsb_feeder_installer_v2.sh
-./adsb_feeder_installer_v2.sh
+wget https://raw.githubusercontent.com/cfd2474/TAK-ADSB-Feeder/main/adsb_feeder_installer_v3.sh
+chmod +x adsb_feeder_installer_v3.sh
+./adsb_feeder_installer_v3.sh
 ```
 
 That's it! Enter your location when prompted and wait 15-20 minutes.
