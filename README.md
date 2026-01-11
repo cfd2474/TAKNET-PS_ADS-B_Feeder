@@ -16,7 +16,7 @@ That's it! Enter your location when prompted and wait 15-20 minutes.
 
 > **💡 Tip:** Name your Pi using its zip code (e.g., `adsb-pi-92882`) for easy identification!
 
-## ✨ What's New in v4.0
+## ✨ What's New in v4
 
 - 🌐 **Local tar1090 web interface** on each Pi feeder
 - 📊 **Per-feeder statistics** and coverage visualization
