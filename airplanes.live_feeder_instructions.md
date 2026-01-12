@@ -96,7 +96,7 @@ This may take 1-2 minutes. Type `y` if prompted.
    [Service]
    Type=simple
    User=readsb
-   ExecStart=/usr/bin/socat -d -d TCP:127.0.0.1:30005 TCP:104.225.219.254:30005
+   ExecStart=/usr/bin/socat -d -d TCP:127.0.0.1:30005 TCP:104.225.219.254:30004
    Restart=always
    RestartSec=30
    StandardOutput=journal
