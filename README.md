@@ -63,6 +63,7 @@ If you're already running an existing ADS-B feeder, you can add my aggregator as
 - **[PiAware/FlightAware Instructions](piaware_feeder_instructions.md)** - Feed from PiAware SD card image or package install
 - **[airplanes.live Instructions](airplanes.live_feeder_instructions.md)** - Feed from airplanes.live image
 - **[Stratux Instructions](stratux_feeder_instructions.md)** - Feed from native Stratux software
+- **[ADSBexchange Instructions](ADSBexchange_feeder_instructions.md)** - Feed from ADSBexchange image
 
 All methods use SSH to create an additional feed while keeping your existing feeds working normally.
 
