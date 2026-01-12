@@ -1,4 +1,4 @@
-# Feeding ADS-B Exchange Image to Custom Aggregator
+# Feeding ADS-B Exchange Image to TAK-ADSB Aggregator
 
 This guide will help you configure your ADS-B Exchange feeder to also send data to the TAK-ADSB aggregator at `104.225.219.254`.
 
