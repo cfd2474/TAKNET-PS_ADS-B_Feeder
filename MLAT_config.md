@@ -143,7 +143,7 @@ User=readsb
 ExecStart=/usr/bin/mlat-client \
     --input-type auto \
     --input-connect localhost:30005 \
-    --server 104.225.219.254:31090 \
+    --server 104.225.219.254:30105 \
     --lat YOUR_LATITUDE \
     --lon YOUR_LONGITUDE \
     --alt YOUR_ALTITUDE \
@@ -181,7 +181,7 @@ WantedBy=multi-user.target
 ExecStart=/usr/bin/mlat-client \
     --input-type auto \
     --input-connect localhost:30005 \
-    --server 104.225.219.254:31090 \
+    --server 104.225.219.254:30105 \
     --lat 40.7128 \
     --lon -74.0060 \
     --alt 150ft \
@@ -264,7 +264,7 @@ sudo journalctl -u aggregator-mlat.service -f
 
 **Good signs:**
 ```
-Connected to multilateration server at 104.225.219.254:31090
+Connected to multilateration server at 104.225.219.254:30105
 Server says: Client successfully registered
 Accepted sync from server
 ```
@@ -279,7 +279,7 @@ sudo ss -tnp | grep 31090
 
 You should see:
 ```
-ESTAB ... 104.225.219.254:31090
+ESTAB ... 104.225.219.254:30105
 ```
 
 This confirms connection to the MLAT server.
@@ -335,13 +335,13 @@ sudo netstat -tlnp | grep readsb
 
 Look for a port with Beast output (usually 30005). Update your service file if needed.
 
-#### "Connection refused to 104.225.219.254:31090"
+#### "Connection refused to 104.225.219.254:30105"
 
 Network connectivity issue.
 
 **Test connection:**
 ```bash
-telnet 104.225.219.254 31090
+telnet 104.225.219.254 30105
 ```
 
 If connection fails:
@@ -461,7 +461,7 @@ Your Antenna → SDR → readsb (decodes signals)
                        ↓
                    mlat-client (sends to aggregator)
                        ↓
-            104.225.219.254:31090 (MLAT server)
+            104.225.219.254:30105 (MLAT server)
                        ↓
         (calculates positions with other feeders)
                        ↓
@@ -617,7 +617,7 @@ If you've followed these steps and still have issues, please provide:
 4. **Network connectivity:**
    ```bash
    ping -c 4 104.225.219.254
-   nc -zv 104.225.219.254 31090
+   nc -zv 104.225.219.254 30105
    ```
 
 5. **readsb status:**
@@ -658,7 +658,7 @@ sudo systemctl restart aggregator-mlat.service
 
 **Check connection:**
 ```bash
-sudo ss -tnp | grep 31090
+sudo ss -tnp | grep 30105
 ```
 
 **List all MLAT services:**
