@@ -401,6 +401,20 @@ Everything is organized under `/opt/TAK_ADSB/`:
 
 The installer now includes **self-update functionality** for easy maintenance!
 
+> **⚠️ Important for v4.0 and Earlier Users:**
+> 
+> The self-update feature (`--update` flag and `adsb-update` command) was introduced in **v5.0**. If you're running v4.0 or earlier:
+> 
+> 1. **Download and run the latest installer** to upgrade to v5.4:
+>    ```bash
+>    wget -O adsb_feeder_installer.sh https://raw.githubusercontent.com/cfd2474/TAK-ADSB-Feeder/main/adsb_feeder_installer.sh
+>    chmod +x adsb_feeder_installer.sh
+>    ./adsb_feeder_installer.sh
+>    ```
+> 2. **After upgrading to v5.x**, you can use the built-in update commands for all future updates
+> 
+> Check your version with: `./adsb_feeder_installer.sh --version` (this flag also requires v5.0+)
+
 ### Update the Installer Script
 
 Before running a new installation or re-installation:
