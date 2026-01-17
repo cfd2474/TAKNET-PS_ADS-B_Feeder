@@ -1,7 +1,7 @@
 #!/bin/bash
 # ADS-B Feeder Auto-Installer for Raspberry Pi
 # Configures RTL-SDR dongle to feed ADS-B data to aggregation server via Tailscale
-# Version 5.2 - With Tailscale SSH security and self-update functionality
+# Version 5.3 - Bug fixes for script path and tmp directory cleanup
 
 set -e
 
@@ -9,7 +9,7 @@ set -e
 # SCRIPT VERSION AND UPDATE CONFIGURATION
 # ============================================================================
 
-SCRIPT_VERSION="5.2"
+SCRIPT_VERSION="5.3"
 GITHUB_RAW_URL="https://raw.githubusercontent.com/cfd2474/TAK-ADSB-Feeder/main/adsb_feeder_installer.sh"
 SCRIPT_NAME="adsb_feeder_installer.sh"
 
@@ -505,7 +505,8 @@ sudo udevadm trigger
 echo ""
 echo -e "${GREEN}[8/15] Building and installing readsb...${NC}"
 cd /tmp
-rm -rf readsb 2>/dev/null || true
+# Force cleanup of any existing directory
+sudo rm -rf readsb 2>/dev/null || true
 git clone https://github.com/wiedehopf/readsb.git
 cd readsb
 make -j$(nproc) RTLSDR=yes
@@ -614,7 +615,8 @@ EOF
 echo ""
 echo -e "${GREEN}[12/15] Installing mlat-client...${NC}"
 cd /tmp
-rm -rf mlat-client 2>/dev/null || true
+# Force cleanup of any existing directory
+sudo rm -rf mlat-client 2>/dev/null || true
 git clone https://github.com/wiedehopf/mlat-client.git
 cd mlat-client
 sudo python3 setup.py install
@@ -716,7 +718,7 @@ echo ""
 if [ "$1" = "readsb" ] || [ "$1" = "all" ]; then
     echo -e "${YELLOW}Updating readsb...${NC}"
     cd /tmp
-    rm -rf readsb 2>/dev/null || true
+    sudo rm -rf readsb 2>/dev/null || true
     git clone https://github.com/wiedehopf/readsb.git
     cd readsb
     make -j$(nproc) RTLSDR=yes
@@ -734,7 +736,7 @@ fi
 if [ "$1" = "mlat" ] || [ "$1" = "all" ]; then
     echo -e "${YELLOW}Updating mlat-client...${NC}"
     cd /tmp
-    rm -rf mlat-client 2>/dev/null || true
+    sudo rm -rf mlat-client 2>/dev/null || true
     git clone https://github.com/wiedehopf/mlat-client.git
     cd mlat-client
     sudo systemctl stop mlat-client
