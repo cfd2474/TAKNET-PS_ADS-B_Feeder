@@ -16,14 +16,26 @@ Automated installer for Raspberry Pi ADS-B feeders with Tailscale integration an
 
 ---
 
-## ✨ What's New in v5.2
+## ✨ What's New in v5.4
 
+- 📡 **MLAT opt-out option** - Choose to disable MLAT during installation to conserve bandwidth
+- ⚠️ **Data usage warnings** - Clear guidance about MLAT bandwidth consumption for metered connections
+- 🎛️ **Flexible MLAT control** - Enable/disable MLAT post-installation with simple commands
+- 💾 **Smart service management** - MLAT installed but not enabled if opted out
+
+### Previous Updates
+
+**v5.3 - Bug Fixes**
+- 🐛 **Script path resolution** - Fixed absolute path capture for reliable self-updates
+- 🧹 **Temporary directory cleanup** - Improved cleanup of temp files during installation
+
+**v5.2 - Self-Update System**
 - 🔄 **Self-updating installer** - Update with `./adsb_feeder_installer.sh --update`
 - 🛠️ **System update command** - `adsb-update` for easy component updates
 - 📦 **Modular updates** - Update individual components or everything at once
 - 🔍 **Version checking** - See current version with `--version` flag
 
-### Previous Features (v5.0/v5.1)
+**v5.0/v5.1 - Infrastructure**
 - 📁 **Dedicated installation directory** at `/opt/TAK_ADSB/` for organized deployments
 - 📊 **vnstat network monitoring** with 90-day data retention
 - 👤 **Remote management user** (`remote:adsb`) for easier administration
@@ -31,7 +43,7 @@ Automated installer for Raspberry Pi ADS-B feeders with Tailscale integration an
 - 🔧 **Improved directory structure** with binaries, data, and logs separated
 - 🔒 **Pre-configured sudo access** for common service management commands
 
-### Historical Features (v4.0)
+**v4.0 - Local Web Interface**
 - 🌐 **Local tar1090 web interface** on each Pi feeder
 - 📊 **Per-feeder statistics** and coverage visualization
 - 📍 **Dual monitoring**: View individual Pi coverage AND network-wide aggregation
@@ -48,7 +60,7 @@ The installer automatically:
 - ✅ Installs self-update functionality for easy maintenance
 - ✅ Installs RTL-SDR drivers and tools
 - ✅ Builds and installs `readsb` ADS-B decoder
-- ✅ Builds and installs `mlat-client` for multilateration
+- ✅ Builds and installs `mlat-client` for multilateration (optional)
 - ✅ Installs `tar1090` locally on each Pi
 - ✅ Installs `lighttpd` web server
 - ✅ Creates systemd services for automatic startup
@@ -123,7 +135,16 @@ Before proceeding, review these guides:
 - **If you don't have a key**: Press Enter when prompted, you'll authenticate via browser or skip completely.
 - Contact [Michael Leckliter](mailto:michael.leckliter@yahoo.com) if you need an auth key
 
-### 2. Geographic Coordinates (REQUIRED)
+### 2. MLAT Configuration (NEW in v5.4)
+During installation, you'll be asked whether to enable MLAT:
+- **Enable MLAT (default)**: Improves position accuracy via multilateration
+  - Requires more network bandwidth
+  - **Not recommended** for metered connections (LTE/cellular with data caps)
+- **Disable MLAT**: Conserves bandwidth for limited data plans
+  - Can be enabled later with simple commands
+  - MLAT client still installed, just not activated
+
+### 3. Geographic Coordinates (REQUIRED)
 You'll need your **precise** location for MLAT (multilateration) to work:
 
 - **Latitude** (e.g., `33.834378`)
@@ -140,7 +161,7 @@ You'll need your **precise** location for MLAT (multilateration) to work:
 >
 > Example: Ground = 350m, roof = 15m, mast = 5m → **Total = 370m**
 
-### 3. Pre-Configured Network Settings
+### 4. Pre-Configured Network Settings
 These are already set in the installer:
 - **Installation Directory**: `/opt/TAK_ADSB/`
 - **Aggregator IP**: `100.117.34.88` (Tailscale)
@@ -156,6 +177,7 @@ These are already set in the installer:
 - ✅ Hostname set to `adsb-pi-[ZIPCODE]` format
 - ✅ SSH access enabled
 - ✅ Your geographic coordinates ready
+- ✅ Decided whether to enable MLAT
 - ✅ Read the requirements above
 
 ### Installation Commands
@@ -174,13 +196,15 @@ chmod +x adsb_feeder_installer.sh
 
 The installer will:
 1. Prompt for Tailscale auth key (or press Enter to authenticate via browser)
-2. Ask for your latitude, longitude, and altitude
-3. Display configuration summary for your confirmation
-4. Install and configure all components (15-20 minutes)
-5. Start services and verify connectivity
+2. Ask whether to enable MLAT (with bandwidth warning for metered connections)
+3. Ask for your latitude, longitude, and altitude
+4. Display configuration summary for your confirmation
+5. Install and configure all components (15-20 minutes)
+6. Start services and verify connectivity
 
 **During installation:**
 - If you didn't provide an auth key, a browser window will open for Tailscale authentication
+- Consider your internet connection when deciding on MLAT
 - Follow the prompts carefully
 - Answer "y" to proceed when configuration is shown
 - Wait for all steps to complete
@@ -221,9 +245,13 @@ These instructions show you how to run additional feeders alongside this install
 │    Raspberry Pi         │◄────────────────────────►│   Aggregator     │
 │  adsb-pi-[ZIPCODE]      │   Beast: Port 30004      │   Server         │
 │  /opt/TAK_ADSB/         │   MLAT:  Port 30105      │   (tar1090)      │
-│  ┌────────────────────┐ │                          │   (Network View) │
+│  ┌────────────────────┐ │   (Optional)             │   (Network View) │
 │  │ readsb + tar1090   │ │                          └──────────────────┘
 │  │ (Local Coverage)   │ │
+│  └────────────────────┘ │
+│  ┌────────────────────┐ │
+│  │ mlat-client        │ │
+│  │ (Enable/Disable)   │ │
 │  └────────────────────┘ │
 │  ┌────────────────────┐ │
 │  │ vnstat monitoring  │ │
@@ -336,6 +364,11 @@ sudo systemctl restart readsb  # Restart services (passwordless)
 sudo journalctl -fu readsb     # View logs (passwordless)
 vnstat -d                      # Check bandwidth usage
 adsb-update --help             # View update options
+
+# Enable/disable MLAT as needed:
+sudo systemctl enable mlat-client && sudo systemctl start mlat-client   # Enable MLAT
+sudo systemctl stop mlat-client && sudo systemctl disable mlat-client   # Disable MLAT
+sudo systemctl status mlat-client                                        # Check MLAT status
 ```
 
 **Security Features:**
@@ -464,6 +497,23 @@ lsusb | grep RTL
 # Should show: "Realtek Semiconductor Corp. RTL2838 DVB-T"
 ```
 
+### MLAT Issues
+```bash
+# Check MLAT service status
+sudo systemctl status mlat-client
+
+# Enable MLAT if disabled
+sudo systemctl enable mlat-client
+sudo systemctl start mlat-client
+
+# Disable MLAT to conserve bandwidth
+sudo systemctl stop mlat-client
+sudo systemctl disable mlat-client
+
+# View MLAT logs
+sudo journalctl -fu mlat-client
+```
+
 ### Check bandwidth usage
 ```bash
 # View daily bandwidth usage
@@ -501,15 +551,16 @@ Each feeder gets a unique name automatically: `hostname_MAC`
 2. Set hostname to `adsb-pi-ZIPCODE` (e.g., `adsb-pi-92882`) **during imaging**
 3. Boot Pi and SSH in
 4. Run installer
-5. Each feeder auto-connects to aggregator
-6. **Each feeder gets its own tar1090** at its Tailscale IP
-7. **Remote access** available via `ssh remote@[TAILSCALE_IP]` (Tailscale only)
-8. **Easy updates** with `adsb-update all` on each feeder
+5. **Choose MLAT setting** based on connection type (disable for metered/cellular)
+6. Each feeder auto-connects to aggregator
+7. **Each feeder gets its own tar1090** at its Tailscale IP
+8. **Remote access** available via `ssh remote@[TAILSCALE_IP]` (Tailscale only)
+9. **Easy updates** with `adsb-update all` on each feeder
 
 **Example deployment:**
-- `adsb-pi-92882` → Corona, CA location
-- `adsb-pi-90210` → Beverly Hills, CA location
-- `adsb-pi-10001` → New York, NY location
+- `adsb-pi-92882` → Corona, CA location (MLAT enabled - fiber internet)
+- `adsb-pi-90210` → Beverly Hills, CA location (MLAT disabled - LTE connection)
+- `adsb-pi-10001` → New York, NY location (MLAT enabled - cable internet)
 
 **Access all feeders from the aggregator dashboard:**
 - Main stats: `http://104.225.219.254/graphs1090/`
@@ -519,6 +570,7 @@ Each feeder gets a unique name automatically: `hostname_MAC`
 - SSH into each feeder as `remote` user (from Tailscale network)
 - Run `vnstat -d` to see 90-day bandwidth history
 - Useful for cellular/metered connection planning
+- Disable MLAT on high-bandwidth feeders to reduce data usage
 
 **Mass Update Strategy:**
 ```bash
@@ -528,6 +580,21 @@ adsb-update all
 # Or create a script to update all feeders:
 for ip in 100.x.x.x 100.y.y.y 100.z.z.z; do
   ssh remote@$ip "adsb-update all"
+done
+```
+
+**Managing MLAT Across Fleet:**
+```bash
+# Enable MLAT on a feeder
+ssh remote@100.x.x.x "sudo systemctl enable mlat-client && sudo systemctl start mlat-client"
+
+# Disable MLAT on metered connection
+ssh remote@100.y.y.y "sudo systemctl stop mlat-client && sudo systemctl disable mlat-client"
+
+# Check MLAT status across all feeders
+for ip in 100.x.x.x 100.y.y.y 100.z.z.z; do
+  echo "=== $ip ==="
+  ssh remote@$ip "sudo systemctl is-active mlat-client"
 done
 ```
 
@@ -557,6 +624,7 @@ See [DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md) for mass production strategies.
 - Compare coverage between different sites
 - Verify optimal antenna placement
 - Monitor bandwidth usage for cellular deployments
+- Control MLAT on per-feeder basis based on connection type
 
 **Network-Wide View:**
 - See combined coverage from all feeders
@@ -570,6 +638,7 @@ See [DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md) for mass production strategies.
 - Test antenna modifications
 - Optimize network placement
 - Track bandwidth consumption over 90 days
+- Disable MLAT on high-bandwidth or metered connections
 
 **Remote Management:**
 - Secure SSH access to all feeders via Tailscale
@@ -577,12 +646,14 @@ See [DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md) for mass production strategies.
 - Easy log access and service control
 - Network statistics monitoring
 - Simple update process with `adsb-update`
+- Toggle MLAT on/off without reinstallation
 
 **Fleet Maintenance:**
 - Update all feeders with single command
 - Monitor component versions across fleet
 - Automated backup during updates
 - Minimal downtime during maintenance
+- Flexible MLAT configuration per deployment site
 
 ## 🤝 Contributing
 
@@ -615,7 +686,7 @@ For Tailscale auth key requests, contact: [michael.leckliter@yahoo.com](mailto:m
 
 **Happy plane spotting!** ✈️
 
-**Monitor each feeder individually, view your network collectively, track your bandwidth, and keep everything updated!**
+**Monitor each feeder individually, view your network collectively, track your bandwidth, control MLAT per-feeder, and keep everything updated!**
 
-*Last updated: January 15, 2025*
-*Current version: v5.2*
+*Last updated: January 16, 2025*
+*Current version: v5.4*
