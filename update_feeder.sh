@@ -19,7 +19,6 @@ echo -e "${GREEN}╔════════════════════
 echo -e "${GREEN}║   ADS-B Feeder Installer Updater          ║${NC}"
 echo -e "${GREEN}╚═══════════════════════════════════════════╝${NC}"
 echo ""
-
 echo -e "${BLUE}Downloading latest version from GitHub...${NC}"
 echo -e "${BLUE}Repository: https://github.com/cfd2474/TAK-ADSB-Feeder${NC}"
 echo ""
@@ -46,6 +45,15 @@ if curl -fsSL "$GITHUB_RAW_URL" -o "$TEMP_SCRIPT" 2>/dev/null || wget -q "$GITHU
         exit 0
     fi
     
+    # Show what's new in latest version
+    if [ "$LATEST_VERSION" = "5.4" ]; then
+        echo -e "${YELLOW}What's new in v5.4:${NC}"
+        echo "  • MLAT opt-out option during installation"
+        echo "  • Bandwidth warnings for metered connections"
+        echo "  • Enable/disable MLAT post-installation"
+        echo ""
+    fi
+    
     # Backup if exists
     if [ -f "$INSTALL_SCRIPT" ]; then
         BACKUP_NAME="${INSTALL_SCRIPT}.backup.$(date +%Y%m%d_%H%M%S)"
@@ -61,6 +69,9 @@ if curl -fsSL "$GITHUB_RAW_URL" -o "$TEMP_SCRIPT" 2>/dev/null || wget -q "$GITHU
     echo ""
     echo -e "${YELLOW}Run the installer with:${NC}"
     echo "  ./$INSTALL_SCRIPT"
+    echo ""
+    echo -e "${YELLOW}Check version info:${NC}"
+    echo "  ./$INSTALL_SCRIPT --version"
     echo ""
     echo -e "${YELLOW}Or run installation immediately:${NC}"
     read -p "Run installation now? (y/N) " -n 1 -r
