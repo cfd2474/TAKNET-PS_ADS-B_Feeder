@@ -11,7 +11,7 @@ set -e
 
 SCRIPT_VERSION="5.5"
 GITHUB_RAW_URL="https://raw.githubusercontent.com/cfd2474/TAK-ADSB-Feeder/main/adsb_feeder_installer.sh"
-CONNECTION_MONITOR_URL="https://raw.githubusercontent.com/cfd2474/TAK-ADSB-Feeder/main/adsb-connection-monitor.sh"
+CONNECTION_MONITOR_URL="https://raw.githubusercontent.com/cfd2474/TAK-ADSB-Feeder/main/adsb_connection_monitor.sh"
 SCRIPT_NAME="adsb_feeder_installer.sh"
 
 # Color output
@@ -855,7 +855,7 @@ BLUE='\033[0;34m'
 NC='\033[0m'
 
 GITHUB_RAW_URL="https://raw.githubusercontent.com/cfd2474/TAK-ADSB-Feeder/main/adsb_feeder_installer.sh"
-CONNECTION_MONITOR_URL="https://raw.githubusercontent.com/cfd2474/TAK-ADSB-Feeder/main/adsb-connection-monitor.sh"
+CONNECTION_MONITOR_URL="https://raw.githubusercontent.com/cfd2474/TAK-ADSB-Feeder/main/adsb_connection_monitor.sh"
 INSTALL_DIR="/opt/TAK_ADSB"
 
 echo -e "${GREEN}╔═══════════════════════════════════════════╗${NC}"
