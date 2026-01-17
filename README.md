@@ -162,8 +162,8 @@ These are already set in the installer:
 
 On your Raspberry Pi:
 ```bash
-# Download the installer
-wget https://raw.githubusercontent.com/cfd2474/TAK-ADSB-Feeder/main/adsb_feeder_installer.sh
+# Download the installer (force clean script)
+wget -O adsb_feeder_installer.sh https://raw.githubusercontent.com/cfd2474/TAK-ADSB-Feeder/main/adsb_feeder_installer.sh
 
 # Make it executable
 chmod +x adsb_feeder_installer.sh
