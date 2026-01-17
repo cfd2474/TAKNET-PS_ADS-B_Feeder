@@ -614,6 +614,12 @@ git clone https://github.com/wiedehopf/readsb.git
 cd readsb
 make -j$(nproc) RTLSDR=yes
 
+# Stop readsb service if it's running (prevents "Text file busy" error)
+if systemctl is-active --quiet readsb 2>/dev/null; then
+    echo -e "${YELLOW}Stopping existing readsb service...${NC}"
+    sudo systemctl stop readsb
+fi
+
 # Install binaries to dedicated directory
 sudo cp readsb "$INSTALL_DIR/bin/"
 sudo cp viewadsb "$INSTALL_DIR/bin/"
@@ -891,7 +897,13 @@ if [ "$1" = "readsb" ] || [ "$1" = "all" ]; then
     git clone https://github.com/wiedehopf/readsb.git
     cd readsb
     make -j$(nproc) RTLSDR=yes
-    sudo systemctl stop readsb
+    
+    # Stop service before updating to prevent "Text file busy" error
+    if systemctl is-active --quiet readsb 2>/dev/null; then
+        echo -e "${YELLOW}Stopping readsb service...${NC}"
+        sudo systemctl stop readsb
+    fi
+    
     sudo cp readsb "$INSTALL_DIR/bin/"
     sudo cp viewadsb "$INSTALL_DIR/bin/"
     sudo chmod +x "$INSTALL_DIR/bin/readsb"
@@ -908,9 +920,20 @@ if [ "$1" = "mlat" ] || [ "$1" = "all" ]; then
     sudo rm -rf mlat-client 2>/dev/null || true
     git clone https://github.com/wiedehopf/mlat-client.git
     cd mlat-client
-    sudo systemctl stop mlat-client 2>/dev/null || true
+    
+    # Stop service before updating to prevent "Text file busy" error
+    if systemctl is-active --quiet mlat-client 2>/dev/null; then
+        echo -e "${YELLOW}Stopping mlat-client service...${NC}"
+        sudo systemctl stop mlat-client
+    fi
+    
     sudo python3 setup.py install
-    sudo systemctl start mlat-client 2>/dev/null || true
+    
+    # Restart service if it was enabled
+    if systemctl is-enabled --quiet mlat-client 2>/dev/null; then
+        sudo systemctl start mlat-client
+    fi
+    
     echo -e "${GREEN}✓ mlat-client updated and restarted${NC}"
     echo ""
 fi
