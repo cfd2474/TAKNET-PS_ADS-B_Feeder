@@ -16,14 +16,21 @@ Automated installer for Raspberry Pi ADS-B feeders with Tailscale integration an
 
 ---
 
-## ✨ What's New in v5.4
+## ✨ What's New in v5.5
 
+- 🔄 **Automatic failover system** - Seamless switch between Tailscale and public IP
+- 🎯 **Connection monitor** - Continuous monitoring with automatic recovery
+- 📊 **Failover logging** - Complete audit trail of all connection events
+- 🔧 **Centralized IP management** - Update aggregator IPs in one place
+- ⚡ **Zero-touch recovery** - Automatic return to Tailscale when available
+
+### Previous Updates
+
+**v5.4 - MLAT Configuration**
 - 📡 **MLAT opt-out option** - Choose to disable MLAT during installation to conserve bandwidth
 - ⚠️ **Data usage warnings** - Clear guidance about MLAT bandwidth consumption for metered connections
 - 🎛️ **Flexible MLAT control** - Enable/disable MLAT post-installation with simple commands
 - 💾 **Smart service management** - MLAT installed but not enabled if opted out
-
-### Previous Updates
 
 **v5.3 - Bug Fixes**
 - 🐛 **Script path resolution** - Fixed absolute path capture for reliable self-updates
@@ -55,6 +62,7 @@ Automated installer for Raspberry Pi ADS-B feeders with Tailscale integration an
 The installer automatically:
 - ✅ Creates dedicated `/opt/TAK_ADSB/` installation directory
 - ✅ Installs and configures Tailscale VPN
+- ✅ **Installs connection monitor with automatic failover (NEW in v5.5)**
 - ✅ Installs vnstat for network bandwidth monitoring (90-day retention)
 - ✅ Creates remote management user with Tailscale-only SSH access
 - ✅ Installs self-update functionality for easy maintenance
@@ -135,7 +143,20 @@ Before proceeding, review these guides:
 - **If you don't have a key**: Press Enter when prompted, you'll authenticate via browser or skip completely.
 - Contact [Michael Leckliter](mailto:michael.leckliter@yahoo.com) if you need an auth key
 
-### 2. MLAT Configuration (NEW in v5.4)
+### 2. Connection Monitor & Failover (NEW in v5.5)
+During installation, you'll be asked whether to install the connection monitor:
+- **Enable (recommended)**: Automatic failover to public IP if Tailscale fails
+  - Monitors connection every 30 seconds
+  - Switches to public IP after 3 failed checks (~90 seconds)
+  - Automatically returns to Tailscale when connection recovers
+  - Comprehensive logging of all failover events
+- **Disable**: No automatic failover (manual intervention required)
+  - Can be installed later from GitHub
+  - Useful if you don't have public IP access configured
+
+**Public IP fallback:** `104.225.219.254`
+
+### 3. MLAT Configuration
 During installation, you'll be asked whether to enable MLAT:
 - **Enable MLAT (default)**: Improves position accuracy via multilateration
   - Requires more network bandwidth
@@ -144,7 +165,7 @@ During installation, you'll be asked whether to enable MLAT:
   - Can be enabled later with simple commands
   - MLAT client still installed, just not activated
 
-### 3. Geographic Coordinates (REQUIRED)
+### 4. Geographic Coordinates (REQUIRED)
 You'll need your **precise** location for MLAT (multilateration) to work:
 
 - **Latitude** (e.g., `33.834378`)
@@ -161,7 +182,7 @@ You'll need your **precise** location for MLAT (multilateration) to work:
 >
 > Example: Ground = 350m, roof = 15m, mast = 5m → **Total = 370m**
 
-### 4. Pre-Configured Network Settings
+### 5. Pre-Configured Network Settings
 These are already set in the installer:
 - **Installation Directory**: `/opt/TAK_ADSB/`
 - **Aggregator IP**: `100.117.34.88` (Tailscale)
@@ -244,16 +265,21 @@ These instructions show you how to run additional feeders alongside this install
 ┌────────▼────────────────┐      Tailscale VPN      ┌──────────────────┐
 │    Raspberry Pi         │◄────────────────────────►│   Aggregator     │
 │  adsb-pi-[ZIPCODE]      │   Beast: Port 30004      │   Server         │
-│  /opt/TAK_ADSB/         │   MLAT:  Port 30105      │   (tar1090)      │
-│  ┌────────────────────┐ │   (Optional)             │   (Network View) │
-│  │ readsb + tar1090   │ │                          └──────────────────┘
-│  │ (Local Coverage)   │ │
-│  └────────────────────┘ │
-│  ┌────────────────────┐ │
-│  │ mlat-client        │ │
-│  │ (Enable/Disable)   │ │
-│  └────────────────────┘ │
-│  ┌────────────────────┐ │
+│  /opt/TAK_ADSB/         │   MLAT:  Port 30105      │ 100.117.34.88    │
+│  ┌────────────────────┐ │   (Optional)             │   (tar1090)      │
+│  │ readsb + tar1090   │ │                          │   (Network View) │
+│  │ (Local Coverage)   │ │                          └──────────────────┘
+│  └────────────────────┘ │            ▲
+│  ┌────────────────────┐ │            │
+│  │ mlat-client        │ │            │ Automatic
+│  │ (Enable/Disable)   │ │            │ Failover
+│  └────────────────────┘ │            │
+│  ┌────────────────────┐ │            ▼
+│  │ Connection Monitor │ │   ┌──────────────────┐
+│  │ (Auto-Failover)    │◄──►│   Public IP      │
+│  │ 30s checks         │ │   │ 104.225.219.254  │
+│  └────────────────────┘ │   │   (Backup)       │
+│  ┌────────────────────┐ │   └──────────────────┘
 │  │ vnstat monitoring  │ │
 │  │ (90-day history)   │ │
 │  └────────────────────┘ │
@@ -271,7 +297,7 @@ These instructions show you how to run additional feeders alongside this install
      │
 ```
 
-All communication happens over **Tailscale** - no port forwarding or public IPs needed!
+All communication happens over **Tailscale** with automatic **public IP failover** - no port forwarding needed!
 
 ## 📊 What You'll See
 
@@ -441,6 +467,7 @@ adsb-update all
 adsb-update readsb          # Update only readsb decoder
 adsb-update mlat            # Update only mlat-client
 adsb-update tar1090         # Update only web interface
+adsb-update monitor         # Update only connection monitor
 adsb-update system          # Update only system packages
 adsb-update installer       # Update only installer script
 
@@ -452,6 +479,7 @@ adsb-update --help
 - `readsb` - Latest ADS-B decoder improvements
 - `mlat-client` - Latest multilateration features
 - `tar1090` - Latest web interface enhancements
+- `connection monitor` - Latest failover improvements (if installed)
 - System packages - Security patches and bug fixes
 - Installer script - Latest installer improvements
 
@@ -538,6 +566,30 @@ vnstat -m
 
 # Monitor live traffic
 vnstat -l
+```
+
+### Connection Monitor Issues
+```bash
+# Check monitor status
+sudo systemctl status adsb-connection-monitor
+
+# View failover logs
+sudo tail -f /var/log/adsb-failover.log
+
+# Check current connection target
+cat /var/run/adsb-connection-state
+
+# Manually test failover
+sudo systemctl stop tailscaled
+# Wait 90 seconds, check if switched to public IP
+cat /var/run/adsb-connection-state
+
+# Start Tailscale again
+sudo systemctl start tailscaled
+# Wait 90 seconds, should switch back to Tailscale
+
+# Restart monitor if needed
+sudo systemctl restart adsb-connection-monitor
 ```
 
 ### Update Issues
@@ -639,12 +691,14 @@ See [DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md) for mass production strategies.
 - Verify optimal antenna placement
 - Monitor bandwidth usage for cellular deployments
 - Control MLAT on per-feeder basis based on connection type
+- **Track connection stability and failover events**
 
 **Network-Wide View:**
 - See combined coverage from all feeders
 - Total aircraft count across your network
 - Network health and performance
 - Identify coverage gaps
+- **Monitor which feeders are on Tailscale vs public IP**
 
 **Performance Optimization:**
 - Compare individual feeder performance
@@ -653,6 +707,7 @@ See [DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md) for mass production strategies.
 - Optimize network placement
 - Track bandwidth consumption over 90 days
 - Disable MLAT on high-bandwidth or metered connections
+- **Analyze connection reliability patterns**
 
 **Remote Management:**
 - Secure SSH access to all feeders via Tailscale
@@ -661,6 +716,7 @@ See [DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md) for mass production strategies.
 - Network statistics monitoring
 - Simple update process with `adsb-update`
 - Toggle MLAT on/off without reinstallation
+- **Monitor failover events and connection health**
 
 **Fleet Maintenance:**
 - Update all feeders with single command
@@ -668,6 +724,8 @@ See [DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md) for mass production strategies.
 - Automated backup during updates
 - Minimal downtime during maintenance
 - Flexible MLAT configuration per deployment site
+- **Centralized IP management for all feeders**
+- **Automatic recovery from network issues**
 
 ## 🤝 Contributing
 
@@ -700,7 +758,7 @@ For Tailscale auth key requests, contact: [michael.leckliter@yahoo.com](mailto:m
 
 **Happy plane spotting!** ✈️
 
-**Monitor each feeder individually, view your network collectively, track your bandwidth, control MLAT per-feeder, and keep everything updated!**
+**Monitor each feeder individually, view your network collectively, track your bandwidth, control MLAT per-feeder, automatic failover protection, and keep everything updated!**
 
 *Last updated: January 16, 2025*
-*Current version: v5.4*
+*Current version: v5.5*
