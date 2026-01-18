@@ -158,6 +158,11 @@ def generate_readsb_service(config):
     lat = feeder.get('latitude', 0)
     lon = feeder.get('longitude', 0)
     
+    # Build connector lines for service file
+    connector_lines = ''
+    if connectors:
+        connector_lines = ' \\\n    '.join(connectors) + ' \\'
+    
     service_content = f"""[Unit]
 Description=readsb ADS-B decoder with multiple outputs
 Wants=network.target tailscaled.service
@@ -176,7 +181,7 @@ ExecStart={INSTALL_DIR}/bin/readsb \\
     --lat {lat} \\
     --lon {lon} \\
     --max-range 360 \\
-    {' '.join(['\\', '    ' + c for c in connectors])} \\
+    {connector_lines}
     --net-bo-port 30005 \\
     --write-json /run/readsb \\
     --write-json-every 1 \\
