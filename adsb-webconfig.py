@@ -1,22 +1,18 @@
 #!/usr/bin/env python3
 """
-ADS-B Feeder Web Configuration Interface
-Standalone version for separate testing and development
+ADS-B Feeder Web Configuration Interface - v0.2.0-alpha
+Enhanced with aggregator-specific configuration support
 
-Optimized for Raspberry Pi 3B with minimal resource usage:
-- Lightweight Flask backend
-- Simple HTML/CSS/JS frontend (no build step)
-- JSON file-based configuration
-- Systemd service integration
-
-Port: 8080 (configurable)
-Access: http://TAILSCALE_IP:8080 or http://localhost:8080
+New Features:
+- Aggregator type selection (FR24, ADSB-X, Airplanes.Live, ADSBhub, Other)
+- FlightRadar24 specific configuration (sharing key, email)
+- Template-based configuration for different aggregators
 
 Author: Mike (cfd2474)
-Version: 0.1.0-alpha
+Version: 0.2.0-alpha
 """
 
-from flask import Flask, render_template_string, request, jsonify, send_from_directory
+from flask import Flask, render_template_string, request, jsonify
 import json
 import subprocess
 import os
@@ -32,7 +28,73 @@ app = Flask(__name__)
 INSTALL_DIR = "/opt/TAK_ADSB"
 CONFIG_FILE = f"{INSTALL_DIR}/config/outputs.json"
 READSB_SERVICE = "/etc/systemd/system/readsb.service"
-MLAT_SERVICE_PREFIX = "/etc/systemd/system/mlat-client"
+
+# Aggregator templates with required fields
+AGGREGATOR_TEMPLATES = {
+    "flightradar24": {
+        "display_name": "FlightRadar24",
+        "default_host": "feed.fr24.com",
+        "default_port": 30004,
+        "type": "beast",
+        "requires_registration": True,
+        "fields": [
+            {"name": "sharing_key", "label": "Sharing Key", "type": "text", "required": True, 
+             "placeholder": "1234567890ABCDEF", "help": "16-character key from flightradar24.com/account/data-sharing"},
+            {"name": "email", "label": "Email Address", "type": "email", "required": True,
+             "placeholder": "your@email.com", "help": "Your FlightRadar24 account email"}
+        ],
+        "registration_url": "https://www.flightradar24.com/share-your-data",
+        "help_text": "Need a sharing key? Register at flightradar24.com/share-your-data"
+    },
+    "adsbexchange": {
+        "display_name": "ADS-B Exchange",
+        "default_host": "feed1.adsbexchange.com",
+        "default_port": 30004,
+        "type": "beast",
+        "requires_registration": False,
+        "fields": [
+            {"name": "uuid", "label": "UUID (Optional)", "type": "text", "required": False,
+             "placeholder": "Leave empty to auto-generate", "help": "Unique identifier for your feeder"}
+        ],
+        "help_text": "ADS-B Exchange accepts anonymous feeding. UUID is optional."
+    },
+    "airplaneslive": {
+        "display_name": "Airplanes.Live",
+        "default_host": "feed.airplanes.live",
+        "default_port": 30004,
+        "type": "beast",
+        "requires_registration": False,
+        "fields": [],
+        "help_text": "Airplanes.Live accepts anonymous feeding. No registration required."
+    },
+    "adsbhub": {
+        "display_name": "ADSBhub",
+        "default_host": "data.adsbhub.org",
+        "default_port": 5001,
+        "type": "beast",
+        "requires_registration": True,
+        "fields": [
+            {"name": "station_key", "label": "Station Key", "type": "text", "required": True,
+             "placeholder": "Your station key", "help": "Get from adsbhub.org after registration"}
+        ],
+        "registration_url": "http://www.adsbhub.org/howtofeed.php",
+        "help_text": "Register at adsbhub.org to get your station key"
+    },
+    "other": {
+        "display_name": "Custom/Other",
+        "default_host": "",
+        "default_port": 30004,
+        "type": "beast",
+        "requires_registration": False,
+        "fields": [
+            {"name": "custom_host", "label": "Host", "type": "text", "required": True,
+             "placeholder": "feed.example.com", "help": "Aggregator hostname or IP"},
+            {"name": "custom_port", "label": "Port", "type": "number", "required": True,
+             "placeholder": "30004", "help": "Beast output port"}
+        ],
+        "help_text": "Configure any custom aggregator"
+    }
+}
 
 # ============================================================================
 # UTILITY FUNCTIONS
@@ -79,26 +141,6 @@ def get_service_status(service_name):
     except:
         return False
 
-def parse_readsb_service():
-    """Parse current readsb service to extract connectors"""
-    connectors = []
-    try:
-        with open(READSB_SERVICE, 'r') as f:
-            content = f.read()
-            # Find --net-connector arguments
-            pattern = r'--net-connector\s+([^,]+),(\d+),(\w+)'
-            matches = re.findall(pattern, content)
-            for host, port, conn_type in matches:
-                connectors.append({
-                    'host': host.strip(),
-                    'port': int(port),
-                    'type': conn_type.strip()
-                })
-    except Exception as e:
-        print(f"Error parsing readsb service: {e}")
-    
-    return connectors
-
 def generate_readsb_service(config):
     """Generate readsb systemd service from configuration"""
     feeder = config.get('feeder_info', {})
@@ -134,7 +176,7 @@ ExecStart={INSTALL_DIR}/bin/readsb \\
     --lat {lat} \\
     --lon {lon} \\
     --max-range 360 \\
-    {' '.join(connectors)} \\
+    {' '.join(['\\', '    ' + c for c in connectors])} \\
     --net-bo-port 30005 \\
     --write-json /run/readsb \\
     --write-json-every 1 \\
@@ -177,7 +219,7 @@ def apply_configuration():
         return False, f"Error applying configuration: {str(e)}"
 
 # ============================================================================
-# HTML TEMPLATE (Optimized for Pi 3B - minimal JavaScript)
+# HTML TEMPLATE (Enhanced with aggregator selection)
 # ============================================================================
 
 HTML_TEMPLATE = """
@@ -331,6 +373,7 @@ HTML_TEMPLATE = """
             font-size: 12px;
             font-weight: 600;
             text-transform: uppercase;
+            margin-left: 10px;
         }
         
         .badge.primary {
@@ -348,6 +391,12 @@ HTML_TEMPLATE = """
             color: white;
         }
         
+        .badge.aggregator {
+            background: #3498db;
+            color: white;
+            text-transform: none;
+        }
+        
         .output-details {
             margin: 15px 0;
             font-size: 14px;
@@ -361,7 +410,7 @@ HTML_TEMPLATE = """
         .output-details strong {
             color: #2c3e50;
             display: inline-block;
-            width: 100px;
+            width: 120px;
         }
         
         .button-group {
@@ -429,11 +478,12 @@ HTML_TEMPLATE = """
             background: rgba(0,0,0,0.5);
             z-index: 1000;
             overflow-y: auto;
+            padding: 20px;
         }
         
         .modal-content {
             background: white;
-            max-width: 600px;
+            max-width: 700px;
             margin: 50px auto;
             padding: 30px;
             border-radius: 10px;
@@ -448,6 +498,44 @@ HTML_TEMPLATE = """
             border-bottom: 2px solid #f0f0f0;
         }
         
+        .aggregator-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .aggregator-option {
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .aggregator-option:hover {
+            border-color: #667eea;
+            background: #f8f9ff;
+            transform: translateY(-2px);
+        }
+        
+        .aggregator-option.selected {
+            border-color: #667eea;
+            background: #667eea;
+            color: white;
+        }
+        
+        .aggregator-icon {
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+        
+        .aggregator-name {
+            font-weight: 600;
+            font-size: 14px;
+        }
+        
         .form-group {
             margin-bottom: 20px;
         }
@@ -459,7 +547,15 @@ HTML_TEMPLATE = """
             color: #2c3e50;
         }
         
+        .field-help {
+            font-size: 12px;
+            color: #7f8c8d;
+            margin-top: 4px;
+            font-weight: normal;
+        }
+        
         input[type="text"],
+        input[type="email"],
         input[type="number"],
         select {
             width: 100%;
@@ -507,17 +603,35 @@ HTML_TEMPLATE = """
             color: #721c24;
         }
         
+        .alert.info {
+            background: #d1ecf1;
+            border-left: 4px solid #3498db;
+            color: #0c5460;
+        }
+        
+        .help-box {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 20px 0;
+            font-size: 14px;
+        }
+        
+        .help-box a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+        }
+        
+        .help-box a:hover {
+            text-decoration: underline;
+        }
+        
         .empty-state {
             text-align: center;
             padding: 60px 20px;
             color: #95a5a6;
-        }
-        
-        .empty-state svg {
-            width: 80px;
-            height: 80px;
-            margin-bottom: 20px;
-            opacity: 0.5;
         }
         
         @media (max-width: 768px) {
@@ -529,23 +643,12 @@ HTML_TEMPLATE = """
                 padding: 20px;
             }
             
-            .status-bar {
-                flex-direction: column;
-                align-items: stretch;
+            .aggregator-grid {
+                grid-template-columns: 1fr 1fr;
             }
             
-            .output-header {
-                flex-direction: column;
-                gap: 10px;
-            }
-            
-            .button-group {
-                flex-direction: column;
-            }
-            
-            button {
-                width: 100%;
-                justify-content: center;
+            .modal-content {
+                margin: 20px auto;
             }
         }
     </style>
@@ -555,7 +658,7 @@ HTML_TEMPLATE = """
         <!-- Header -->
         <div class="header">
             <h1>🛩️ ADS-B Feeder Configuration</h1>
-            <p>Manage aggregator outputs and MLAT clients • v0.1.0-alpha</p>
+            <p>Manage aggregator outputs and MLAT clients • v0.2.0-alpha</p>
         </div>
 
         <!-- Alert Messages -->
@@ -578,7 +681,7 @@ HTML_TEMPLATE = """
         <div class="section">
             <div class="section-header">
                 <h2 class="section-title">Beast Outputs</h2>
-                <button onclick="showAddOutputModal()">+ Add Output</button>
+                <button onclick="showAggregatorSelection()">+ Add Output</button>
             </div>
             <div id="outputs-container">
                 <div class="empty-state">
@@ -612,32 +715,46 @@ HTML_TEMPLATE = """
         </div>
     </div>
 
-    <!-- Add Output Modal -->
+    <!-- Aggregator Selection Modal -->
+    <div id="aggregator-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">Select Aggregator Type</div>
+            <p style="margin-bottom: 20px; color: #666;">Choose the aggregator you want to add to your feeder:</p>
+            
+            <div class="aggregator-grid">
+                <div class="aggregator-option" onclick="selectAggregator('flightradar24')">
+                    <div class="aggregator-icon">✈️</div>
+                    <div class="aggregator-name">FlightRadar24</div>
+                </div>
+                <div class="aggregator-option" onclick="selectAggregator('adsbexchange')">
+                    <div class="aggregator-icon">🌐</div>
+                    <div class="aggregator-name">ADS-B Exchange</div>
+                </div>
+                <div class="aggregator-option" onclick="selectAggregator('airplaneslive')">
+                    <div class="aggregator-icon">📡</div>
+                    <div class="aggregator-name">Airplanes.Live</div>
+                </div>
+                <div class="aggregator-option" onclick="selectAggregator('adsbhub')">
+                    <div class="aggregator-icon">🗺️</div>
+                    <div class="aggregator-name">ADSBhub</div>
+                </div>
+                <div class="aggregator-option" onclick="selectAggregator('other')">
+                    <div class="aggregator-icon">⚙️</div>
+                    <div class="aggregator-name">Custom/Other</div>
+                </div>
+            </div>
+            
+            <div style="margin-top: 20px;">
+                <button class="secondary" onclick="closeModal('aggregator-modal')">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Output Modal (Dynamic based on aggregator) -->
     <div id="output-modal" class="modal">
         <div class="modal-content">
-            <div class="modal-header">Add Beast Output</div>
-            <form id="output-form">
-                <div class="form-group">
-                    <label>Name:</label>
-                    <input type="text" id="output-name" required placeholder="e.g., FlightRadar24">
-                </div>
-                <div class="form-group">
-                    <label>Host:</label>
-                    <input type="text" id="output-host" required placeholder="e.g., feed.fr24.com">
-                </div>
-                <div class="form-group">
-                    <label>Port:</label>
-                    <input type="number" id="output-port" value="30004" required>
-                </div>
-                <div class="form-group checkbox-group">
-                    <input type="checkbox" id="output-enabled" checked>
-                    <label for="output-enabled" style="margin-bottom: 0;">Enabled</label>
-                </div>
-                <div class="button-group">
-                    <button type="submit" class="success">Save Output</button>
-                    <button type="button" class="secondary" onclick="closeModal('output-modal')">Cancel</button>
-                </div>
-            </form>
+            <div class="modal-header" id="output-modal-title">Add Output</div>
+            <div id="output-form-container"></div>
         </div>
     </div>
 
@@ -669,14 +786,15 @@ HTML_TEMPLATE = """
     <script>
         // Global state
         let config = {};
+        let selectedAggregator = null;
+        const aggregatorTemplates = """ + json.dumps(AGGREGATOR_TEMPLATES) + """;
 
         // Initialize on page load
         document.addEventListener('DOMContentLoaded', function() {
             loadConfiguration();
             checkServiceStatus();
             
-            // Set up form handlers
-            document.getElementById('output-form').addEventListener('submit', handleAddOutput);
+            // Set up MLAT form handler
             document.getElementById('mlat-form').addEventListener('submit', handleAddMLAT);
         });
 
@@ -698,7 +816,7 @@ HTML_TEMPLATE = """
             const outputs = config.outputs || [];
 
             if (outputs.length === 0) {
-                container.innerHTML = '<div class="empty-state"><p>No outputs configured</p></div>';
+                container.innerHTML = '<div class="empty-state"><p>No outputs configured. Click "+ Add Output" to get started!</p></div>';
                 return;
             }
 
@@ -706,17 +824,22 @@ HTML_TEMPLATE = """
                 <div class="output-card ${output.primary ? 'primary' : ''} ${!output.enabled ? 'disabled' : ''}">
                     <div class="output-header">
                         <div>
-                            <div class="output-title">${output.name}</div>
-                            ${output.primary ? '<span class="badge primary">Primary</span>' : ''}
-                            <span class="badge ${output.enabled ? 'enabled' : 'disabled'}">
-                                ${output.enabled ? 'Enabled' : 'Disabled'}
-                            </span>
+                            <div class="output-title">
+                                ${output.name}
+                                ${output.primary ? '<span class="badge primary">Primary</span>' : ''}
+                                ${output.aggregator_type ? '<span class="badge aggregator">' + (aggregatorTemplates[output.aggregator_type]?.display_name || output.aggregator_type) + '</span>' : ''}
+                                <span class="badge ${output.enabled ? 'enabled' : 'disabled'}">
+                                    ${output.enabled ? 'Enabled' : 'Disabled'}
+                                </span>
+                            </div>
                         </div>
                     </div>
                     <div class="output-details">
                         <div><strong>Host:</strong> ${output.host}</div>
                         <div><strong>Port:</strong> ${output.port}</div>
                         <div><strong>Type:</strong> ${output.type}</div>
+                        ${output.sharing_key ? '<div><strong>Sharing Key:</strong> ' + output.sharing_key.substring(0, 4) + '...' + output.sharing_key.substring(12) + '</div>' : ''}
+                        ${output.email ? '<div><strong>Email:</strong> ' + output.email + '</div>' : ''}
                     </div>
                     <div class="button-group">
                         <button onclick="toggleOutput('${output.id}')">
@@ -786,30 +909,138 @@ HTML_TEMPLATE = """
             showAlert('Status refreshed', 'success');
         }
 
-        // Modal functions
-        function showAddOutputModal() {
+        // Aggregator selection flow
+        function showAggregatorSelection() {
+            document.getElementById('aggregator-modal').style.display = 'block';
+        }
+
+        function selectAggregator(type) {
+            selectedAggregator = type;
+            closeModal('aggregator-modal');
+            showOutputFormForAggregator(type);
+        }
+
+        function showOutputFormForAggregator(type) {
+            const template = aggregatorTemplates[type];
+            const modalTitle = document.getElementById('output-modal-title');
+            const formContainer = document.getElementById('output-form-container');
+            
+            modalTitle.textContent = 'Add ' + template.display_name;
+            
+            // Build form HTML
+            let formHTML = '<form id="output-form">';
+            
+            // Add help text if available
+            if (template.help_text) {
+                formHTML += `<div class="help-box">
+                    ℹ️ ${template.help_text}
+                    ${template.registration_url ? ` <a href="${template.registration_url}" target="_blank">Register here</a>` : ''}
+                </div>`;
+            }
+            
+            // Name field (always present)
+            formHTML += `
+                <div class="form-group">
+                    <label>Name:</label>
+                    <input type="text" id="output-name" required placeholder="${template.display_name}" value="${template.display_name}">
+                </div>
+            `;
+            
+            // Add aggregator-specific fields
+            template.fields.forEach(field => {
+                formHTML += `
+                    <div class="form-group">
+                        <label>
+                            ${field.label}${field.required ? ' *' : ''}
+                            ${field.help ? '<span class="field-help">' + field.help + '</span>' : ''}
+                        </label>
+                        <input type="${field.type}" 
+                               id="field-${field.name}" 
+                               ${field.required ? 'required' : ''} 
+                               placeholder="${field.placeholder || ''}">
+                    </div>
+                `;
+            });
+            
+            // Host and port (may be pre-filled or custom)
+            if (type === 'other') {
+                // Already included in fields
+            } else {
+                formHTML += `
+                    <div class="form-group">
+                        <label>Host:</label>
+                        <input type="text" id="output-host" required value="${template.default_host}" readonly style="background: #f5f5f5;">
+                    </div>
+                    <div class="form-group">
+                        <label>Port:</label>
+                        <input type="number" id="output-port" required value="${template.default_port}" readonly style="background: #f5f5f5;">
+                    </div>
+                `;
+            }
+            
+            // Enabled checkbox
+            formHTML += `
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" id="output-enabled" checked>
+                    <label for="output-enabled" style="margin-bottom: 0;">Enabled</label>
+                </div>
+            `;
+            
+            // Buttons
+            formHTML += `
+                <div class="button-group">
+                    <button type="submit" class="success">Save Output</button>
+                    <button type="button" class="secondary" onclick="closeModal('output-modal')">Cancel</button>
+                </div>
+            </form>`;
+            
+            formContainer.innerHTML = formHTML;
+            
+            // Attach form handler
+            document.getElementById('output-form').addEventListener('submit', handleAddOutput);
+            
+            // Show modal
             document.getElementById('output-modal').style.display = 'block';
+        }
+
+        // Modal functions
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+            selectedAggregator = null;
         }
 
         function showAddMLATModal() {
             document.getElementById('mlat-modal').style.display = 'block';
         }
 
-        function closeModal(modalId) {
-            document.getElementById(modalId).style.display = 'none';
-        }
-
         // Handle add output
         function handleAddOutput(e) {
             e.preventDefault();
             
+            const template = aggregatorTemplates[selectedAggregator];
             const output = {
                 name: document.getElementById('output-name').value,
                 type: 'beast',
-                host: document.getElementById('output-host').value,
-                port: parseInt(document.getElementById('output-port').value),
+                aggregator_type: selectedAggregator,
                 enabled: document.getElementById('output-enabled').checked
             };
+            
+            // Get host and port
+            if (selectedAggregator === 'other') {
+                output.host = document.getElementById('field-custom_host').value;
+                output.port = parseInt(document.getElementById('field-custom_port').value);
+            } else {
+                output.host = template.default_host;
+                output.port = template.default_port;
+            }
+            
+            // Get aggregator-specific fields
+            template.fields.forEach(field => {
+                const fieldElement = document.getElementById(`field-${field.name}`);
+                if (fieldElement && fieldElement.value) {
+                    output[field.name] = fieldElement.value;
+                }
+            });
 
             fetch('/api/outputs', {
                 method: 'POST',
@@ -820,7 +1051,7 @@ HTML_TEMPLATE = """
             .then(() => {
                 closeModal('output-modal');
                 loadConfiguration();
-                showAlert('Output added successfully', 'success');
+                showAlert('Output added successfully. Click "Apply Configuration" to activate.', 'success');
             })
             .catch(err => showAlert('Error adding output: ' + err.message, 'error'));
         }
@@ -856,7 +1087,7 @@ HTML_TEMPLATE = """
             fetch(`/api/outputs/${id}/toggle`, {method: 'POST'})
                 .then(() => {
                     loadConfiguration();
-                    showAlert('Output toggled', 'success');
+                    showAlert('Output toggled. Click "Apply Configuration" to activate changes.', 'info');
                 })
                 .catch(err => showAlert('Error toggling output: ' + err.message, 'error'));
         }
@@ -895,9 +1126,9 @@ HTML_TEMPLATE = """
 
         // Apply configuration
         function applyConfiguration() {
-            if (!confirm('Apply configuration and restart services? This will cause brief downtime.')) return;
+            if (!confirm('Apply configuration and restart services? This will cause brief downtime (~5 seconds).')) return;
             
-            showAlert('Applying configuration...', 'success');
+            showAlert('Applying configuration...', 'info');
             
             fetch('/api/apply', {method: 'POST'})
                 .then(r => r.json())
@@ -923,6 +1154,7 @@ HTML_TEMPLATE = """
                     a.href = url;
                     a.download = 'adsb-feeder-config.json';
                     a.click();
+                    showAlert('Configuration downloaded', 'success');
                 });
         }
 
@@ -1072,7 +1304,7 @@ def apply_config():
 
 if __name__ == '__main__':
     print("=" * 60)
-    print("ADS-B Feeder Web Configuration Interface")
+    print("ADS-B Feeder Web Configuration Interface v0.2.0")
     print("=" * 60)
     print(f"Configuration file: {CONFIG_FILE}")
     print(f"Starting web server on port 8080...")
@@ -1082,5 +1314,4 @@ if __name__ == '__main__':
     print("\nPress Ctrl+C to stop\n")
     
     # Run on all interfaces, port 8080
-    # Note: For production, use gunicorn or uwsgi instead of Flask dev server
     app.run(host='0.0.0.0', port=8080, debug=False, threaded=True)
