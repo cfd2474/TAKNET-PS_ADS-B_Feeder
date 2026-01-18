@@ -16,15 +16,31 @@ Automated installer for Raspberry Pi ADS-B feeders with Tailscale integration an
 
 ---
 
-## ✨ What's New in v5.5
+## ✨ What's New in v5.6
 
+Interactive gain configuration during setup - Users are prompted to set RTL-SDR gain during installation (defaults to -10 for auto gain)
+adsb-gain command - A new utility for changing gain after installation:
+
+adsb-gain - View current gain setting
+adsb-gain -10 - Set auto gain
+adsb-gain 30.0 - Set specific manual gain
+adsb-gain --help - Show help
+
+
+Gain validation - Input validation with warnings for out-of-range values
+Added bc package - Required for floating-point gain value comparisons
+Updated sudoers permissions - Remote user can now run systemctl daemon-reload for gain changes
+
+
+### Previous Updates
+
+**5.5 - Failover Protections**
 - 🔄 **Automatic failover system** - Seamless switch between Tailscale and public IP
 - 🎯 **Connection monitor** - Continuous monitoring with automatic recovery
 - 📊 **Failover logging** - Complete audit trail of all connection events
 - 🔧 **Centralized IP management** - Update aggregator IPs in one place
 - ⚡ **Zero-touch recovery** - Automatic return to Tailscale when available
 
-### Previous Updates
 
 **v5.4 - MLAT Configuration**
 - 📡 **MLAT opt-out option** - Choose to disable MLAT during installation to conserve bandwidth
