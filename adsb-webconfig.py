@@ -992,8 +992,8 @@ HTML_TEMPLATE = """
             
             modalTitle.textContent = 'Add ' + template.display_name;
             
-            // Build form HTML
-            let formHTML = '<form id="output-form" onsubmit="handleAddOutput(event); return false;">';
+            // Build form HTML - store aggregator type in data attribute
+            let formHTML = '<form id="output-form" data-aggregator="' + type + '">';
             
             // Add help text if available
             if (template.help_text) {
@@ -1061,6 +1061,12 @@ HTML_TEMPLATE = """
             
             formContainer.innerHTML = formHTML;
             
+            // IMPORTANT: Attach event listener AFTER inserting HTML
+            document.getElementById('output-form').addEventListener('submit', function(e) {
+                e.preventDefault();
+                handleAddOutput(e);
+            });
+            
             // Show modal
             document.getElementById('output-modal').style.display = 'block';
         }
@@ -1079,18 +1085,27 @@ HTML_TEMPLATE = """
         function handleAddOutput(e) {
             e.preventDefault();
             
-            console.log('Form submitted, selectedAggregator:', selectedAggregator);
+            // Get aggregator type from form data attribute
+            const form = document.getElementById('output-form');
+            const aggregatorType = form.getAttribute('data-aggregator');
             
-            const template = aggregatorTemplates[selectedAggregator];
+            console.log('Form submitted, aggregatorType:', aggregatorType);
+            
+            if (!aggregatorType || !aggregatorTemplates[aggregatorType]) {
+                showAlert('Error: Invalid aggregator type', 'error');
+                return false;
+            }
+            
+            const template = aggregatorTemplates[aggregatorType];
             const output = {
                 name: document.getElementById('output-name').value,
                 type: 'beast',
-                aggregator_type: selectedAggregator,
+                aggregator_type: aggregatorType,
                 enabled: document.getElementById('output-enabled').checked
             };
             
             // Get host and port
-            if (selectedAggregator === 'other') {
+            if (aggregatorType === 'other') {
                 output.host = document.getElementById('field-custom_host').value;
                 output.port = parseInt(document.getElementById('field-custom_port').value);
             } else {
