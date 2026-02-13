@@ -1,10 +1,10 @@
 {
-  "version": "2.47.36",
+  "version": "2.47.37",
   "release_date": "2026-02-13",
-  "release_name": "Production Release - SSH Security Fix",
+  "release_name": "Production Release - Documentation Update",
   "download_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh",
   "changelog_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/CHANGELOG.md",
   "minimum_version": "2.40.0",
   "breaking_changes": false,
-  "release_notes": "Production release with critical SSH security script restored. Includes configure-ssh-tailscale.sh for Tailscale-only remote user access. Install script updated with error handling to prevent hangups. Complete ADS-B feeder system ready for public safety deployment."
+  "release_notes": "Updated documentation with correct mDNS hostname. All references now use taknet-ps.local instead of generic hostname placeholder. Includes SSH security script and install error handling from v2.47.36."
 }

@@ -62,7 +62,7 @@ curl -fsSL https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main
 1. **Flash Raspberry Pi OS Lite 64-bit (Bookworm)** to SD card
 2. **Connect SDR** and antenna
 3. **Run installer** (command above)
-4. **Access web interface** at `http://[raspberry-pi-ip]` or `http://[hostname].local`
+4. **Access web interface** at `http://taknet-ps.local` or `http://[raspberry-pi-ip]`
 5. **Complete setup wizard**
 
 The installer handles:
@@ -77,7 +77,7 @@ The installer handles:
 
 After installation completes:
 
-1. Navigate to `http://[raspberry-pi-ip]` or `http://[hostname].local`
+1. Navigate to `http://taknet-ps.local` or `http://[raspberry-pi-ip]`
 2. Follow the setup wizard:
    - **SDR Configuration** - Auto-detect dongles and assign functions (1090 MHz, 978 MHz)
    - **Location & Name** - Enter latitude, longitude, altitude, and feeder name
@@ -125,7 +125,7 @@ After installation completes:
 
 ## 🌐 Web Interface
 
-Access at `http://[feeder-ip]` or `http://[hostname].local`
+Access at `http://taknet-ps.local` or `http://[feeder-ip]`
 
 ### Navigation Tabs
 
@@ -291,7 +291,7 @@ Available at `http://[feeder-ip]:8080/graphs1090/?timeframe=24h`
 
 ### Logs Access
 
-Available at `http://[feeder-ip]/logs` or `http://[hostname].local/logs`
+Available at `http://taknet-ps.local/logs` or `http://[feeder-ip]/logs`
 
 **Log Sources:**
 - ultrafeeder (main service)
@@ -576,10 +576,10 @@ cat /opt/adsb/VERSION
 
 ### Essential URLs
 
-- Web Interface: `http://[feeder-ip]` or `http://[hostname].local`
+- Web Interface: `http://taknet-ps.local` or `http://[feeder-ip]`
 - Map: `http://[feeder-ip]:8080`
 - Statistics: `http://[feeder-ip]:8080/graphs1090/`
-- Logs: `http://[feeder-ip]/logs`
+- Logs: `http://taknet-ps.local/logs`
 
 ---
 
