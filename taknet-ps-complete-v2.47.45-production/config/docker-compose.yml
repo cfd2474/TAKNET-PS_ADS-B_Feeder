@@ -1,0 +1,97 @@
+networks:
+  adsb_net:
+    driver: bridge
+
+services:
+  ultrafeeder:
+    image: ghcr.io/sdr-enthusiasts/docker-adsb-ultrafeeder:latest
+    container_name: ultrafeeder
+    hostname: ultrafeeder
+    restart: unless-stopped
+    networks:
+      - adsb_net
+    ports:
+      - "8080:80"
+      - "9273-9274:9273-9274"
+    environment:
+      - TZ=${FEEDER_TZ:-UTC}
+      - LAT=${FEEDER_LAT}
+      - LONG=${FEEDER_LONG}
+      - ALT=${FEEDER_ALT_M}m
+      - READSB_DEVICE_TYPE=rtlsdr
+      - READSB_RTLSDR_DEVICE=${READSB_DEVICE:-0}
+      - READSB_GAIN=${READSB_GAIN:-autogain}
+      - READSB_RX_LOCATION_ACCURACY=2
+      - READSB_STATS_RANGE=true
+      - MLAT_USER=${MLAT_SITE_NAME:-feeder}
+      - UPDATE_TAR1090=true
+      - TAR1090_ENABLE_AC_DB=true
+      - TAR1090_FLIGHTAWARELINKS=true
+      - TAR1090_SITESHOW=true
+      - ULTRAFEEDER_CONFIG=${ULTRAFEEDER_CONFIG}
+      - PROMETHEUS_ENABLE=true
+    devices:
+      - /dev/bus/usb:/dev/bus/usb
+    volumes:
+      - /opt/adsb/ultrafeeder:/opt/adsb
+      - /run/readsb:/run/readsb
+      - /proc/diskstats:/proc/diskstats:ro
+    tmpfs:
+      - /run:exec,size=256M
+      - /tmp:size=128M
+
+  fr24:
+    image: ghcr.io/sdr-enthusiasts/docker-flightradar24:latest
+    container_name: fr24
+    hostname: fr24
+    restart: unless-stopped
+    networks:
+      - adsb_net
+    ports:
+      - "8754:8754"
+    environment:
+      - BEASTHOST=ultrafeeder
+      - BEASTPORT=30005
+      - FR24KEY=${FR24_KEY}
+      - MLAT=yes
+    tmpfs:
+      - /var/log
+    depends_on:
+      - ultrafeeder
+
+  piaware:
+    image: ghcr.io/sdr-enthusiasts/docker-piaware:latest
+    container_name: piaware
+    hostname: piaware
+    restart: unless-stopped
+    networks:
+      - adsb_net
+    ports:
+      - "8082:80"
+    environment:
+      - TZ=${FEEDER_TZ}
+      - FEEDER_ID=${PIAWARE_FEEDER_ID}
+      - RECEIVER_TYPE=relay
+      - BEASTHOST=ultrafeeder
+      - BEASTPORT=30005
+      - ALLOW_MLAT=yes
+      - MLAT_RESULTS=yes
+    tmpfs:
+      - /run:exec,size=64M
+      - /var/log
+    depends_on:
+      - ultrafeeder
+
+  adsbhub:
+    image: ghcr.io/sdr-enthusiasts/docker-adsbhub:latest
+    container_name: adsbhub
+    hostname: adsbhub
+    restart: unless-stopped
+    networks:
+      - adsb_net
+    environment:
+      - TZ=${FEEDER_TZ}
+      - SBSHOST=ultrafeeder
+      - CLIENTKEY=${ADSBHUB_STATION_KEY}
+    depends_on:
+      - ultrafeeder

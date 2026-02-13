@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TAKNET-PS-ADSB Dashboard</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>TAKNET-PS-ADSB-Feeder</h1>
+            <p style="margin: 5px 0 5px 0; color: #9ca3af; font-size: 0.9em;">Tactical Awareness Kit Network for Enhanced Tracking – Public Safety</p>
+            <p style="margin: 0 0 15px 0; color: #6b7280; font-size: 0.8em;">v{{ version }}</p>
+            <nav>
+                <a href="/dashboard" class="active">Dashboard</a>
+                <a href="/feeds">Feed Selection</a>
+                <a href="/settings">Settings</a>
+                <a href="http://{{ request.host.split(':')[0] }}:8080" target="_blank">Map</a>
+                <a href="http://{{ request.host.split(':')[0] }}:8080/graphs1090/?timeframe=24h" target="_blank">Statistics</a>
+                <a href="/about">About</a>
+                <button onclick="refreshDashboard()" class="btn btn-sm" style="margin-left: auto;">🔄 Refresh</button>
+            </nav>
+        </header>
+
+        <div class="dashboard">
+            <!-- Logo -->
+            <div style="text-align: center; margin-bottom: 30px;">
+                <img src="/static/taknet-ps_shield.png" alt="TAKNET-PS" style="max-width: 300px; height: auto;">
+            </div>
+
+            <!-- Combined System Status -->
+            <div class="card" style="margin-bottom: 20px;">
+                <h3 style="text-align: center; margin-bottom: 20px; font-size: 1.5em; color: #1f2937;">System Status</h3>
+                
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px;">
+                    <!-- Core Service -->
+                    <div style="padding: 20px; background: #f9fafb; border-radius: 8px; border-left: 4px solid #3b82f6;">
+                        <h4 style="margin: 0 0 15px 0; color: #374151; font-size: 1.1em;">🔧 Core Service</h4>
+                        <div id="container-status">
+                            {% if docker.get('ultrafeeder') %}
+                                <div class="status-item" style="margin-bottom: 10px;">
+                                    <span class="status-dot {% if 'Up' in docker.get('ultrafeeder') %}active{% else %}inactive{% endif %}"></span>
+                                    <span style="font-weight: 600;">ultrafeeder</span>
+                                    <span class="status-text" style="margin-left: 10px;">{{ docker.get('ultrafeeder', 'Unknown') }}</span>
+                                </div>
+                            {% else %}
+                                <p class="text-muted">ultrafeeder not running</p>
+                            {% endif %}
+                            <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #e5e7eb;">
+                                <p style="font-size: 0.85em; color: #6b7280; margin-bottom: 5px;">Feeder UUID:</p>
+                                <p style="font-family: monospace; font-size: 0.85em; color: #374151; word-break: break-all;">{{ feeder_uuid }}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Location -->
+                    <div style="padding: 20px; background: #f9fafb; border-radius: 8px; border-left: 4px solid #10b981;">
+                        <h4 style="margin: 0 0 15px 0; color: #374151; font-size: 1.1em;">📍 Location</h4>
+                        <div style="display: grid; gap: 8px;">
+                            <div style="display: flex; justify-content: space-between;">
+                                <span style="color: #6b7280;">Latitude:</span>
+                                <span style="font-weight: 600; color: #374151;">{{ config.get('FEEDER_LAT', 'Not set') }}</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between;">
+                                <span style="color: #6b7280;">Longitude:</span>
+                                <span style="font-weight: 600; color: #374151;">{{ config.get('FEEDER_LONG', 'Not set') }}</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between;">
+                                <span style="color: #6b7280;">Altitude:</span>
+                                <span style="font-weight: 600; color: #374151;">{{ config.get('FEEDER_ALT_M', 'Not set') }}m</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between;">
+                                <span style="color: #6b7280;">Timezone:</span>
+                                <span style="font-weight: 600; color: #374151;">{{ config.get('FEEDER_TZ', 'UTC') }}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Network Status -->
+                    <div style="padding: 20px; background: #f9fafb; border-radius: 8px; border-left: 4px solid #f59e0b;">
+                        <h4 style="margin: 0 0 15px 0; color: #374151; font-size: 1.1em;">🌐 Network</h4>
+                        <div style="display: grid; gap: 8px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <span style="color: #6b7280;">Machine:</span>
+                                <span style="font-weight: 600; color: #374151; font-size: 0.9em;">{{ network_info.machine_name }}</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <span style="color: #6b7280;">Hostname:</span>
+                                <span style="font-weight: 600; color: #374151; font-size: 0.9em;">{{ network_info.hostname }}</span>
+                            </div>
+                            <div style="display: grid; gap: 4px; margin-top: 4px;">
+                                <span style="color: #6b7280; font-size: 0.9em;">Connection:</span>
+                                <span style="font-weight: 600; color: #374151; font-size: 0.9em;">
+                                    {% if network_info.connection_mode == 'wifi' %}
+                                        <span style="color: #3b82f6;">📶 WiFi</span>
+                                    {% elif network_info.connection_mode == 'ethernet' %}
+                                        <span style="color: #10b981;">🔌 Ethernet</span>
+                                    {% elif network_info.connection_mode == 'usb' %}
+                                        <span style="color: #f59e0b;">🔗 USB</span>
+                                    {% elif network_info.connection_mode == 'none' %}
+                                        <span style="color: #ef4444;">❌ No Connection</span>
+                                    {% else %}
+                                        <span style="color: #6b7280;">❓ {{ network_info.connection_mode }}</span>
+                                    {% endif %}
+                                </span>
+                                <span style="font-size: 0.85em; color: #6b7280;">{{ network_info.connection_details }}</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px;">
+                                <span style="color: #6b7280;">Internet:</span>
+                                <span id="internet-status" style="display: flex; align-items: center; gap: 6px;">
+                                    <span class="status-dot active"></span>
+                                    <span class="status-text">Connected</span>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Global TAKNET-PS Map Button -->
+            <div style="grid-column: 1 / -1; display: flex; justify-content: center; margin: 20px 0;">
+                <a href="http://adsb.tak-solutions.com/tar1090/" target="_blank" 
+                   style="text-decoration: none; width: 100%; max-width: 600px;">
+                    <button style="
+                        width: 100%;
+                        padding: 20px 40px;
+                        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+                        color: white;
+                        border: none;
+                        border-radius: 12px;
+                        font-size: 1.2em;
+                        font-weight: 600;
+                        cursor: pointer;
+                        box-shadow: 0 4px 6px rgba(37, 99, 235, 0.3);
+                        transition: all 0.3s ease;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        gap: 12px;
+                    " 
+                    onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 12px rgba(37, 99, 235, 0.4)';"
+                    onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 6px rgba(37, 99, 235, 0.3)';">
+                        <span style="font-size: 1.5em;">🌍</span>
+                        <span>View Global TAKNET-PS ADS-B Map</span>
+                        <span style="font-size: 1.2em;">→</span>
+                    </button>
+                </a>
+            </div>
+
+            <!-- Aggregator Feed Status Table -->
+            <div class="card" style="grid-column: 1 / -1;">
+                <h3>You are feeding</h3>
+                <p style="color: #6b7280; font-size: 0.9em; margin-bottom: 15px;">
+                    Enabled indicates feeding the aggregator. <span style="color: #10b981;">✓</span> feed is in good state, 
+                    <span style="color: #ef4444;">✓</span> feed is down, <span style="color: #f59e0b;">✓</span> MLAT is down, 
+                    <span style="color: #374151;">✓</span> if we don't have that information.
+                </p>
+                <p style="color: #6b7280; font-size: 0.9em; margin-bottom: 20px;">
+                    '+' or '-' in the Data and MLAT columns show that aggregator indicates that you are (or are not) feeding ADS-B data and MLAT data to them.<br>
+                    '.' in those columns indicates that the aggregator isn't offering that information to the feeder.
+                </p>
+                
+                <div style="overflow-x: auto;">
+                    <table class="feed-table">
+                        <thead>
+                            <tr>
+                                <th>Aggregator</th>
+                                <th style="text-align: center;">Enabled</th>
+                                <th style="text-align: center;">Data</th>
+                                <th style="text-align: center;">MLAT</th>
+                                <th style="text-align: center;">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="feed-table-body">
+                            {% if config.get('TAKNET_PS_ENABLED') == 'true' %}
+                            <tr>
+                                <td><strong>TAKNET-PS Server</strong></td>
+                                <td style="text-align: center;"><span class="feed-check" id="taknet-check" data-status="good">✓</span></td>
+                                <td style="text-align: center;" id="taknet-data">+</td>
+                                <td style="text-align: center;" id="taknet-mlat">{{ '+' if config.get('TAKNET_PS_MLAT_ENABLED') == 'true' else '-' }}</td>
+                                <td style="text-align: center;">
+                                    <a href="/taknet-ps-status" style="text-decoration: none; font-size: 1.2em; transition: opacity 0.2s;" 
+                                       onmouseover="this.style.opacity='0.6'" 
+                                       onmouseout="this.style.opacity='1'"
+                                       title="View TAKNET-PS Connection Status">🔗</a>
+                                </td>
+                            </tr>
+                            {% endif %}
+                            
+                            {% if config.get('FR24_ENABLED') == 'true' %}
+                            <tr>
+                                <td>FlightRadar24</td>
+                                <td style="text-align: center;"><span class="feed-check" id="fr24-check" data-status="unknown">✓</span></td>
+                                <td style="text-align: center;" id="fr24-data">.</td>
+                                <td style="text-align: center;" id="fr24-mlat">.</td>
+                                <td style="text-align: center;"><a href="#" class="feed-link" onclick="openFeedLink('fr24'); return false;" title="Open FR24 Stats">🔗</a></td>
+                            </tr>
+                            {% endif %}
+                            
+                            {% if config.get('PIAWARE_ENABLED') == 'true' %}
+                            <tr>
+                                <td>FlightAware</td>
+                                <td style="text-align: center;"><span class="feed-check" id="piaware-check" data-status="unknown">✓</span></td>
+                                <td style="text-align: center;" id="piaware-data">.</td>
+                                <td style="text-align: center;" id="piaware-mlat">.</td>
+                                <td style="text-align: center;"><a href="#" class="feed-link" onclick="openFeedLink('piaware'); return false;" title="Open PiAware Stats">🔗</a></td>
+                            </tr>
+                            {% endif %}
+                            
+                            {% if config.get('ADSBFI_ENABLED') == 'true' %}
+                            <tr>
+                                <td>adsb.fi</td>
+                                <td style="text-align: center;"><span class="feed-check" id="adsbfi-check" data-status="good">✓</span></td>
+                                <td style="text-align: center;">+</td>
+                                <td style="text-align: center;">+</td>
+                                <td style="text-align: center;"><a href="https://api.adsb.fi/v1/myip" class="feed-link" target="_blank" title="View adsb.fi Stats">🔗</a></td>
+                            </tr>
+                            {% endif %}
+                            
+                            {% if config.get('ADSBLOL_ENABLED') == 'true' %}
+                            <tr>
+                                <td>adsb.lol</td>
+                                <td style="text-align: center;"><span class="feed-check" id="adsblol-check" data-status="good">✓</span></td>
+                                <td style="text-align: center;">+</td>
+                                <td style="text-align: center;">+</td>
+                                <td style="text-align: center;"><a href="https://api.adsb.lol/0/me" class="feed-link" target="_blank" title="View adsb.lol Stats">🔗</a></td>
+                            </tr>
+                            {% endif %}
+                            
+                            {% if config.get('ADSBX_ENABLED') == 'true' %}
+                            <tr>
+                                <td>ADSBexchange</td>
+                                <td style="text-align: center;"><span class="feed-check" id="adsbx-check" data-status="good">✓</span></td>
+                                <td style="text-align: center;">+</td>
+                                <td style="text-align: center;">+</td>
+                                <td style="text-align: center;"><a href="https://www.adsbexchange.com/myip/" class="feed-link" target="_blank" title="View ADSBexchange Stats">🔗</a></td>
+                            </tr>
+                            {% endif %}
+                            
+                            {% if config.get('AIRPLANESLIVE_ENABLED') == 'true' %}
+                            <tr>
+                                <td>Airplanes.Live</td>
+                                <td style="text-align: center;"><span class="feed-check" id="airplaneslive-check" data-status="good">✓</span></td>
+                                <td style="text-align: center;">+</td>
+                                <td style="text-align: center;">+</td>
+                                <td style="text-align: center;"><a href="https://airplanes.live/myfeed/" class="feed-link" target="_blank" title="View Airplanes.Live Stats">🔗</a></td>
+                            </tr>
+                            {% endif %}
+                            
+                            {% if config.get('ADSBHUB_ENABLED') == 'true' %}
+                            <tr>
+                                <td>ADSBHub</td>
+                                <td style="text-align: center;"><span class="feed-check" id="adsbhub-check" data-status="good">✓</span></td>
+                                <td style="text-align: center;">+</td>
+                                <td style="text-align: center;">-</td>
+                                <td style="text-align: center;"><a href="https://www.adsbhub.org/statistic.php" class="feed-link" target="_blank" title="View ADSBHub Stats">🔗</a></td>
+                            </tr>
+                            {% endif %}
+                            
+                            {% if not config.get('TAKNET_PS_ENABLED') and not config.get('FR24_ENABLED') and not config.get('PIAWARE_ENABLED') and not config.get('ADSBFI_ENABLED') and not config.get('ADSBLOL_ENABLED') and not config.get('ADSBX_ENABLED') and not config.get('AIRPLANESLIVE_ENABLED') and not config.get('ADSBHUB_ENABLED') %}
+                            <tr>
+                                <td colspan="5" style="text-align: center; color: #9ca3af; padding: 20px;">
+                                    No feeds configured
+                                </td>
+                            </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="actions">
+                <button class="btn" onclick="window.location.href='/settings'">⚙️ Settings</button>
+            </div>
+        </div>
+
+        <div id="status"></div>
+    </div>
+
+    <style>
+        header nav {
+            display: flex;
+            align-items: center;
+        }
+        
+        .btn-sm {
+            padding: 8px 16px;
+            font-size: 14px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .btn-sm:hover {
+            background: #5a67d8;
+            transform: translateY(-1px);
+        }
+        
+        .btn-sm:active {
+            transform: translateY(0);
+        }
+        
+        .refreshing {
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .last-updated {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-size: 12px;
+            z-index: 1000;
+        }
+    </style>
+
+    <div class="last-updated" id="lastUpdated">
+        Last updated: <span id="updateTime">Just now</span>
+    </div>
+
+    <script src="/static/js/dashboard.js"></script>
+    <script>
+        let autoRefreshInterval;
+        let serviceStateInterval;
+        let lastUpdateTime = new Date();
+        
+        async function updateServiceStates() {
+            try {
+                const response = await fetch('/api/status');
+                const data = await response.json();
+                
+                // Update TAKNET-PS feed table status (based on TCP connection check)
+                try {
+                    const taknetResponse = await fetch('/api/taknet-ps/stats');
+                    const taknetData = await taknetResponse.json();
+                    
+                    if (taknetData.success) {
+                        const taknetCheck = document.getElementById('taknet-check');
+                        const taknetDataCol = document.getElementById('taknet-data');
+                        const taknetMlatCol = document.getElementById('taknet-mlat');
+                        
+                        if (taknetCheck) {
+                            // Update checkmark based on data feed status
+                            if (taknetData.data_feed_active) {
+                                taknetCheck.setAttribute('data-status', 'good');
+                            } else {
+                                taknetCheck.setAttribute('data-status', 'down');
+                            }
+                        }
+                        
+                        if (taknetDataCol) {
+                            // Update data column
+                            taknetDataCol.textContent = taknetData.data_feed_active ? '+' : '-';
+                        }
+                        
+                        if (taknetMlatCol) {
+                            // Update MLAT column
+                            if (taknetData.mlat_enabled) {
+                                taknetMlatCol.textContent = taknetData.mlat_active ? '+' : '-';
+                            } else {
+                                taknetMlatCol.textContent = '-';
+                            }
+                        }
+                    }
+                } catch (e) {
+                    console.error('Error fetching TAKNET-PS status:', e);
+                }
+                
+                // Update PiAware feed table status if enabled
+                if (data.service_states && data.service_states.piaware) {
+                    const piawareState = data.service_states.piaware;
+                    const piawareCheck = document.getElementById('piaware-check');
+                    
+                    if (piawareCheck) {
+                        switch(piawareState) {
+                            case 'running':
+                                piawareCheck.setAttribute('data-status', 'good');
+                                // Update data and MLAT columns when running
+                                const piawareData = document.getElementById('piaware-data');
+                                const piawareMlat = document.getElementById('piaware-mlat');
+                                if (piawareData) piawareData.textContent = '+';
+                                if (piawareMlat) piawareMlat.textContent = '+';
+                                break;
+                            case 'downloading':
+                            case 'starting':
+                                piawareCheck.setAttribute('data-status', 'unknown');
+                                break;
+                            case 'stopped':
+                            case 'not_installed':
+                                piawareCheck.setAttribute('data-status', 'down');
+                                // Reset data and MLAT columns when stopped
+                                const piawareDataStopped = document.getElementById('piaware-data');
+                                const piawareMlatStopped = document.getElementById('piaware-mlat');
+                                if (piawareDataStopped) piawareDataStopped.textContent = '.';
+                                if (piawareMlatStopped) piawareMlatStopped.textContent = '.';
+                                break;
+                        }
+                    }
+                }
+                
+                // Update FR24 feed table status if enabled
+                if (data.service_states && data.service_states.fr24) {
+                    const fr24State = data.service_states.fr24;
+                    const fr24Check = document.getElementById('fr24-check');
+                    
+                    if (fr24Check) {
+                        switch(fr24State) {
+                            case 'running':
+                                fr24Check.setAttribute('data-status', 'good');
+                                // Update data and MLAT columns when running
+                                const fr24Data = document.getElementById('fr24-data');
+                                const fr24Mlat = document.getElementById('fr24-mlat');
+                                if (fr24Data) fr24Data.textContent = '+';
+                                if (fr24Mlat) fr24Mlat.textContent = '+';
+                                break;
+                            case 'downloading':
+                            case 'starting':
+                                fr24Check.setAttribute('data-status', 'unknown');
+                                break;
+                            case 'stopped':
+                            case 'not_installed':
+                                fr24Check.setAttribute('data-status', 'down');
+                                // Reset data and MLAT columns when stopped
+                                const fr24DataStopped = document.getElementById('fr24-data');
+                                const fr24MlatStopped = document.getElementById('fr24-mlat');
+                                if (fr24DataStopped) fr24DataStopped.textContent = '.';
+                                if (fr24MlatStopped) fr24MlatStopped.textContent = '.';
+                                break;
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error('Failed to update service states:', error);
+            }
+        }
+        
+        function refreshDashboard() {
+            const btn = event ? event.target : null;
+            if (btn) {
+                btn.classList.add('refreshing');
+                btn.disabled = true;
+            }
+            
+            // Reload the page
+            location.reload();
+        }
+        
+        function updateLastUpdateTime() {
+            const now = new Date();
+            const seconds = Math.floor((now - lastUpdateTime) / 1000);
+            
+            let timeText;
+            if (seconds < 60) {
+                timeText = `${seconds}s ago`;
+            } else if (seconds < 3600) {
+                const minutes = Math.floor(seconds / 60);
+                timeText = `${minutes}m ago`;
+            } else {
+                const hours = Math.floor(seconds / 3600);
+                timeText = `${hours}h ago`;
+            }
+            
+            document.getElementById('updateTime').textContent = timeText;
+        }
+        
+        // Open feed status/info link
+        function openFeedLink(feedType) {
+            const hostname = window.location.hostname;
+            let url;
+            
+            switch(feedType) {
+                case 'fr24':
+                    url = `http://${hostname}:8754/`;
+                    break;
+                case 'piaware':
+                    url = `http://${hostname}:8082/`;
+                    break;
+                default:
+                    console.error('Unknown feed type:', feedType);
+                    return;
+            }
+            
+            window.open(url, '_blank');
+        }
+        
+        // Auto-refresh every 10 seconds
+        function startAutoRefresh() {
+            // Update time display every second
+            setInterval(updateLastUpdateTime, 1000);
+            
+            // Update service states every 3 seconds (more responsive)
+            serviceStateInterval = setInterval(updateServiceStates, 3000);
+            
+            // Auto-refresh page every 60 seconds
+            autoRefreshInterval = setInterval(() => {
+                console.log('Auto-refreshing dashboard...');
+                location.reload();
+            }, 60000);
+        }
+        
+        // Start auto-refresh when page loads
+        window.addEventListener('DOMContentLoaded', () => {
+            lastUpdateTime = new Date();
+            updateLastUpdateTime();
+            updateServiceStates(); // Initial update
+            startAutoRefresh();
+        });
+        
+        // Clear interval when leaving page
+        window.addEventListener('beforeunload', () => {
+            if (autoRefreshInterval) {
+                clearInterval(autoRefreshInterval);
+            }
+            if (serviceStateInterval) {
+                clearInterval(serviceStateInterval);
+            }
+        });
+    </script>
+</body>
+</html>

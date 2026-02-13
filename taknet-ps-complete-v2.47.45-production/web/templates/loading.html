@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configuring Feeder - TAKNET-PS</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <style>
+        .loading-container {
+            max-width: 600px;
+            margin: 100px auto;
+            padding: 60px 30px;
+            text-align: center;
+            background: rgba(0, 0, 0, 0.6);
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+        
+        .spinner {
+            width: 60px;
+            height: 60px;
+            border: 6px solid rgba(255, 255, 255, 0.2);
+            border-top: 6px solid #ffffff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 30px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .loading-container h2 {
+            font-size: 2em;
+            margin-bottom: 15px;
+            color: #ffffff;
+        }
+        
+        .loading-container p {
+            font-size: 1.1em;
+            color: #e5e7eb;
+        }
+        
+        .completion-message {
+            display: none;
+            text-align: center;
+            padding: 40px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 10px;
+            margin-top: 30px;
+        }
+        
+        .completion-message h2 {
+            margin: 0 0 15px 0;
+            font-size: 2.5em;
+        }
+        
+        .completion-message p {
+            margin: 10px 0;
+            font-size: 1.2em;
+            color: white;
+        }
+        
+        .redirect-info {
+            margin-top: 20px;
+            font-size: 1em;
+            opacity: 0.9;
+        }
+        
+        .error-message {
+            display: none;
+            background: rgba(254, 226, 226, 0.95);
+            border: 2px solid #ef4444;
+            color: #991b1b;
+            padding: 30px;
+            border-radius: 10px;
+            margin-top: 30px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+        
+        .error-message h3 {
+            margin: 0 0 10px 0;
+            color: #991b1b;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>TAKNET-PS-ADSB-Feeder</h1>
+        </header>
+
+        <div class="loading-container">
+            <div id="loadingSection">
+                <div class="spinner"></div>
+                <h2>Configuring Your Feeder</h2>
+                <p>This will only take a moment...</p>
+            </div>
+
+            <div class="completion-message" id="completionMessage">
+                <h2>✅ Setup Complete!</h2>
+                <p>Your TAKNET-PS feeder is now running</p>
+                <p class="redirect-info">Redirecting to dashboard in <span id="countdown">3</span> seconds...</p>
+            </div>
+            
+            <div class="error-message" id="errorMessage">
+                <h3>⚠️ Setup Issue</h3>
+                <p id="errorText"></p>
+                <p style="margin-top: 15px;">Redirecting to dashboard where you can check status...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function startSetup() {
+            try {
+                // Fetch configuration from API
+                const configResponse = await fetch('/api/config');
+                const config = await configResponse.json();
+                
+                // Step 1: Tailscale (if enabled)
+                if (config.TAILSCALE_ENABLED === 'true' && config.TAILSCALE_AUTH_KEY) {
+                    await fetch('/api/tailscale/install', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            auth_key: config.TAILSCALE_AUTH_KEY,
+                            hostname: config.MLAT_SITE_NAME
+                        })
+                    });
+                }
+                
+                // Step 2: Restart ultrafeeder service
+                const restartResponse = await fetch('/api/service/restart', {
+                    method: 'POST'
+                });
+                
+                if (!restartResponse.ok) {
+                    throw new Error('Failed to start service');
+                }
+                
+                // Step 3: Wait for service to be ready (max 3 minutes)
+                const maxWaitTime = 180000;
+                const pollInterval = 2000;
+                const startTime = Date.now();
+                let isReady = false;
+                
+                while (!isReady && (Date.now() - startTime) < maxWaitTime) {
+                    await sleep(pollInterval);
+                    
+                    try {
+                        const statusResponse = await fetch('/api/service/ready');
+                        const statusData = await statusResponse.json();
+                        
+                        if (statusData.ready) {
+                            isReady = true;
+                        }
+                    } catch (error) {
+                        // Keep waiting
+                    }
+                }
+                
+                if (!isReady) {
+                    throw new Error('Service did not start in time');
+                }
+                
+                // Start FR24 if enabled
+                if (config.FR24_ENABLED === 'true' && config.FR24_SHARING_KEY) {
+                    await sleep(2000);
+                }
+                
+                // Success!
+                document.getElementById('loadingSection').style.display = 'none';
+                document.getElementById('completionMessage').style.display = 'block';
+                
+                // Countdown and redirect
+                let countdown = 3;
+                const countdownEl = document.getElementById('countdown');
+                const countdownInterval = setInterval(() => {
+                    countdown--;
+                    countdownEl.textContent = countdown;
+                    if (countdown <= 0) {
+                        clearInterval(countdownInterval);
+                        window.location.href = '/dashboard';
+                    }
+                }, 1000);
+                
+            } catch (error) {
+                document.getElementById('loadingSection').style.display = 'none';
+                document.getElementById('errorMessage').style.display = 'block';
+                document.getElementById('errorText').textContent = error.message || 'An error occurred during setup';
+                
+                setTimeout(() => {
+                    window.location.href = '/dashboard';
+                }, 5000);
+            }
+        }
+        
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+        
+        // Start setup on page load
+        window.addEventListener('DOMContentLoaded', startSetup);
+    </script>
+</body>
+</html>
