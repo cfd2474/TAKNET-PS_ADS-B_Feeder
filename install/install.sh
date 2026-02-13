@@ -1,6 +1,6 @@
 #!/bin/bash
 # TAKNET-PS-ADSB-Feeder One-Line Installer v2.47.35
-# curl -fsSL https://raw.githubusercontent.com/cfd2474/feeder_test/main/install/install.sh | sudo bash
+# curl -fsSL https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh | sudo bash
 
 set -e
 
@@ -30,7 +30,7 @@ if [ "$EUID" -ne 0 ]; then
     echo ""
     echo "Please run with sudo:"
     echo ""
-    echo "  curl -fsSL https://raw.githubusercontent.com/cfd2474/feeder_test/main/install/install.sh | sudo bash"
+    echo "  curl -fsSL https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh | sudo bash"
     echo ""
     echo "Or if you downloaded the script:"
     echo ""
@@ -340,7 +340,7 @@ mkdir -p /opt/adsb/{config,scripts,ultrafeeder,web/{templates,static/{css,js}}}
 
 # Download files
 echo "Downloading configuration files..."
-REPO="https://raw.githubusercontent.com/cfd2474/feeder_test/main"
+REPO="https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main"
 
 # Config files
 echo "  - docker-compose.yml..."

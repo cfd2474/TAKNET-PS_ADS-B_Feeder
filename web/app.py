@@ -2906,7 +2906,7 @@ def get_system_version():
         print(f"Current version from file: {current_version}")
         
         # Fetch latest version from GitHub
-        repo_url = 'https://raw.githubusercontent.com/cfd2474/feeder_test/main/version.json'
+        repo_url = 'https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/version.json'
         
         try:
             import requests

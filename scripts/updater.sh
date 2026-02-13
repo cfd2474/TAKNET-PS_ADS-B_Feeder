@@ -4,7 +4,7 @@
 
 set -e
 
-REPO_URL="https://raw.githubusercontent.com/cfd2474/feeder_test/main"
+REPO_URL="https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main"
 BACKUP_DIR="/opt/adsb/backup"
 CONFIG_FILE="/opt/adsb/config/.env"
 VERSION_FILE="/opt/adsb/VERSION"
