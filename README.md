@@ -43,7 +43,7 @@ TAKNET-PS is an independently developed project focused on delivering free, low-
 
 ### Software
 
-- Raspberry Pi OS (64-bit recommended)
+- **Raspberry Pi OS Lite 64-bit (Bookworm)** - Required for dependencies
 - Internet connection (for installation and updates)
 - Modern web browser (Chrome, Firefox, Safari, Edge)
 
@@ -59,7 +59,7 @@ curl -fsSL https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main
 
 ### Installation Steps
 
-1. **Flash Raspberry Pi OS** to SD card
+1. **Flash Raspberry Pi OS Lite 64-bit (Bookworm)** to SD card
 2. **Connect SDR** and antenna
 3. **Run installer** (command above)
 4. **Access web interface** at `http://[raspberry-pi-ip]` or `http://[hostname].local`
@@ -525,7 +525,7 @@ TAKNET-PS is an independently developed, free service providing low-latency ADS-
 
 ## 🏗️ Technical Stack
 
-- **OS:** Linux (Raspberry Pi OS)
+- **OS:** Raspberry Pi OS Lite 64-bit (Bookworm) - Required
 - **Container:** Docker / Docker Compose
 - **Core Service:** ghcr.io/sdr-enthusiasts/docker-adsb-ultrafeeder
 - **Web Framework:** Python Flask
