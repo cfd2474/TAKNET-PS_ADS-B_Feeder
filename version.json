@@ -1,10 +1,10 @@
 {
-  "version": "2.47.35",
+  "version": "2.47.36",
   "release_date": "2026-02-13",
-  "release_name": "Production Release",
+  "release_name": "Production Release - SSH Security Fix",
   "download_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh",
   "changelog_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/CHANGELOG.md",
   "minimum_version": "2.40.0",
   "breaking_changes": false,
-  "release_notes": "Production release of TAKNET-PS ADS-B Feeder system. Comprehensive aircraft tracking solution with web interface, multiple aggregator support, and integrated statistics."
+  "release_notes": "Production release with critical SSH security script restored. Includes configure-ssh-tailscale.sh for Tailscale-only remote user access. Install script updated with error handling to prevent hangups. Complete ADS-B feeder system ready for public safety deployment."
 }
