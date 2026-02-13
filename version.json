@@ -1,10 +1,10 @@
 {
-  "version": "2.47.42",
+  "version": "2.47.43",
   "release_date": "2026-02-13",
-  "release_name": "Account Feeds Button Consolidation",
+  "release_name": "Global Map Button & Header Fix",
   "download_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh",
   "changelog_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/CHANGELOG.md",
   "minimum_version": "2.40.0",
   "breaking_changes": false,
-  "release_notes": "Removed broken 'Save & Enable' buttons causing modal errors. Moved working toggle buttons below key input fields. Button text now changes dynamically: shows 'Save & Enable' when disabled, 'Disable' when enabled. Cleaner, more intuitive feed configuration interface."
+  "release_notes": "Added prominent 'View Global TAKNET-PS ADS-B Map' button to dashboard linking to http://adsb.tak-solutions.com/tar1090/. Fixed account-required feeds page header to include version number matching other pages. Improved navigation and branding consistency."
 }
