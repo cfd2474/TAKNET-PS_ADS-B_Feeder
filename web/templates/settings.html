@@ -694,31 +694,34 @@
             const toggleText = document.getElementById('tailscale-toggle-text');
             
             if (enabled && connected) {
-                // Enabled and connected - hide status indicator
+                // Enabled and connected - hide status indicator, hide auth key field
                 if (statusIndicator) statusIndicator.style.display = 'none';
                 toggleBtn.className = 'btn';
                 toggleText.textContent = '🔴 Disable Tailscale';
+                tailscaleEnabled = true;
             } else if (enabled && !connected) {
-                // Enabled but not connected
+                // Enabled but not connected - show auth key field so user can retry
                 if (statusIndicator) statusIndicator.style.display = 'flex';
                 statusIcon.textContent = '⚠️';
                 statusText.textContent = 'Not Connected';
                 statusIcon.parentElement.style.background = '#fef3c7';
                 statusIcon.parentElement.style.border = '1px solid #f59e0b';
-                toggleBtn.className = 'btn';
-                toggleText.textContent = '🔴 Disable Tailscale';
+                toggleBtn.className = 'btn btn-primary';
+                toggleText.textContent = '🔄 Retry Connection';
+                tailscaleEnabled = false; // Show auth key field for retry
             } else {
                 // Disabled
                 if (statusIndicator) statusIndicator.style.display = 'flex';
                 statusIcon.textContent = '⭕';
-                statusText.textContent = 'Disabled';
+                statusText.textContent = 'Not Connected';
+                statusText.innerHTML = 'Not Connected<br><span style="font-size: 0.9em; color: #6b7280;">Enter auth key below to connect</span>';
                 statusIcon.parentElement.style.background = '#f3f4f6';
                 statusIcon.parentElement.style.border = '1px solid #d1d5db';
                 toggleBtn.className = 'btn btn-primary';
                 toggleText.textContent = '🟢 Enable & Connect';
+                tailscaleEnabled = false;
             }
             
-            tailscaleEnabled = enabled;
             tailscaleConnected = connected;
             toggleTailscaleConfig();
         }
