@@ -294,11 +294,6 @@
                                     <span id="fr24-status-text">Checking...</span>
                                 </div>
                             </div>
-                            <div>
-                                <button class="btn" id="fr24-toggle-btn" style="min-width: 150px;">
-                                    <span id="fr24-toggle-text">⏳ Loading...</span>
-                                </button>
-                            </div>
                         </div>
                         <small style="color: #666; display: block; margin-top: 10px;">
                             Enable or disable feeding data to FlightRadar24
@@ -323,8 +318,8 @@
                     </div>
                     
                     <div class="config-actions">
-                        <button class="btn-primary" onclick="setupFR24()" id="setup-fr24-btn">
-                            <span id="setup-fr24-text">Save & Enable FR24</span>
+                        <button class="btn" id="fr24-toggle-btn" style="min-width: 150px;">
+                            <span id="fr24-toggle-text">⏳ Loading...</span>
                         </button>
                     </div>
                     
@@ -369,11 +364,6 @@
                                     <span id="piaware-status-text">Checking...</span>
                                 </div>
                             </div>
-                            <div>
-                                <button class="btn" id="piaware-toggle-btn" style="min-width: 150px;">
-                                    <span id="piaware-toggle-text">⏳ Loading...</span>
-                                </button>
-                            </div>
                         </div>
                         <small style="color: #666; display: block; margin-top: 10px;">
                             Enable or disable feeding data to FlightAware
@@ -393,13 +383,13 @@
                             value="{{ piaware_feeder_id }}"
                         >
                         <p class="config-hint">
-                            You need a FlightAware / Piaware feeder ID. If you already have one, please enter it below. Otherwise, leave the field empty and click on the button and we will try to get one for you. Once this process completes and the feeder ID has been filled in, open the local Piaware page (this should open in a new tab) and click on the "Claim this feeder on FlightAware" button.
+                            You need a FlightAware / Piaware feeder ID. If you already have one, please enter it below. Otherwise, leave the field empty and click the button below to generate one. Once complete, open the local Piaware page (opens in new tab) and click "Claim this feeder on FlightAware".
                         </p>
                     </div>
                     
                     <div class="config-actions">
-                        <button class="btn-primary" onclick="setupPiaware()" id="setup-piaware-btn">
-                            <span id="setup-piaware-text">Save & Enable FlightAware</span>
+                        <button class="btn" id="piaware-toggle-btn" style="min-width: 150px;">
+                            <span id="piaware-toggle-text">⏳ Loading...</span>
                         </button>
                     </div>
                     
@@ -408,7 +398,7 @@
                 
                 <div style="padding: 20px; background: #eff6ff; border-radius: 8px; border-left: 4px solid #3b82f6;">
                     <p style="margin: 0; color: #1e40af;">
-                        <strong>Quick Start:</strong> New to FlightAware? Just click "Save & Enable FlightAware" with an empty field and we'll handle the setup!
+                        <strong>Quick Start:</strong> New to FlightAware? Just enable the feeder with an empty field and we'll handle the setup!
                     </p>
                     <ul style="margin: 10px 0 0 20px; color: #1e40af;">
                         <li>System generates a unique Feeder ID</li>
@@ -464,11 +454,6 @@
                                     <span id="adsbhub-status-text">Checking...</span>
                                 </div>
                             </div>
-                            <div>
-                                <button class="btn" id="adsbhub-toggle-btn" style="min-width: 150px;">
-                                    <span id="adsbhub-toggle-text">⏳ Loading...</span>
-                                </button>
-                            </div>
                         </div>
                         <small style="color: #666; display: block; margin-top: 10px;">
                             Enable or disable feeding data to ADSBHub
@@ -494,7 +479,6 @@
                             class="config-input" 
                             placeholder="Enter your ADSBHub station key"
                             value="{{ adsbhub_key }}"
-                            oninput="validateADSBHubKey()"
                         >
                         <p class="config-hint">
                             Your unique station key (Station dynamic IP update ckey) from ADSBHub.org
@@ -502,8 +486,8 @@
                     </div>
                     
                     <div class="config-actions">
-                        <button class="btn-primary" onclick="setupADSBHub()" id="setup-adsbhub-btn" disabled>
-                            <span id="setup-adsbhub-text">Save & Enable ADSBHub</span>
+                        <button class="btn" id="adsbhub-toggle-btn" style="min-width: 150px;">
+                            <span id="adsbhub-toggle-text">⏳ Loading...</span>
                         </button>
                     </div>
                     
@@ -585,7 +569,7 @@
                         statusIndicator.style.background = '#d1fae5';
                         statusIndicator.style.border = '1px solid #10b981';
                         toggleBtn.className = 'btn';
-                        toggleText.textContent = '🔴 Disable FR24';
+                        toggleText.textContent = '🔴 Disable';
                     } else {
                         // FR24 disabled
                         statusIcon.textContent = '⭕';
@@ -593,7 +577,7 @@
                         statusIndicator.style.background = '#f3f4f6';
                         statusIndicator.style.border = '1px solid #d1d5db';
                         toggleBtn.className = 'btn btn-primary';
-                        toggleText.textContent = '🟢 Enable & Setup FR24';
+                        toggleText.textContent = '💾 Save & Enable';
                     }
                     toggleBtn.disabled = false;
                     
@@ -847,7 +831,7 @@
                         statusIndicator.style.background = '#d1fae5';
                         statusIndicator.style.border = '1px solid #10b981';
                         toggleBtn.className = 'btn';
-                        toggleText.textContent = '🔴 Disable FlightAware';
+                        toggleText.textContent = '🔴 Disable';
                     } else {
                         // FlightAware disabled
                         statusIcon.textContent = '⭕';
@@ -855,7 +839,7 @@
                         statusIndicator.style.background = '#f3f4f6';
                         statusIndicator.style.border = '1px solid #d1d5db';
                         toggleBtn.className = 'btn btn-primary';
-                        toggleText.textContent = '🟢 Enable & Setup FlightAware';
+                        toggleText.textContent = '💾 Save & Enable';
                     }
                     toggleBtn.disabled = false;
                     
@@ -1100,7 +1084,7 @@
                         statusIndicator.style.background = '#d1fae5';
                         statusIndicator.style.border = '1px solid #10b981';
                         toggleBtn.className = 'btn';
-                        toggleText.textContent = '🔴 Disable ADSBHub';
+                        toggleText.textContent = '🔴 Disable';
                     } else {
                         // ADSBHub disabled
                         statusIcon.textContent = '⭕';
@@ -1108,7 +1092,7 @@
                         statusIndicator.style.background = '#f3f4f6';
                         statusIndicator.style.border = '1px solid #d1d5db';
                         toggleBtn.className = 'btn btn-primary';
-                        toggleText.textContent = '🟢 Enable & Setup ADSBHub';
+                        toggleText.textContent = '💾 Save & Enable';
                     }
                     toggleBtn.disabled = false;
                     

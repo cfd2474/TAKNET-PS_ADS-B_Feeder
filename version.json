@@ -1,10 +1,10 @@
 {
-  "version": "2.47.41",
+  "version": "2.47.42",
   "release_date": "2026-02-13",
-  "release_name": "Tailscale UI State Fix",
+  "release_name": "Account Feeds Button Consolidation",
   "download_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh",
   "changelog_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/CHANGELOG.md",
   "minimum_version": "2.40.0",
   "breaking_changes": false,
-  "release_notes": "Fixed Tailscale UI state mismatch when connection fails. Now shows auth key field and 'Retry Connection' button when Tailscale is enabled but not connected, allowing users to enter a new key without disabling first. Improved clarity for failed connection states."
+  "release_notes": "Removed broken 'Save & Enable' buttons causing modal errors. Moved working toggle buttons below key input fields. Button text now changes dynamically: shows 'Save & Enable' when disabled, 'Disable' when enabled. Cleaner, more intuitive feed configuration interface."
 }
