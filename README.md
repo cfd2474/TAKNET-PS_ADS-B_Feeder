@@ -43,7 +43,7 @@ TAKNET-PS is an independently developed project focused on delivering free, low-
 
 ### Software
 
-- **Raspberry Pi OS Lite 64-bit (Bookworm)** - Recommended
+- Raspberry Pi OS (64-bit recommended)
 - Internet connection (for installation and updates)
 - Modern web browser (Chrome, Firefox, Safari, Edge)
 
@@ -59,7 +59,7 @@ curl -fsSL https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main
 
 ### Installation Steps
 
-1. **Flash Raspberry Pi OS Lite 64-bit (Bookworm)** to SD card
+1. **Flash Raspberry Pi OS** to SD card
 2. **Connect SDR** and antenna
 3. **Run installer** (command above)
 4. **Access web interface** at `http://[raspberry-pi-ip]` or `http://[hostname].local`
@@ -227,7 +227,8 @@ The system automatically:
    - Altitude (meters, whole number)
 3. Select timezone
 4. Optional: Enter zip/postal code
-5. Click **Apply Changes & Restart Ultrafeeder**
+5. **Provide a feeder name** that describes your station (e.g., "Corona Rooftop Feeder", "Downtown Fire Station")
+6. Click **Apply Changes & Restart Ultrafeeder**
 
 **Important:** Accurate location is critical for:
 - MLAT positioning calculations
@@ -524,7 +525,7 @@ TAKNET-PS is an independently developed, free service providing low-latency ADS-
 
 ## 🏗️ Technical Stack
 
-- **OS:** Raspberry Pi OS Lite 64-bit (Bookworm)
+- **OS:** Linux (Raspberry Pi OS)
 - **Container:** Docker / Docker Compose
 - **Core Service:** ghcr.io/sdr-enthusiasts/docker-adsb-ultrafeeder
 - **Web Framework:** Python Flask
