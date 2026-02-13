@@ -1,10 +1,10 @@
 {
-  "version": "2.47.38",
+  "version": "2.47.39",
   "release_date": "2026-02-13",
-  "release_name": "Production Release - Restart Modal Fix",
+  "release_name": "Production Release - SDR Restart Modal",
   "download_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh",
   "changelog_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/CHANGELOG.md",
   "minimum_version": "2.40.0",
   "breaking_changes": false,
-  "release_notes": "Fixed restart modal freezing at 'Configuration saved. Restarting ultrafeeder'. Now properly polls /api/service/ready endpoint with 60-second timeout and fallback handling. Modal completes successfully and redirects to dashboard when ultrafeeder is back up."
+  "release_notes": "Added restart confirmation modal for SDR configuration changes. When changing gain, bias tee, or frequency settings, users now get a 'Restart Now' or 'Not Now' option with progress tracking. SDR changes now apply automatically without manual restart commands. Matches UX pattern from Location settings."
 }
