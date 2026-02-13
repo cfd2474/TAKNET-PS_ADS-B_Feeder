@@ -202,7 +202,7 @@
             // Initialize offline mode detection
             initializeOfflineMode();
             
-            const currentTz = "{{ config.get('FEEDER_TZ', 'UTC') }}";
+            const currentTz = "{{ config.get('FEEDER_TZ', '') }}";
             const tzSelect = document.getElementById('tz');
             if (currentTz) {
                 tzSelect.value = currentTz;
