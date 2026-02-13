@@ -49,20 +49,19 @@ if grep -q "^DenyUsers remote" $SSH_CONFIG_FILE; then
     echo "✓ Removed DenyUsers restriction for remote user"
 fi
 
-# Check if Match block already exists
+# Remove any existing Match block for remote user
 if grep -q "Match User remote" $SSH_CONFIG_FILE; then
-    echo "⚠️  SSH config for 'remote' user already exists"
-    echo "   Remove existing config manually if you want to update"
-    exit 1
+    # Remove the entire Match block
+    sed -i '/# TAKNET-PS Remote User - Tailscale Only Access/,/^Match\|^$/d' $SSH_CONFIG_FILE
+    echo "✓ Removed existing Match block for remote user"
 fi
 
-# Add Match block at end of file
+# Add AllowUsers at top level and Match block for address restriction
 cat >> $SSH_CONFIG_FILE << EOF
 
 # TAKNET-PS Remote User - Tailscale Only Access
-Match User remote
-    # Only allow from Tailscale network
-    AllowUsers remote@$TAILSCALE_SUBNET
+# Allow remote user only from Tailscale network
+Match User remote Address $TAILSCALE_SUBNET
     PasswordAuthentication yes
     PubkeyAuthentication yes
 EOF

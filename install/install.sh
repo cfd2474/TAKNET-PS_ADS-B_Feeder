@@ -1,5 +1,5 @@
 #!/bin/bash
-# TAKNET-PS-ADSB-Feeder One-Line Installer v2.47.39
+# TAKNET-PS-ADSB-Feeder One-Line Installer v2.47.40
 # curl -fsSL https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh | sudo bash
 
 set -e
@@ -42,7 +42,7 @@ fi
 if [ "$UPDATE_MODE" != true ]; then
     echo ""
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    echo "  TAKNET-PS-ADSB-Feeder Installer v2.47.39"
+    echo "  TAKNET-PS-ADSB-Feeder Installer v2.47.40"
     echo "  Ultrafeeder + TAKNET-PS + Web UI"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo ""
@@ -385,7 +385,7 @@ wget -q $REPO/version.json -O /opt/adsb/version.json 2>/dev/null || echo "  (ver
 
 # Download VERSION file
 echo "  - VERSION..."
-wget -q $REPO/VERSION -O /opt/adsb/VERSION 2>/dev/null || echo "2.47.39" > /opt/adsb/VERSION
+wget -q $REPO/VERSION -O /opt/adsb/VERSION 2>/dev/null || echo "2.47.40" > /opt/adsb/VERSION
 
 # Web UI files
 echo "Installing Web UI..."
@@ -1170,8 +1170,8 @@ fi
 
 # Download SSH Tailscale configuration script
 echo "Downloading SSH configuration script..."
-wget -q $REPO/configure-ssh-tailscale.sh -O /opt/adsb/configure-ssh-tailscale.sh 2>/dev/null || echo "  (SSH script not found, skipping)"
-chmod +x /opt/adsb/configure-ssh-tailscale.sh 2>/dev/null
+wget -q $REPO/configure-ssh-tailscale.sh -O /opt/adsb/configure-ssh-tailscale.sh
+chmod +x /opt/adsb/configure-ssh-tailscale.sh
 
 # Get IP address
 IP=$(hostname -I | awk '{print $1}')
