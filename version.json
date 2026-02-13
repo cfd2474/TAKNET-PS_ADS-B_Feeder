@@ -1,10 +1,10 @@
 {
-  "version": "2.47.43",
+  "version": "2.47.44",
   "release_date": "2026-02-13",
-  "release_name": "Global Map Button & Header Fix",
+  "release_name": "Tailscale Auth Key Advisory",
   "download_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh",
   "changelog_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/CHANGELOG.md",
   "minimum_version": "2.40.0",
   "breaking_changes": false,
-  "release_notes": "Added prominent 'View Global TAKNET-PS ADS-B Map' button to dashboard linking to http://adsb.tak-solutions.com/tar1090/. Fixed account-required feeds page header to include version number matching other pages. Improved navigation and branding consistency."
+  "release_notes": "Added prominent warning in Tailscale section: 'Only enter TAKNET-PS auth key. Do not use private key here.' Confirms that disabling Tailscale and entering a new auth key properly reauthorizes on new tailnet. Prevents user confusion between TAKNET-PS keys and private Tailscale keys."
 }
