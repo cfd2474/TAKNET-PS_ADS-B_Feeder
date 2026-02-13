@@ -28,11 +28,11 @@ TAKNET-PS is a complete ADS-B feeder system that combines real-time aircraft tra
 ### Hardware
 
 **Minimum:**
-- Raspberry Pi 4 (2GB RAM)
+- Raspberry Pi 3B (2GB RAM)
 - RTL-SDR dongle (RTL2832U chipset)
 - ADS-B antenna (1090 MHz)
 - MicroSD card (16GB minimum, 32GB recommended)
-- Power supply (5V/3A USB-C)
+- Power supply (5V/3A USB)
 
 **Recommended:**
 - Raspberry Pi 4 (4GB+ RAM)
