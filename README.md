@@ -61,7 +61,7 @@ curl -fsSL https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main
 
 1. **Flash Raspberry Pi OS Lite 64-bit (Bookworm)** to SD card
 2. **Connect SDR** and antenna
-3. **Run installer** (command above)
+3. **Run installer** (command above - this will take 5-10 minutes!)
 4. **Access web interface** at `http://taknet-ps.local` or `http://[raspberry-pi-ip]`
 5. **Complete setup wizard**
 
