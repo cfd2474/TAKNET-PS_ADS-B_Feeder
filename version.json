@@ -1,0 +1,10 @@
+{
+  "version": "2.47.35",
+  "release_date": "2026-02-13",
+  "release_name": "Automated Logo Installation",
+  "download_url": "https://raw.githubusercontent.com/cfd2474/feeder_test/main/install/install.sh",
+  "changelog_url": "https://raw.githubusercontent.com/cfd2474/feeder_test/main/CHANGELOG.md",
+  "minimum_version": "2.40.0",
+  "breaking_changes": false,
+  "release_notes": "Updated install script to automatically download and install TAKNET-PS shield logo. No manual file placement required. Logo automatically copied to /opt/adsb/web/static/ during installation and updates."
+}

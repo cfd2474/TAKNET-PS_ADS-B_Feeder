@@ -1,0 +1,1295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Account-Required Feeds - TAKNET-PS</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <style>
+        .feed-config-card {
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 25px;
+            margin-bottom: 25px;
+            background: #f9fafb;
+        }
+        
+        .feed-config-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e5e7eb;
+        }
+        
+        .feed-title {
+            flex: 1;
+        }
+        
+        .feed-title h3 {
+            margin: 0 0 5px 0;
+            color: #111827;
+            font-size: 1.3em;
+        }
+        
+        .feed-title p {
+            margin: 0;
+            color: #6b7280;
+            font-size: 0.9em;
+        }
+        
+        .feed-status-badge {
+            padding: 6px 14px;
+            border-radius: 12px;
+            font-size: 0.9em;
+            font-weight: 600;
+        }
+        
+        .status-active {
+            background: #d1fae5;
+            color: #065f46;
+        }
+        
+        .status-inactive {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+        
+        .config-section {
+            margin-bottom: 20px;
+        }
+        
+        .config-label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #374151;
+        }
+        
+        .config-input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 1em;
+            font-family: 'Courier New', monospace;
+            transition: border-color 0.2s;
+        }
+        
+        .config-input:focus {
+            outline: none;
+            border-color: #3b82f6;
+        }
+        
+        .config-hint {
+            color: #6b7280;
+            font-size: 0.85em;
+            margin-top: 5px;
+        }
+        
+        .config-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        .btn-primary {
+            flex: 1;
+            padding: 12px 24px;
+            background: #3b82f6;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        
+        .btn-primary:hover {
+            background: #2563eb;
+        }
+        
+        .btn-primary:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+        }
+        
+        .btn-secondary {
+            padding: 12px 24px;
+            background: white;
+            color: #374151;
+            border: 2px solid #d1d5db;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .btn-secondary:hover {
+            border-color: #9ca3af;
+            background: #f9fafb;
+        }
+        
+        .setup-method-btn {
+            flex: 1;
+            padding: 12px 24px;
+            background: #f3f4f6;
+            color: #6b7280;
+            border: 2px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .setup-method-btn:hover {
+            background: #e5e7eb;
+            border-color: #9ca3af;
+        }
+        
+        .setup-method-btn.active {
+            background: #3b82f6;
+            color: white;
+            border-color: #3b82f6;
+        }
+        
+        .setup-section {
+            animation: fadeIn 0.3s ease-in;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* Status Change Modal Styles */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal-overlay.show {
+            display: flex;
+        }
+        
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            max-width: 500px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+        
+        .status-modal {
+            text-align: center;
+            min-width: 350px;
+            padding: 40px 30px;
+        }
+        
+        .status-modal-body {
+            margin-bottom: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+        
+        .status-spinner {
+            width: 48px;
+            height: 48px;
+            border: 4px solid #e5e7eb;
+            border-top-color: #3b82f6;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .status-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+        }
+        
+        .status-icon.success {
+            background: #d1fae5;
+            color: #065f46;
+        }
+        
+        .status-icon.error {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+        
+        .status-message {
+            font-size: 1.1em;
+            font-weight: 600;
+            color: #374151;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>TAKNET-PS-ADSB-Feeder</h1>
+            <p style="margin: 5px 0 15px 0; color: #9ca3af; font-size: 0.9em;">Tactical Awareness Kit Network for Enhanced Tracking – Public Safety</p>
+            <nav>
+                <a href="/dashboard">Dashboard</a>
+                <a href="/feeds">Feed Selection</a>
+                <a href="/settings">Settings</a>
+                <a href="#" id="map-link" target="_blank">Map</a>
+                <a href="#" id="statistics-link" target="_blank">Statistics</a>
+                <a href="/about">About</a>
+            </nav>
+        </header>
+        
+        <script>
+        // Set map link dynamically
+        document.getElementById('map-link').href = 'http://' + window.location.hostname + ':8080';
+        // Set statistics link dynamically
+        document.getElementById('statistics-link').href = 'http://' + window.location.hostname + ':8080/graphs1090/?timeframe=24h';
+        </script>
+
+        <div class="dashboard">
+            <div class="card">
+                <h2>Account-Required Feeds</h2>
+                <p style="color: #666; margin-bottom: 30px;">
+                    Configure feeds that require account registration and API keys.
+                </p>
+                
+                <!-- FlightRadar24 Configuration -->
+                <div class="feed-config-card">
+                    <div class="feed-config-header">
+                        <div class="feed-title">
+                            <h3>FlightRadar24</h3>
+                            <p>Share your ADS-B data for free Business plan access</p>
+                        </div>
+                        <span class="feed-status-badge {{ 'status-active' if fr24_status else 'status-inactive' }}" id="fr24-status">
+                            {{ 'Active' if fr24_status else 'Inactive' }}
+                        </span>
+                    </div>
+                    
+                    <!-- Enable/Disable Button Toggle -->
+                    <div class="config-section" style="padding: 15px; background: #f9fafb; border-radius: 8px; margin-bottom: 20px;">
+                        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+                            <div style="flex: 1;">
+                                <strong style="display: block; margin-bottom: 5px;">FR24 Feed Status</strong>
+                                <div id="fr24-status-indicator" style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: #f3f4f6; border-radius: 6px; font-size: 0.95em;">
+                                    <span id="fr24-status-icon">⏳</span>
+                                    <span id="fr24-status-text">Checking...</span>
+                                </div>
+                            </div>
+                            <div>
+                                <button class="btn" id="fr24-toggle-btn" style="min-width: 150px;">
+                                    <span id="fr24-toggle-text">⏳ Loading...</span>
+                                </button>
+                            </div>
+                        </div>
+                        <small style="color: #666; display: block; margin-top: 10px;">
+                            Enable or disable feeding data to FlightRadar24
+                        </small>
+                    </div>
+                    
+                    <!-- Smart Single Field -->
+                    <div class="config-section">
+                        <label class="config-label" for="fr24-key-or-email">
+                            Sharing Key or Email
+                        </label>
+                        <input 
+                            type="text" 
+                            id="fr24-key-or-email" 
+                            class="config-input" 
+                            placeholder="Enter sharing key or email if no key"
+                            value="{{ fr24_key }}"
+                        >
+                        <p class="config-hint">
+                            Already have a key? Paste it here. Need a key? Enter your email and we'll register you.
+                        </p>
+                    </div>
+                    
+                    <div class="config-actions">
+                        <button class="btn-primary" onclick="setupFR24()" id="setup-fr24-btn">
+                            <span id="setup-fr24-text">Save & Enable FR24</span>
+                        </button>
+                    </div>
+                    
+                    <div id="fr24-result" style="margin-top: 15px; display: none;"></div>
+                </div>
+                
+                <div style="padding: 20px; background: #eff6ff; border-radius: 8px; border-left: 4px solid #3b82f6;">
+                    <p style="margin: 0; color: #1e40af;">
+                        <strong>Pro Tip:</strong> After setting up FR24, you'll receive a free Business plan subscription that includes:
+                    </p>
+                    <ul style="margin: 10px 0 0 20px; color: #1e40af;">
+                        <li>90-day flight history</li>
+                        <li>Unlimited alerts</li>
+                        <li>No ads</li>
+                        <li>Advanced filters</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <!-- FlightAware / PiAware Configuration -->
+            <div class="section" id="piaware-section">
+                <h2>FlightAware (PiAware)</h2>
+                
+                <div class="feed-config-card">
+                    <div class="feed-config-header">
+                        <div class="feed-title">
+                            <h3>FlightAware</h3>
+                            <p>Share your ADS-B data with the world's largest flight tracking network</p>
+                        </div>
+                        <span class="feed-status-badge {{ 'status-active' if piaware_status else 'status-inactive' }}" id="piaware-status">
+                            {{ 'Active' if piaware_status else 'Inactive' }}
+                        </span>
+                    </div>
+                    
+                    <!-- Enable/Disable Button Toggle -->
+                    <div class="config-section" style="padding: 15px; background: #f9fafb; border-radius: 8px; margin-bottom: 20px;">
+                        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+                            <div style="flex: 1;">
+                                <strong style="display: block; margin-bottom: 5px;">FlightAware Feed Status</strong>
+                                <div id="piaware-status-indicator" style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: #f3f4f6; border-radius: 6px; font-size: 0.95em;">
+                                    <span id="piaware-status-icon">⏳</span>
+                                    <span id="piaware-status-text">Checking...</span>
+                                </div>
+                            </div>
+                            <div>
+                                <button class="btn" id="piaware-toggle-btn" style="min-width: 150px;">
+                                    <span id="piaware-toggle-text">⏳ Loading...</span>
+                                </button>
+                            </div>
+                        </div>
+                        <small style="color: #666; display: block; margin-top: 10px;">
+                            Enable or disable feeding data to FlightAware
+                        </small>
+                    </div>
+                    
+                    <!-- Smart Single Field -->
+                    <div class="config-section">
+                        <label class="config-label" for="piaware-feeder-id">
+                            Feeder ID (UUID format)
+                        </label>
+                        <input 
+                            type="text" 
+                            id="piaware-feeder-id" 
+                            class="config-input" 
+                            placeholder="c478b1c9-23d3-4376-1f82-47352a28cg37 or leave empty to generate"
+                            value="{{ piaware_feeder_id }}"
+                        >
+                        <p class="config-hint">
+                            You need a FlightAware / Piaware feeder ID. If you already have one, please enter it below. Otherwise, leave the field empty and click on the button and we will try to get one for you. Once this process completes and the feeder ID has been filled in, open the local Piaware page (this should open in a new tab) and click on the "Claim this feeder on FlightAware" button.
+                        </p>
+                    </div>
+                    
+                    <div class="config-actions">
+                        <button class="btn-primary" onclick="setupPiaware()" id="setup-piaware-btn">
+                            <span id="setup-piaware-text">Save & Enable FlightAware</span>
+                        </button>
+                    </div>
+                    
+                    <div id="piaware-result" style="margin-top: 15px; display: none;"></div>
+                </div>
+                
+                <div style="padding: 20px; background: #eff6ff; border-radius: 8px; border-left: 4px solid #3b82f6;">
+                    <p style="margin: 0; color: #1e40af;">
+                        <strong>Quick Start:</strong> New to FlightAware? Just click "Save & Enable FlightAware" with an empty field and we'll handle the setup!
+                    </p>
+                    <ul style="margin: 10px 0 0 20px; color: #1e40af;">
+                        <li>System generates a unique Feeder ID</li>
+                        <li>Opens local PiAware page in new tab</li>
+                        <li>Click "Claim this feeder" button on that page</li>
+                        <li>Done! Your feeder is now linked to your FlightAware account</li>
+                    </ul>
+                </div>
+                
+                <div style="padding: 20px; background: #fef3c7; border-radius: 8px; border-left: 4px solid #f59e0b; margin-top: 15px;">
+                    <p style="margin: 0 0 10px 0; color: #92400e; font-weight: 600;">
+                        ⏱️ MLAT Status & Location Verification
+                    </p>
+                    <ul style="margin: 0 0 10px 20px; color: #92400e;">
+                        <li><strong>MLAT Timing:</strong> After setup, MLAT may take up to <strong>10 minutes</strong> to show as "live" on FlightAware. This is normal - be patient!</li>
+                        <li><strong>Verify Location:</strong> To ensure accurate position data, you must verify your coordinates on FlightAware.com:
+                            <ol style="margin: 8px 0 0 20px; color: #92400e;">
+                                <li>Go to <a href="https://flightaware.com/adsb/stats/user/" target="_blank" style="color: #1e40af; text-decoration: underline;">flightaware.com/adsb/stats/user/</a></li>
+                                <li>Click the <strong>gear icon ⚙️</strong> next to your feeder name</li>
+                                <li>Enter your exact coordinates (same as configured in TAKNET-PS)</li>
+                                <li>Save changes</li>
+                            </ol>
+                        </li>
+                    </ul>
+                    <p style="margin: 0; color: #92400e; font-size: 0.9em;">
+                        <strong>Why?</strong> Incorrect location data causes MLAT positioning errors. Always verify your coordinates on FlightAware!
+                    </p>
+                </div>
+            </div>
+            
+            <!-- ADSBHub Configuration -->
+            <div class="section" id="adsbhub-section">
+                <h2>ADSBHub</h2>
+                
+                <div class="feed-config-card">
+                    <div class="feed-config-header">
+                        <div class="feed-title">
+                            <h3>ADSBHub</h3>
+                            <p>Share your ADS-B data with the ADSBHub community network</p>
+                        </div>
+                        <span class="feed-status-badge {{ 'status-active' if adsbhub_status else 'status-inactive' }}" id="adsbhub-status">
+                            {{ 'Active' if adsbhub_status else 'Inactive' }}
+                        </span>
+                    </div>
+                    
+                    <!-- Enable/Disable Button Toggle -->
+                    <div class="config-section" style="padding: 15px; background: #f9fafb; border-radius: 8px; margin-bottom: 20px;">
+                        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+                            <div style="flex: 1;">
+                                <strong style="display: block; margin-bottom: 5px;">ADSBHub Feed Status</strong>
+                                <div id="adsbhub-status-indicator" style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: #f3f4f6; border-radius: 6px; font-size: 0.95em;">
+                                    <span id="adsbhub-status-icon">⏳</span>
+                                    <span id="adsbhub-status-text">Checking...</span>
+                                </div>
+                            </div>
+                            <div>
+                                <button class="btn" id="adsbhub-toggle-btn" style="min-width: 150px;">
+                                    <span id="adsbhub-toggle-text">⏳ Loading...</span>
+                                </button>
+                            </div>
+                        </div>
+                        <small style="color: #666; display: block; margin-top: 10px;">
+                            Enable or disable feeding data to ADSBHub
+                        </small>
+                    </div>
+                    
+                    <!-- Station Key Field -->
+                    <div class="config-section">
+                        <label class="config-label" for="adsbhub-station-key">
+                            ADSBHub Station Key
+                        </label>
+                        <div style="padding: 12px; background: #eff6ff; border-left: 4px solid #3b82f6; border-radius: 6px; margin-bottom: 12px;">
+                            <p style="margin: 0 0 8px 0; color: #1e40af; font-size: 0.95em; font-weight: 600;">
+                                ADSBHub 🛡️
+                            </p>
+                            <p style="margin: 0; color: #1e40af; font-size: 0.9em; line-height: 1.6;">
+                                To sign up for an ADSBHub station key go to <a href="https://www.adsbhub.org/howtofeed.php" target="_blank" style="color: #2563eb; font-weight: 600;">ADSBHub how to feed</a>, setting your station up as feeder type "Linux" in "Client" mode, feeding via the "SBS" protocol. Enter your feeder hostname or IP (If unknown, enter 0.0.0.0 and update it after feeder connects). This will get you your station key (called by ADSBHub as "Station dynamic IP update ckey"). Existing users can find their station key on the Settings page of the ADSBHub site.
+                            </p>
+                        </div>
+                        <input 
+                            type="text" 
+                            id="adsbhub-station-key" 
+                            class="config-input" 
+                            placeholder="Enter your ADSBHub station key"
+                            value="{{ adsbhub_key }}"
+                            oninput="validateADSBHubKey()"
+                        >
+                        <p class="config-hint">
+                            Your unique station key (Station dynamic IP update ckey) from ADSBHub.org
+                        </p>
+                    </div>
+                    
+                    <div class="config-actions">
+                        <button class="btn-primary" onclick="setupADSBHub()" id="setup-adsbhub-btn" disabled>
+                            <span id="setup-adsbhub-text">Save & Enable ADSBHub</span>
+                        </button>
+                    </div>
+                    
+                    <div id="adsbhub-result" style="margin-top: 15px; display: none;"></div>
+                </div>
+            </div>
+            
+            <div class="actions">
+                <button class="btn" onclick="window.location.href='/feeds'">Back to Feed Selection</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Status Change Modal -->
+    <div class="modal-overlay" id="status-change-modal">
+        <div class="modal-content status-modal">
+            <div class="modal-body status-modal-body">
+                <div id="status-modal-spinner" class="status-spinner"></div>
+                <div id="status-modal-icon" class="status-icon" style="display: none;"></div>
+                <div id="status-modal-message" class="status-message">Applying settings...</div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Status Modal Functions
+        function showStatusModal(message) {
+            const modal = document.getElementById('status-change-modal');
+            const spinner = document.getElementById('status-modal-spinner');
+            const icon = document.getElementById('status-modal-icon');
+            const messageEl = document.getElementById('status-modal-message');
+            
+            // Show spinner, hide icon
+            spinner.style.display = 'block';
+            icon.style.display = 'none';
+            messageEl.textContent = message;
+            
+            // Show modal
+            modal.classList.add('show');
+        }
+        
+        function updateStatusModal(message, type) {
+            const spinner = document.getElementById('status-modal-spinner');
+            const icon = document.getElementById('status-modal-icon');
+            const messageEl = document.getElementById('status-modal-message');
+            
+            // Hide spinner, show icon
+            spinner.style.display = 'none';
+            icon.style.display = 'flex';
+            icon.className = 'status-icon ' + type;
+            icon.textContent = type === 'success' ? '✓' : '✕';
+            messageEl.textContent = message;
+        }
+        
+        function hideStatusModal() {
+            const modal = document.getElementById('status-change-modal');
+            modal.classList.remove('show');
+        }
+        
+        // Switch between setup methods
+        
+        // Check FR24 status and update button
+        async function checkFR24Status() {
+            const statusIcon = document.getElementById('fr24-status-icon');
+            const statusText = document.getElementById('fr24-status-text');
+            const statusIndicator = document.getElementById('fr24-status-indicator');
+            const toggleBtn = document.getElementById('fr24-toggle-btn');
+            const toggleText = document.getElementById('fr24-toggle-text');
+            
+            try {
+                const response = await fetch('/api/feeds/fr24/status');
+                const data = await response.json();
+                
+                if (data.success) {
+                    if (data.enabled) {
+                        // FR24 enabled
+                        statusIcon.textContent = '✅';
+                        statusText.textContent = 'Enabled';
+                        statusIndicator.style.background = '#d1fae5';
+                        statusIndicator.style.border = '1px solid #10b981';
+                        toggleBtn.className = 'btn';
+                        toggleText.textContent = '🔴 Disable FR24';
+                    } else {
+                        // FR24 disabled
+                        statusIcon.textContent = '⭕';
+                        statusText.textContent = 'Disabled';
+                        statusIndicator.style.background = '#f3f4f6';
+                        statusIndicator.style.border = '1px solid #d1d5db';
+                        toggleBtn.className = 'btn btn-primary';
+                        toggleText.textContent = '🟢 Enable & Setup FR24';
+                    }
+                    toggleBtn.disabled = false;
+                    
+                    // Update status badge
+                    const statusBadge = document.getElementById('fr24-status');
+                    if (statusBadge) {
+                        statusBadge.textContent = data.enabled ? 'Active' : 'Inactive';
+                        statusBadge.className = 'feed-status-badge ' + (data.enabled ? 'status-active' : 'status-inactive');
+                    }
+                } else {
+                    statusIcon.textContent = '⚠️';
+                    statusText.textContent = 'Status unknown';
+                    toggleBtn.disabled = true;
+                }
+            } catch (error) {
+                console.error('Error checking FR24 status:', error);
+                statusIcon.textContent = '❌';
+                statusText.textContent = 'Error';
+                toggleBtn.disabled = true;
+            }
+        }
+        
+        // Toggle FR24 enabled/disabled
+        async function toggleFR24Enabled() {
+            const statusIcon = document.getElementById('fr24-status-icon');
+            const statusText = document.getElementById('fr24-status-text');
+            const toggleBtn = document.getElementById('fr24-toggle-btn');
+            const toggleText = document.getElementById('fr24-toggle-text');
+            
+            // Determine current state
+            const isEnabled = statusText.textContent === 'Enabled';
+            
+            // Disable button during operation
+            toggleBtn.disabled = true;
+            toggleText.textContent = isEnabled ? '⏳ Disabling...' : '⏳ Enabling...';
+            
+            const statusTextAction = isEnabled ? 'disabling' : 'enabling';
+            const statusTextPast = isEnabled ? 'disabled' : 'enabled';
+            
+            // Show loading modal
+            showStatusModal(`${statusTextAction.charAt(0).toUpperCase() + statusTextAction.slice(1)} FR24 feed...`);
+            
+            try {
+                const response = await fetch('/api/feeds/fr24/toggle', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ enabled: !isEnabled })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Show success in modal
+                    updateStatusModal(`FR24 feed ${statusTextPast} successfully`, 'success');
+                    
+                    // Refresh status
+                    await checkFR24Status();
+                    
+                    // Auto-dismiss after 1.5 seconds
+                    setTimeout(() => {
+                        hideStatusModal();
+                    }, 1500);
+                } else {
+                    // Show error in modal
+                    updateStatusModal(`Failed: ${data.message}`, 'error');
+                    
+                    // Re-enable button
+                    toggleBtn.disabled = false;
+                    
+                    // Auto-dismiss after 2 seconds
+                    setTimeout(() => {
+                        hideStatusModal();
+                    }, 2000);
+                }
+            } catch (error) {
+                // Show error in modal
+                updateStatusModal(`Error: ${error.message}`, 'error');
+                
+                // Re-enable button
+                toggleBtn.disabled = false;
+                
+                // Auto-dismiss after 2 seconds
+                setTimeout(() => {
+                    hideStatusModal();
+                }, 2000);
+            }
+        }
+        
+        // Setup FR24 with existing key
+        // Smart setup - detects email or key automatically
+        async function setupFR24() {
+            const input = document.getElementById('fr24-key-or-email').value.trim();
+            const setupBtn = document.getElementById('setup-fr24-btn');
+            const setupText = document.getElementById('setup-fr24-text');
+            const resultDiv = document.getElementById('fr24-result');
+            
+            if (!input) {
+                // Use modal for validation error
+                showStatusModal('Please enter a sharing key or email');
+                updateStatusModal('Please enter a sharing key or email address', 'error');
+                setTimeout(() => hideStatusModal(), 2000);
+                return;
+            }
+            
+            // Smart detection: contains @ = email, otherwise = key
+            const isEmail = input.includes('@');
+            
+            // Disable button and hide old result div
+            setupBtn.disabled = true;
+            resultDiv.style.display = 'none';
+            
+            try {
+                if (isEmail) {
+                    // Email entered - trigger registration
+                    showStatusModal('Registering with FlightRadar24...');
+                    
+                    const response = await fetch('/api/feeds/fr24/register', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ email: input })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (data.success && data.sharing_key) {
+                        // Registration succeeded - populate key back into field
+                        document.getElementById('fr24-key-or-email').value = data.sharing_key;
+                        updateStatusModal('Registration successful! Starting FR24 feed...', 'success');
+                        
+                        // Now setup with the key after brief delay
+                        setTimeout(async () => {
+                            await setupWithKey(data.sharing_key);
+                        }, 1500);
+                    } else {
+                        // Registration failed
+                        let errorMessage = data.message || 'Registration failed';
+                        updateStatusModal(errorMessage, 'error');
+                        setTimeout(() => hideStatusModal(), 3000);
+                        
+                        // Keep field editable for manual key entry
+                        document.getElementById('fr24-key-or-email').disabled = false;
+                        document.getElementById('fr24-key-or-email').focus();
+                    }
+                } else {
+                    // Key entered - use it directly
+                    showStatusModal('Configuring FlightRadar24 feed...');
+                    await setupWithKey(input);
+                }
+            } catch (error) {
+                updateStatusModal(`Error: ${error.message}`, 'error');
+                setTimeout(() => hideStatusModal(), 2000);
+            } finally {
+                setupBtn.disabled = false;
+                setupText.textContent = 'Save & Enable FR24';
+            }
+        }
+        
+        // Helper function to setup with a key
+        async function setupWithKey(sharingKey) {
+            const setupBtn = document.getElementById('setup-fr24-btn');
+            const setupText = document.getElementById('setup-fr24-text');
+            
+            setupBtn.disabled = true;
+            showStatusModal('Starting FR24 feed...');
+            
+            try {
+                const response = await fetch('/api/feeds/fr24/setup', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ feeder_id: sharingKey })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    updateStatusModal('FR24 feed enabled successfully!', 'success');
+                    document.getElementById('fr24-status').textContent = 'Active';
+                    document.getElementById('fr24-status').className = 'feed-status-badge status-active';
+                    document.getElementById('fr24-enabled').checked = true;
+                    
+                    // Auto-dismiss after 2 seconds
+                    setTimeout(() => hideStatusModal(), 2000);
+                } else {
+                    updateStatusModal(`Setup failed: ${data.message}`, 'error');
+                    setTimeout(() => hideStatusModal(), 3000);
+                }
+            } catch (error) {
+                updateStatusModal(`Error: ${error.message}`, 'error');
+                setTimeout(() => hideStatusModal(), 2000);
+            } finally {
+                setupBtn.disabled = false;
+                setupText.textContent = 'Save & Enable FR24';
+            }
+        }
+        
+        function showResult(type, message) {
+            const resultDiv = document.getElementById('fr24-result');
+            resultDiv.style.display = 'block';
+            resultDiv.style.padding = '12px';
+            resultDiv.style.borderRadius = '6px';
+            resultDiv.style.fontWeight = '500';
+            resultDiv.style.whiteSpace = 'pre-wrap';  // Preserve newlines
+            resultDiv.style.fontFamily = 'inherit';
+            
+            if (type === 'success') {
+                resultDiv.style.background = '#d1fae5';
+                resultDiv.style.color = '#065f46';
+                resultDiv.style.border = '2px solid #10b981';
+            } else if (type === 'warning') {
+                // Partial success - registration worked but key extraction failed
+                resultDiv.style.background = '#fef3c7';
+                resultDiv.style.color = '#92400e';
+                resultDiv.style.border = '2px solid #f59e0b';
+            } else if (type === 'info') {
+                resultDiv.style.background = '#dbeafe';
+                resultDiv.style.color = '#1e40af';
+                resultDiv.style.border = '2px solid #3b82f6';
+            } else {
+                // Error
+                resultDiv.style.background = '#fee2e2';
+                resultDiv.style.color = '#991b1b';
+                resultDiv.style.border = '2px solid #ef4444';
+            }
+            
+            // Use innerHTML to support clickable links, but escape user input
+            resultDiv.innerHTML = message;
+        }
+        
+        // ========================================
+        // PiAware / FlightAware Functions
+        // ========================================
+        
+        // Toggle PiAware enabled/disabled
+        // Check FlightAware status and update button
+        async function checkPiawareStatus() {
+            const statusIcon = document.getElementById('piaware-status-icon');
+            const statusText = document.getElementById('piaware-status-text');
+            const statusIndicator = document.getElementById('piaware-status-indicator');
+            const toggleBtn = document.getElementById('piaware-toggle-btn');
+            const toggleText = document.getElementById('piaware-toggle-text');
+            
+            try {
+                const response = await fetch('/api/feeds/piaware/status');
+                const data = await response.json();
+                
+                if (data.success) {
+                    if (data.enabled) {
+                        // FlightAware enabled
+                        statusIcon.textContent = '✅';
+                        statusText.textContent = 'Enabled';
+                        statusIndicator.style.background = '#d1fae5';
+                        statusIndicator.style.border = '1px solid #10b981';
+                        toggleBtn.className = 'btn';
+                        toggleText.textContent = '🔴 Disable FlightAware';
+                    } else {
+                        // FlightAware disabled
+                        statusIcon.textContent = '⭕';
+                        statusText.textContent = 'Disabled';
+                        statusIndicator.style.background = '#f3f4f6';
+                        statusIndicator.style.border = '1px solid #d1d5db';
+                        toggleBtn.className = 'btn btn-primary';
+                        toggleText.textContent = '🟢 Enable & Setup FlightAware';
+                    }
+                    toggleBtn.disabled = false;
+                    
+                    // Update status badge
+                    const statusBadge = document.getElementById('piaware-status');
+                    if (statusBadge) {
+                        statusBadge.textContent = data.enabled ? 'Active' : 'Inactive';
+                        statusBadge.className = 'feed-status-badge ' + (data.enabled ? 'status-active' : 'status-inactive');
+                    }
+                } else {
+                    statusIcon.textContent = '⚠️';
+                    statusText.textContent = 'Status unknown';
+                    toggleBtn.disabled = true;
+                }
+            } catch (error) {
+                console.error('Error checking FlightAware status:', error);
+                statusIcon.textContent = '❌';
+                statusText.textContent = 'Error';
+                toggleBtn.disabled = true;
+            }
+        }
+        
+        // Toggle FlightAware enabled/disabled
+        async function togglePiawareEnabled() {
+            const statusIcon = document.getElementById('piaware-status-icon');
+            const statusText = document.getElementById('piaware-status-text');
+            const toggleBtn = document.getElementById('piaware-toggle-btn');
+            const toggleText = document.getElementById('piaware-toggle-text');
+            
+            // Determine current state
+            const isEnabled = statusText.textContent === 'Enabled';
+            
+            // Disable button during operation
+            toggleBtn.disabled = true;
+            toggleText.textContent = isEnabled ? '⏳ Disabling...' : '⏳ Enabling...';
+            
+            const statusTextAction = isEnabled ? 'disabling' : 'enabling';
+            const statusTextPast = isEnabled ? 'disabled' : 'enabled';
+            
+            showStatusModal(`${statusTextAction.charAt(0).toUpperCase() + statusTextAction.slice(1)} FlightAware feed...`);
+            
+            try {
+                const response = await fetch('/api/feeds/piaware/toggle', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ enabled: !isEnabled })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    updateStatusModal(`FlightAware feed ${statusTextPast} successfully`, 'success');
+                    
+                    // Refresh status
+                    await checkPiawareStatus();
+                    
+                    // Auto-dismiss after 1.5 seconds
+                    setTimeout(() => {
+                        hideStatusModal();
+                    }, 1500);
+                } else {
+                    updateStatusModal(`Failed to ${statusTextAction} FlightAware feed: ${data.message}`, 'error');
+                    
+                    // Re-enable button
+                    toggleBtn.disabled = false;
+                    
+                    // Auto-dismiss after 2 seconds
+                    setTimeout(() => {
+                        hideStatusModal();
+                    }, 2000);
+                }
+            } catch (error) {
+                updateStatusModal(`Error ${statusTextAction} FlightAware feed: ${error.message}`, 'error');
+                
+                // Re-enable button
+                toggleBtn.disabled = false;
+                
+                // Auto-dismiss after 2 seconds
+                setTimeout(() => {
+                    hideStatusModal();
+                }, 2000);
+            }
+        }
+        
+        // Setup PiAware with smart detection
+        async function setupPiaware() {
+            const setupBtn = document.getElementById('setup-piaware-btn');
+            const setupText = document.getElementById('setup-piaware-text');
+            const input = document.getElementById('piaware-feeder-id').value.trim();
+            const resultDiv = document.getElementById('piaware-result');
+            
+            setupBtn.disabled = true;
+            resultDiv.style.display = 'none';  // Hide old result div
+            
+            try {
+                if (input === '') {
+                    // No ID provided - GENERATE new one
+                    showStatusModal('Generating FlightAware Feeder ID...');
+                    
+                    const response = await fetch('/api/feeds/piaware/setup', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ feeder_id: '' })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (data.success && data.mode === 'generated') {
+                        // New ID generated - show success
+                        document.getElementById('piaware-feeder-id').value = data.feeder_id;
+                        
+                        // Open local PiAware page in new tab
+                        const localPiawareUrl = `http://${window.location.hostname}:8082`;
+                        window.open(localPiawareUrl, '_blank');
+                        
+                        updateStatusModal('Feeder ID generated! Opening claim page...', 'success');
+                        
+                        // Show extended instructions in the result div after modal closes
+                        setTimeout(() => {
+                            hideStatusModal();
+                            
+                            let message = `<div style="line-height: 1.6;">`;
+                            message += `<div style="font-size: 1.1em; margin-bottom: 12px;">✅ <strong>New Feeder ID Generated!</strong></div>`;
+                            message += `<div style="background: #1e293b; color: #e2e8f0; padding: 10px; border-radius: 4px; font-family: monospace; margin: 10px 0; word-break: break-all;">${data.feeder_id}</div>`;
+                            message += `<div style="margin: 15px 0;"><strong>Next Steps:</strong></div>`;
+                            message += `<ol style="margin: 8px 0; padding-left: 20px;">`;
+                            message += `<li style="margin: 6px 0;">The Feeder ID has been filled in above</li>`;
+                            message += `<li style="margin: 6px 0;">A new tab with your local PiAware page has opened</li>`;
+                            message += `<li style="margin: 6px 0;">On that page, click the "Claim this feeder on FlightAware" button</li>`;
+                            message += `<li style="margin: 6px 0;">After claiming, return here and click "Save & Enable FlightAware"</li>`;
+                            message += `</ol>`;
+                            message += `<div style="margin-top: 15px;">`;
+                            message += `<a href="${localPiawareUrl}" target="_blank" style="display: inline-block; color: #2563eb; text-decoration: underline; font-weight: 600;">→ Open Local PiAware Page Again</a>`;
+                            message += `</div>`;
+                            message += `</div>`;
+                            
+                            showPiawareResult('info', message);
+                        }, 2000);
+                    } else {
+                        // Failed to generate
+                        let errorMessage = data.message || 'Failed to generate Feeder ID';
+                        updateStatusModal(errorMessage, 'error');
+                        setTimeout(() => hideStatusModal(), 3000);
+                    }
+                    
+                    setupBtn.disabled = false;
+                    setupText.textContent = 'Save & Enable FlightAware';
+                    
+                } else {
+                    // Feeder ID provided - USE it directly
+                    showStatusModal('Configuring FlightAware feed...');
+                    
+                    const response = await fetch('/api/feeds/piaware/setup', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ feeder_id: input })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        updateStatusModal('FlightAware feed enabled successfully!', 'success');
+                        document.getElementById('piaware-status').textContent = 'Active';
+                        document.getElementById('piaware-status').className = 'feed-status-badge status-active';
+                        document.getElementById('piaware-enabled').checked = true;
+                        
+                        // Auto-dismiss after 2 seconds
+                        setTimeout(() => hideStatusModal(), 2000);
+                    } else {
+                        updateStatusModal(`Setup failed: ${data.message}`, 'error');
+                        setTimeout(() => hideStatusModal(), 3000);
+                    }
+                    
+                    setupBtn.disabled = false;
+                    setupText.textContent = 'Save & Enable FlightAware';
+                }
+            } catch (error) {
+                updateStatusModal(`Error: ${error.message}`, 'error');
+                setTimeout(() => hideStatusModal(), 2000);
+                setupBtn.disabled = false;
+                setupText.textContent = 'Save & Enable FlightAware';
+            }
+        }
+        
+        function showPiawareResult(type, message) {
+            const resultDiv = document.getElementById('piaware-result');
+            resultDiv.style.display = 'block';
+            resultDiv.style.padding = '12px';
+            resultDiv.style.borderRadius = '6px';
+            resultDiv.style.fontWeight = '500';
+            resultDiv.style.whiteSpace = 'pre-wrap';
+            resultDiv.style.fontFamily = 'inherit';
+            
+            if (type === 'success') {
+                resultDiv.style.background = '#d1fae5';
+                resultDiv.style.color = '#065f46';
+                resultDiv.style.border = '2px solid #10b981';
+            } else if (type === 'info') {
+                resultDiv.style.background = '#dbeafe';
+                resultDiv.style.color = '#1e40af';
+                resultDiv.style.border = '2px solid #3b82f6';
+            } else {
+                // Error
+                resultDiv.style.background = '#fee2e2';
+                resultDiv.style.color = '#991b1b';
+                resultDiv.style.border = '2px solid #ef4444';
+            }
+            
+            resultDiv.innerHTML = message;
+        }
+        
+        // ========================================
+        // ADSBHub Functions
+        // ========================================
+        
+        // Validate ADSBHub button based on station key
+        function validateADSBHubButton() {
+            const stationKey = document.getElementById('adsbhub-station-key').value.trim();
+            const setupBtn = document.getElementById('setup-adsbhub-btn');
+            
+            // Enable button only if station key has at least 8 characters
+            setupBtn.disabled = stationKey.length < 8;
+        }
+        
+        // Check ADSBHub status and update button
+        async function checkADSBHubStatus() {
+            const statusIcon = document.getElementById('adsbhub-status-icon');
+            const statusText = document.getElementById('adsbhub-status-text');
+            const statusIndicator = document.getElementById('adsbhub-status-indicator');
+            const toggleBtn = document.getElementById('adsbhub-toggle-btn');
+            const toggleText = document.getElementById('adsbhub-toggle-text');
+            
+            try {
+                const response = await fetch('/api/feeds/adsbhub/status');
+                const data = await response.json();
+                
+                if (data.success) {
+                    if (data.enabled) {
+                        // ADSBHub enabled
+                        statusIcon.textContent = '✅';
+                        statusText.textContent = 'Enabled';
+                        statusIndicator.style.background = '#d1fae5';
+                        statusIndicator.style.border = '1px solid #10b981';
+                        toggleBtn.className = 'btn';
+                        toggleText.textContent = '🔴 Disable ADSBHub';
+                    } else {
+                        // ADSBHub disabled
+                        statusIcon.textContent = '⭕';
+                        statusText.textContent = 'Disabled';
+                        statusIndicator.style.background = '#f3f4f6';
+                        statusIndicator.style.border = '1px solid #d1d5db';
+                        toggleBtn.className = 'btn btn-primary';
+                        toggleText.textContent = '🟢 Enable & Setup ADSBHub';
+                    }
+                    toggleBtn.disabled = false;
+                    
+                    // Update status badge
+                    const statusBadge = document.getElementById('adsbhub-status');
+                    if (statusBadge) {
+                        statusBadge.textContent = data.enabled ? 'Active' : 'Inactive';
+                        statusBadge.className = 'feed-status-badge ' + (data.enabled ? 'status-active' : 'status-inactive');
+                    }
+                } else {
+                    statusIcon.textContent = '⚠️';
+                    statusText.textContent = 'Status unknown';
+                    toggleBtn.disabled = true;
+                }
+            } catch (error) {
+                console.error('Error checking ADSBHub status:', error);
+                statusIcon.textContent = '❌';
+                statusText.textContent = 'Error';
+                toggleBtn.disabled = true;
+            }
+        }
+        
+        // Toggle ADSBHub enabled/disabled
+        async function toggleADSBHubEnabled() {
+            const statusIcon = document.getElementById('adsbhub-status-icon');
+            const statusText = document.getElementById('adsbhub-status-text');
+            const toggleBtn = document.getElementById('adsbhub-toggle-btn');
+            const toggleText = document.getElementById('adsbhub-toggle-text');
+            const stationKey = document.getElementById('adsbhub-station-key').value.trim();
+            
+            // Determine current state
+            const isEnabled = statusText.textContent === 'Enabled';
+            
+            // Check if trying to enable without a key
+            if (!isEnabled && !stationKey) {
+                showStatusModal('Station key required');
+                updateStatusModal('Please enter your ADSBHub station key before enabling', 'error');
+                setTimeout(() => hideStatusModal(), 2500);
+                return;
+            }
+            
+            // Disable button during operation
+            toggleBtn.disabled = true;
+            toggleText.textContent = isEnabled ? '⏳ Disabling...' : '⏳ Enabling...';
+            
+            const statusTextAction = isEnabled ? 'disabling' : 'enabling';
+            const statusTextPast = isEnabled ? 'disabled' : 'enabled';
+            
+            // Show loading modal
+            showStatusModal(`${statusTextAction.charAt(0).toUpperCase() + statusTextAction.slice(1)} ADSBHub feed...`);
+            
+            try {
+                const response = await fetch('/api/feeds/adsbhub/toggle', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ enabled: !isEnabled })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Show success in modal
+                    updateStatusModal(`ADSBHub feed ${statusTextPast} successfully`, 'success');
+                    
+                    // Refresh status
+                    await checkADSBHubStatus();
+                    
+                    // Auto-dismiss after 1.5 seconds
+                    setTimeout(() => {
+                        hideStatusModal();
+                    }, 1500);
+                } else {
+                    // Show error in modal
+                    updateStatusModal(`Failed: ${data.message}`, 'error');
+                    
+                    // Re-enable button
+                    toggleBtn.disabled = false;
+                    
+                    // Auto-dismiss after 2 seconds
+                    setTimeout(() => {
+                        hideStatusModal();
+                    }, 2000);
+                }
+            } catch (error) {
+                // Show error in modal
+                updateStatusModal(`Error: ${error.message}`, 'error');
+                
+                // Re-enable button
+                toggleBtn.disabled = false;
+                
+                // Auto-dismiss after 2 seconds
+                setTimeout(() => {
+                    hideStatusModal();
+                }, 2000);
+            }
+        }
+        
+        // Validate ADSBHub station key and enable/disable button
+        function validateADSBHubKey() {
+            const stationKey = document.getElementById('adsbhub-station-key').value.trim();
+            const setupBtn = document.getElementById('setup-adsbhub-btn');
+            
+            // Enable button only if key is entered
+            setupBtn.disabled = !stationKey;
+        }
+        
+        async function setupADSBHub() {
+            const stationKey = document.getElementById('adsbhub-station-key').value.trim();
+            const setupBtn = document.getElementById('setup-adsbhub-btn');
+            const setupText = document.getElementById('setup-adsbhub-text');
+            const resultDiv = document.getElementById('adsbhub-result');
+            
+            if (!stationKey) {
+                // Use modal for validation error
+                showStatusModal('Please enter your station key');
+                updateStatusModal('Please enter your ADSBHub station key', 'error');
+                setTimeout(() => hideStatusModal(), 2000);
+                return;
+            }
+            
+            // Disable button and hide old result div
+            setupBtn.disabled = true;
+            resultDiv.style.display = 'none';
+            
+            try {
+                showStatusModal('Configuring ADSBHub feed...');
+                
+                const response = await fetch('/api/feeds/adsbhub/setup', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ station_key: stationKey })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Update status badge
+                    document.getElementById('adsbhub-status').textContent = 'Active';
+                    document.getElementById('adsbhub-status').className = 'feed-status-badge status-active';
+                    
+                    // Update checkbox
+                    document.getElementById('adsbhub-enabled').checked = true;
+                    
+                    // Show success in modal
+                    updateStatusModal('ADSBHub feed enabled successfully!', 'success');
+                    
+                    // Auto-dismiss after 2 seconds
+                    setTimeout(() => {
+                        hideStatusModal();
+                    }, 2000);
+                } else {
+                    // Show error in modal
+                    updateStatusModal(`Failed: ${data.message}`, 'error');
+                    
+                    // Auto-dismiss after 3 seconds
+                    setTimeout(() => {
+                        hideStatusModal();
+                    }, 3000);
+                }
+            } catch (error) {
+                updateStatusModal(`Error: ${error.message}`, 'error');
+                setTimeout(() => hideStatusModal(), 2000);
+            } finally {
+                setupBtn.disabled = false;
+                setupText.textContent = 'Save & Enable ADSBHub';
+            }
+        }
+        
+        // Validate ADSBHub button on page load
+        // Add event listeners for toggle buttons
+        document.getElementById('fr24-toggle-btn').addEventListener('click', toggleFR24Enabled);
+        document.getElementById('piaware-toggle-btn').addEventListener('click', togglePiawareEnabled);
+        document.getElementById('adsbhub-toggle-btn').addEventListener('click', toggleADSBHubEnabled);
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            // Check status on page load
+            checkFR24Status();
+            checkPiawareStatus();
+            checkADSBHubStatus();
+            validateADSBHubKey();
+        });
+    </script>
+</body>
+</html>
