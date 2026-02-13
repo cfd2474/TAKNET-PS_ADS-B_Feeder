@@ -104,7 +104,7 @@ def check_host_reachable(host, port, timeout=2):
 
 def check_tailscale_running():
     """
-    Check if Tailscale is running and connected
+    Check if Tailscale is running and connected to TAKNET-PS tailnet
     Returns: (is_running, tailscale_ip)
     """
     import subprocess
@@ -134,12 +134,28 @@ def check_tailscale_running():
         # Check if we're connected (BackendState should be "Running")
         backend_state = status.get('BackendState', '')
         if backend_state == 'Running':
-            # Get our Tailscale IP
+            # Get our Tailscale IP and DNS name
             self_info = status.get('Self', {})
             tailscale_ips = self_info.get('TailscaleIPs', [])
+            dns_name = self_info.get('DNSName', '').rstrip('.')  # Remove trailing dot
+            
             if tailscale_ips:
-                print(f"✓ Tailscale: Running ({tailscale_ips[0]})")
-                return (True, tailscale_ips[0])
+                # CRITICAL: Verify we're on the TAKNET-PS tailnet
+                expected_suffix = 'tail4d77be.ts.net'
+                
+                if dns_name.endswith(expected_suffix):
+                    # Correct tailnet!
+                    print(f"✓ Tailscale: Running on TAKNET-PS tailnet ({tailscale_ips[0]})")
+                    print(f"  DNS: {dns_name}")
+                    return (True, tailscale_ips[0])
+                else:
+                    # Wrong tailnet - private or different network
+                    print(f"❌ Tailscale: Connected to WRONG tailnet!")
+                    print(f"   Current: {dns_name}")
+                    print(f"   Expected: *.{expected_suffix}")
+                    print(f"   This is NOT the TAKNET-PS network.")
+                    print(f"   Falling back to public IP connection.")
+                    return (False, None)
         
         print(f"⚠ Tailscale: State={backend_state}")
         return (False, None)

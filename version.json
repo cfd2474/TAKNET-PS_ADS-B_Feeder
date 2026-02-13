@@ -1,10 +1,10 @@
 {
-  "version": "2.47.46",
+  "version": "2.47.47",
   "release_date": "2026-02-13",
-  "release_name": "Timezone & Documentation Updates",
+  "release_name": "Tailnet Validation",
   "download_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh",
   "changelog_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/CHANGELOG.md",
   "minimum_version": "2.40.0",
   "breaking_changes": false,
-  "release_notes": "Setup wizard now requires timezone selection before proceeding (prevents users forgetting to change from UTC default). README.md now displays current version number near top for quick reference. Minor UX improvements."
+  "release_notes": "SECURITY: Added tailnet validation to prevent connection to wrong Tailscale network. System now verifies DNS suffix (tail4d77be.ts.net) and only uses Tailscale connection if on correct TAKNET-PS tailnet. Wrong tailnet detection shows red error in UI and falls back to public IP connection. Protects against improper auth key installation."
 }

@@ -683,9 +683,15 @@
                 fetch('/api/tailscale/status')
                     .then(response => response.json())
                     .then(data => {
-                        // Only update connection status, don't change enabled state
-                        const connected = data.status === 'Running' || data.backend_state === 'Running';
-                        updateTailscaleStatusUI(true, connected);
+                        // Check for wrong tailnet condition
+                        if (data.wrong_tailnet) {
+                            // Connected to wrong tailnet - treat as not connected
+                            updateTailscaleStatusUI(true, false, data.message || 'Wrong tailnet');
+                        } else {
+                            // Normal connection status check
+                            const connected = data.status === 'Running' || data.backend_state === 'Running';
+                            updateTailscaleStatusUI(true, connected);
+                        }
                     })
                     .catch(error => console.error('Error checking Tailscale status:', error));
             }
@@ -696,12 +702,28 @@
         let tailscaleConnected = false;
         
         // Update Tailscale status UI (global scope for checkTailscaleStatus)
-        function updateTailscaleStatusUI(enabled, connected) {
+        function updateTailscaleStatusUI(enabled, connected, errorMessage) {
             const statusIcon = document.getElementById('tailscale-status-icon');
             const statusText = document.getElementById('tailscale-status-text');
             const statusIndicator = document.getElementById('tailscale-status-indicator');
             const toggleBtn = document.getElementById('tailscale-toggle-btn');
             const toggleText = document.getElementById('tailscale-toggle-text');
+            
+            // Check for wrong tailnet error
+            if (errorMessage && errorMessage.includes('Wrong tailnet')) {
+                // Wrong tailnet - show critical error
+                if (statusIndicator) statusIndicator.style.display = 'flex';
+                statusIcon.textContent = '❌';
+                statusText.innerHTML = 'Wrong Tailnet!<br><span style="font-size: 0.9em; color: #991b1b;">Not connected to TAKNET-PS network</span>';
+                statusIcon.parentElement.style.background = '#fee2e2';
+                statusIcon.parentElement.style.border = '1px solid #dc2626';
+                toggleBtn.className = 'btn btn-primary';
+                toggleText.textContent = '🔄 Reconnect to TAKNET-PS';
+                tailscaleEnabled = false; // Show auth key field for correct key
+                tailscaleConnected = false;
+                toggleTailscaleConfig();
+                return;
+            }
             
             if (enabled && connected) {
                 // Enabled and connected - hide status indicator, hide auth key field
