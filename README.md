@@ -9,7 +9,7 @@ A comprehensive ADS-B aircraft tracking solution designed for distributed deploy
 
 ## 🎯 Overview
 
-TAKNET-PS is a complete ADS-B feeder system that combines real-time aircraft tracking with a professional web interface. It supports multiple aggregator feeds, provides detailed statistics, and offers both local map viewing and data forwarding to centralized servers.
+TAKNET-PS is an independently developed project focused on delivering free, low-latency ADS-B data to public safety users worldwide. This comprehensive feeder system combines real-time aircraft tracking with a professional web interface, supporting multiple aggregator feeds and providing detailed statistics for emergency services and aviation tracking networks.
 
 ### Key Features
 
@@ -28,17 +28,18 @@ TAKNET-PS is a complete ADS-B feeder system that combines real-time aircraft tra
 ### Hardware
 
 **Minimum:**
-- Raspberry Pi 4 (2GB RAM)
+- Raspberry Pi 3B (2GB RAM)
 - RTL-SDR dongle (RTL2832U chipset)
 - ADS-B antenna (1090 MHz)
 - MicroSD card (16GB minimum, 32GB recommended)
-- Power supply (5V/3A USB-C)
+- Power supply (5V/2.5A for Pi 3B)
 
 **Recommended:**
 - Raspberry Pi 4 (4GB+ RAM)
 - FlightAware Pro Stick Plus (or similar with LNA/filter)
 - Quality outdoor antenna with proper mounting
 - Ethernet connection (more stable than WiFi)
+- Power supply (5V/3A USB-C for Pi 4)
 
 ### Software
 
@@ -61,7 +62,7 @@ curl -fsSL https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main
 1. **Flash Raspberry Pi OS** to SD card
 2. **Connect SDR** and antenna
 3. **Run installer** (command above)
-4. **Access web interface** at `http://[raspberry-pi-ip]:5000`
+4. **Access web interface** at `http://[raspberry-pi-ip]` or `http://[hostname].local`
 5. **Complete setup wizard**
 
 The installer handles:
@@ -76,12 +77,14 @@ The installer handles:
 
 After installation completes:
 
-1. Navigate to `http://[raspberry-pi-ip]:5000`
+1. Navigate to `http://[raspberry-pi-ip]` or `http://[hostname].local`
 2. Follow the setup wizard:
-   - **Location** - Enter latitude, longitude, altitude
-   - **SDR Configuration** - Select dongles and assign functions
-   - **Aggregators** - Choose which services to feed
-   - **Tailscale** (optional) - Enter auth key for VPN
+   - **SDR Configuration** - Auto-detect dongles and assign functions (1090 MHz, 978 MHz)
+   - **Location & Name** - Enter latitude, longitude, altitude, and feeder name
+
+3. After setup wizard completes:
+   - **Feed Selection** - Navigate to Feed Selection tab to choose aggregators
+   - **Tailscale VPN** (optional) - Navigate to Settings tab to configure secure connection
 
 ---
 
@@ -122,7 +125,7 @@ After installation completes:
 
 ## 🌐 Web Interface
 
-Access at `http://[feeder-ip]:5000`
+Access at `http://[feeder-ip]` or `http://[hostname].local`
 
 ### Navigation Tabs
 
@@ -182,9 +185,20 @@ Each aggregator can be:
 - No port forwarding required
 - DNS-friendly hostname generation
 
+### Obtaining an Auth Key
+
+**IMPORTANT:** You must use an approved TAKNET-PS auth key to communicate securely with the aggregator service.
+
+**Contact for Auth Key:**
+- Email: **Michael.Leckliter@yahoo.com**
+- Subject: "TAKNET-PS Auth Key Request"
+- Include: Your name, location, and intended use
+
+Standard Tailscale auth keys will NOT work with the TAKNET-PS aggregation network. Only approved keys provided by the network administrator will establish secure connectivity.
+
 ### Setup Process
 
-1. Obtain Tailscale auth key (contact network admin)
+1. Obtain approved Tailscale auth key (contact above)
 2. Navigate to **Settings** → **Tailscale VPN**
 3. Enter auth key
 4. Click **Enable & Connect**
@@ -276,7 +290,7 @@ Available at `http://[feeder-ip]:8080/graphs1090/?timeframe=24h`
 
 ### Logs Access
 
-Available at `http://[feeder-ip]:5000/logs`
+Available at `http://[feeder-ip]/logs` or `http://[hostname].local/logs`
 
 **Log Sources:**
 - ultrafeeder (main service)
@@ -425,13 +439,13 @@ Edit `/opt/adsb/config/docker-compose.yml`:
 
 | Port | Service | Purpose |
 |------|---------|---------|
-| 5000 | Flask Web | Main web interface |
+| 80 | Nginx/Flask Web | Main web interface (redirects to SSL if configured) |
 | 8080 | tar1090 | Map display |
 | 8080 | graphs1090 | Statistics (subpath) |
 | 30005 | readsb | Beast output |
 | 30104 | MLAT | Multilateration |
 
-**Firewall Note:** Only port 5000 needs to be accessible from your network for normal operation.
+**Firewall Note:** Only port 80 needs to be accessible from your network for normal operation. Access the web interface without specifying a port number.
 
 ---
 
@@ -458,6 +472,17 @@ Edit `/opt/adsb/config/docker-compose.yml`:
 3. Enable Tailscale for remote access
 4. Regularly review aggregator connections
 5. Monitor logs for anomalies
+
+---
+
+## 💖 Supporting the Project
+
+TAKNET-PS is an independently developed, free service providing low-latency ADS-B data to public safety users worldwide. If you find this project valuable, please consider supporting continued development and operation.
+
+**To support:**
+- Navigate to the **About** tab in your feeder's web interface
+- Find donation and support information
+- Your contributions help maintain servers, develop new features, and expand coverage
 
 ---
 
@@ -550,10 +575,10 @@ cat /opt/adsb/VERSION
 
 ### Essential URLs
 
-- Web Interface: `http://[feeder-ip]:5000`
+- Web Interface: `http://[feeder-ip]` or `http://[hostname].local`
 - Map: `http://[feeder-ip]:8080`
 - Statistics: `http://[feeder-ip]:8080/graphs1090/`
-- Logs: `http://[feeder-ip]:5000/logs`
+- Logs: `http://[feeder-ip]/logs`
 
 ---
 
