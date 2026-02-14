@@ -306,6 +306,11 @@ def build_dump978_service(env_vars):
     if not sdr_978_device or sdr_978_device == 'disabled':
         return None
     
+    # Get values from env_vars
+    feeder_tz = env_vars.get('FEEDER_TZ', 'UTC')
+    feeder_lat = env_vars.get('FEEDER_LAT', '')
+    feeder_long = env_vars.get('FEEDER_LONG', '')
+    
     service = {
         'image': 'ghcr.io/sdr-enthusiasts/docker-dump978:latest',
         'container_name': 'dump978',
@@ -313,9 +318,9 @@ def build_dump978_service(env_vars):
         'restart': 'unless-stopped',
         'networks': ['adsb_net'],
         'environment': [
-            'TZ=${FEEDER_TZ:-UTC}',
-            'LAT=${FEEDER_LAT}',
-            'LONG=${FEEDER_LONG}'
+            f'TZ={feeder_tz}',
+            f'LAT={feeder_lat}',
+            f'LONG={feeder_long}'
         ],
         'tmpfs': [
             '/run:exec,size=64M',
@@ -406,6 +411,17 @@ def build_private_tailscale_service(env_vars):
 
 def build_docker_compose(env_vars):
     """Build docker-compose.yml with conditional FR24 service"""
+    # Get all env vars needed for ultrafeeder (write actual values, not ${VARIABLE})
+    feeder_tz = env_vars.get('FEEDER_TZ', 'UTC')
+    feeder_lat = env_vars.get('FEEDER_LAT', '')
+    feeder_long = env_vars.get('FEEDER_LONG', '')
+    feeder_alt_m = env_vars.get('FEEDER_ALT_M', '')
+    feeder_uuid = env_vars.get('FEEDER_UUID', '')
+    readsb_device = env_vars.get('READSB_DEVICE', '0')
+    readsb_gain = env_vars.get('READSB_GAIN', 'autogain')
+    mlat_site_name = env_vars.get('MLAT_SITE_NAME', 'feeder')
+    ultrafeeder_config = env_vars.get('ULTRAFEEDER_CONFIG', '')
+    
     compose = {
         'networks': {
             'adsb_net': {'driver': 'bridge'}
@@ -419,22 +435,22 @@ def build_docker_compose(env_vars):
                 'networks': ['adsb_net'],
                 'ports': ['8080:80', '9273-9274:9273-9274'],
                 'environment': [
-                    'TZ=${FEEDER_TZ:-UTC}',
-                    'LAT=${FEEDER_LAT}',
-                    'LONG=${FEEDER_LONG}',
-                    'ALT=${FEEDER_ALT_M}m',
-                    'UUID=${FEEDER_UUID}',
+                    f'TZ={feeder_tz}',
+                    f'LAT={feeder_lat}',
+                    f'LONG={feeder_long}',
+                    f'ALT={feeder_alt_m}m',
+                    f'UUID={feeder_uuid}',
                     'READSB_DEVICE_TYPE=rtlsdr',
-                    'READSB_RTLSDR_DEVICE=${READSB_DEVICE:-0}',
-                    'READSB_GAIN=${READSB_GAIN:-autogain}',
+                    f'READSB_RTLSDR_DEVICE={readsb_device}',
+                    f'READSB_GAIN={readsb_gain}',
                     'READSB_RX_LOCATION_ACCURACY=2',
                     'READSB_STATS_RANGE=true',
-                    'MLAT_USER=${MLAT_SITE_NAME:-feeder}',
+                    f'MLAT_USER={mlat_site_name}',
                     'UPDATE_TAR1090=true',
                     'TAR1090_ENABLE_AC_DB=true',
                     'TAR1090_FLIGHTAWARELINKS=true',
                     'TAR1090_SITESHOW=true',
-                    'ULTRAFEEDER_CONFIG=${ULTRAFEEDER_CONFIG}',
+                    f'ULTRAFEEDER_CONFIG={ultrafeeder_config}',
                     'PROMETHEUS_ENABLE=true'
                 ],
                 'devices': ['/dev/bus/usb:/dev/bus/usb'],
@@ -452,6 +468,9 @@ def build_docker_compose(env_vars):
     }
     
     # Always include FR24 service (can be started/stopped via docker compose)
+    # Get FR24 key from env_vars and write actual value (not ${VARIABLE})
+    fr24_key = env_vars.get('FR24_KEY', '')
+    
     compose['services']['fr24'] = {
         'image': 'ghcr.io/sdr-enthusiasts/docker-flightradar24:latest',
         'container_name': 'fr24',
@@ -463,13 +482,17 @@ def build_docker_compose(env_vars):
         'environment': [
             'BEASTHOST=ultrafeeder',
             'BEASTPORT=30005',
-            'FR24KEY=${FR24_KEY}',
+            f'FR24KEY={fr24_key}',  # Write actual value, not ${VARIABLE}
             'MLAT=yes'
         ],
         'tmpfs': ['/var/log']
     }
     
     # Always include PiAware service (can be started/stopped via docker compose)
+    # Get PiAware values from env_vars and write actual values (not ${VARIABLE})
+    feeder_tz = env_vars.get('FEEDER_TZ', 'UTC')
+    piaware_feeder_id = env_vars.get('PIAWARE_FEEDER_ID', '')
+    
     compose['services']['piaware'] = {
         'image': 'ghcr.io/sdr-enthusiasts/docker-piaware:latest',
         'container_name': 'piaware',
@@ -479,8 +502,8 @@ def build_docker_compose(env_vars):
         'depends_on': ['ultrafeeder'],
         'ports': ['8082:80'],
         'environment': [
-            'TZ=${FEEDER_TZ}',
-            'FEEDER_ID=${PIAWARE_FEEDER_ID}',
+            f'TZ={feeder_tz}',  # Write actual value
+            f'FEEDER_ID={piaware_feeder_id}',  # Write actual value
             'RECEIVER_TYPE=relay',
             'BEASTHOST=ultrafeeder',
             'BEASTPORT=30005',
@@ -494,6 +517,9 @@ def build_docker_compose(env_vars):
     }
     
     # Always include ADSBHub service (can be started/stopped via docker compose)
+    # Get values from env_vars (write actual values, not ${VARIABLE})
+    adsbhub_station_key = env_vars.get('ADSBHUB_STATION_KEY', '')
+    
     compose['services']['adsbhub'] = {
         'image': 'ghcr.io/sdr-enthusiasts/docker-adsbhub:latest',
         'container_name': 'adsbhub',
@@ -502,9 +528,9 @@ def build_docker_compose(env_vars):
         'networks': ['adsb_net'],
         'depends_on': ['ultrafeeder'],
         'environment': [
-            'TZ=${FEEDER_TZ}',
+            f'TZ={feeder_tz}',  # Reuse from ultrafeeder section above
             'SBSHOST=ultrafeeder',
-            'CLIENTKEY=${ADSBHUB_STATION_KEY}'
+            f'CLIENTKEY={adsbhub_station_key}'
         ]
     }
     

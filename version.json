@@ -1,10 +1,10 @@
 {
-  "version": "2.53.1",
+  "version": "2.53.2",
   "release_date": "2026-02-14",
-  "release_name": "FR24 Fix",
+  "release_name": "Variable Substitution Fix",
   "download_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh",
   "changelog_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/CHANGELOG.md",
   "minimum_version": "2.40.0",
   "breaking_changes": false,
-  "release_notes": "Fixed FR24 container issues. Force container recreation when enabling/setup to ensure clean start. Added diagnostics API endpoint to troubleshoot FR24 container status and logs."
+  "release_notes": "CRITICAL FIX: Write all environment variable values directly into docker-compose.yml instead of using ${VARIABLE} substitution. Docker compose variable substitution was unreliable causing FR24, PiAware, and other services to not receive their configuration. Now all services get actual values written: FR24KEY=xxx, FEEDER_ID=xxx, etc. Config rebuilds automatically when enabling FR24 to ensure key is written."
 }

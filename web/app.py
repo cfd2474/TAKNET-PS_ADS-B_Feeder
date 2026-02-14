@@ -1153,6 +1153,20 @@ def api_fr24_setup():
         update_env_var('FR24_KEY', feeder_id)
         update_env_var('FR24_ENABLED', 'true')
         
+        # Rebuild config to write FR24KEY actual value into docker-compose.yml
+        try:
+            rebuild_result = subprocess.run(
+                ['python3', '/opt/adsb/scripts/config_builder.py'],
+                capture_output=True, text=True, timeout=30
+            )
+            if rebuild_result.returncode != 0:
+                return jsonify({
+                    'success': False,
+                    'message': f'Config rebuild failed: {rebuild_result.stderr}'
+                })
+        except Exception as e:
+            return jsonify({'success': False, 'message': f'Config rebuild failed: {str(e)}'})
+        
         # Start FR24 container using docker compose
         # Use the correct paths - config is at /opt/adsb not /opt/taknet-ps
         compose_file = '/opt/adsb/config/docker-compose.yml'
@@ -1435,6 +1449,21 @@ def api_fr24_toggle():
         
         # Update .env
         update_env_var('FR24_ENABLED', 'true' if enabled else 'false')
+        
+        # Rebuild config to ensure FR24KEY value is in docker-compose.yml
+        if enabled:
+            try:
+                rebuild_result = subprocess.run(
+                    ['python3', '/opt/adsb/scripts/config_builder.py'],
+                    capture_output=True, text=True, timeout=30
+                )
+                if rebuild_result.returncode != 0:
+                    return jsonify({
+                        'success': False,
+                        'message': f'Config rebuild failed: {rebuild_result.stderr}'
+                    })
+            except Exception as e:
+                return jsonify({'success': False, 'message': f'Config rebuild failed: {str(e)}'})
         
         # Use the correct paths - config is at /opt/adsb not /opt/taknet-ps
         compose_file = '/opt/adsb/config/docker-compose.yml'

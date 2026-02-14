@@ -3,7 +3,7 @@
 **Tactical Awareness Kit Network - Public Safety**  
 **For Enhanced Tracking**
 
-**Current Version: 2.53.1**
+**Current Version: 2.53.2**
 
 A comprehensive ADS-B aircraft tracking solution designed for distributed deployment with centralized aggregation. Built for public safety, emergency services, and aviation tracking networks.
 
@@ -514,15 +514,16 @@ TAKNET-PS is an independently developed, free service providing low-latency ADS-
 
 ## 📝 Version Information
 
-**Current Version:** 2.53.1  
+**Current Version:** 2.53.2  
 **Release Date:** February 14, 2026  
 **Minimum Version:** 2.40.0
 
-### Recent Improvements (v2.53.1)
+### Recent Improvements (v2.53.2)
 
-- **FR24 Fix** - Force container recreation when enabling for clean start
-- **FR24 Diagnostics** - New API endpoint to check container status and logs
-- **Better Reliability** - FR24 container properly removed before recreation
+- **Variable Substitution Fix** - Write actual values instead of ${VARIABLE} in docker-compose
+- **FR24 Reliability** - FR24KEY now guaranteed to reach container
+- **All Services Fixed** - Ultrafeeder, PiAware, ADSBHub, dump978 all use direct values
+- **Auto Config Rebuild** - Config rebuilds when enabling FR24 to write key value
 - Automated logo installation
 - Improved Tailscale integration
 - ADSBHub toggle button (matches other feeds)
