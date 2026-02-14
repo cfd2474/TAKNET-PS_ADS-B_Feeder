@@ -369,7 +369,9 @@ def build_private_tailscale_service(env_vars):
             'TS_AUTHKEY=${PRIVATE_TAILSCALE_KEY:-}',
             'TS_STATE_DIR=/var/lib/tailscale',
             'TS_USERSPACE=false',
-            f'TS_HOSTNAME={hostname}'
+            f'TS_HOSTNAME={hostname}',
+            'TS_ACCEPT_DNS=false',
+            'TS_EXTRA_ARGS=--accept-routes=false'
         ],
         'volumes': [
             '/opt/adsb/private-tailscale:/var/lib/tailscale',

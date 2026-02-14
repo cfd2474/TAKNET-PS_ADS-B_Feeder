@@ -1,10 +1,10 @@
 {
-  "version": "2.52.3",
+  "version": "2.52.4",
   "release_date": "2026-02-14",
-  "release_name": "Private Tailscale OK Button",
+  "release_name": "Private Tailscale Auth Fix",
   "download_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh",
   "changelog_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/CHANGELOG.md",
   "minimum_version": "2.40.0",
   "breaking_changes": false,
-  "release_notes": "UX IMPROVEMENT: Private Tailscale modal now uses OK button instead of auto-dismiss. Modal stays open after success/failure until user clicks OK button, allowing time to review logs and error messages. Removed 3-second auto-close timer. Added closePrivateTailscaleModal function. Better user control over when to dismiss connection results."
+  "release_notes": "CRITICAL FIX: Container now clears Tailscale state directory before each enable to force fresh authentication with new auth key. Previously old state caused interactive login instead of using provided auth key. Added TS_ACCEPT_DNS=false and TS_EXTRA_ARGS to container config. Logs showed 'StartLoginInteractiveAs' indicating auth key was being ignored - now forces clean slate authentication."
 }

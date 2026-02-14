@@ -2190,6 +2190,16 @@ def api_private_tailscale_enable():
         write_env(env)
         print("[Private Tailscale] Environment variables saved to .env")
         
+        # Clear old Tailscale state to force fresh authentication
+        print("[Private Tailscale] Clearing old state directory...")
+        state_dir = Path('/opt/adsb/private-tailscale')
+        if state_dir.exists():
+            import shutil
+            shutil.rmtree(state_dir)
+            print("[Private Tailscale] ✓ Old state cleared")
+        state_dir.mkdir(parents=True, exist_ok=True)
+        print("[Private Tailscale] ✓ Fresh state directory created")
+        
         # Rebuild docker-compose to include updated env vars
         print("[Private Tailscale] Rebuilding docker-compose...")
         rebuild_result = subprocess.run(
