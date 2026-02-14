@@ -127,7 +127,8 @@ fi
 TOTAL_COUNT=$((RTL_COUNT + FTDI_COUNT))
 
 if [ "$TOTAL_COUNT" = "0" ]; then
-    echo '{"count": 0, "devices": [], "message": "No SDR devices detected"}' | tee "$OUTPUT"
+    echo '{"count": 0, "devices": [], "message": "No SDR devices detected"}' > "$OUTPUT"
+    echo '{"count": 0, "devices": [], "message": "No SDR devices detected"}'
     exit 0
 fi
 
@@ -178,7 +179,9 @@ done
 echo "  ]" >> "$OUTPUT"
 echo "}" >> "$OUTPUT"
 
-# Output JSON
-cat "$OUTPUT"
+# Output JSON (use shell built-in instead of cat)
+while IFS= read -r line; do
+    echo "$line"
+done < "$OUTPUT"
 
 echo "Detection complete!" >&2

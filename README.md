@@ -3,7 +3,7 @@
 **Tactical Awareness Kit Network - Public Safety**  
 **For Enhanced Tracking**
 
-**Current Version: 2.51.1**
+**Current Version: 2.51.2**
 
 A comprehensive ADS-B aircraft tracking solution designed for distributed deployment with centralized aggregation. Built for public safety, emergency services, and aviation tracking networks.
 
@@ -514,13 +514,13 @@ TAKNET-PS is an independently developed, free service providing low-latency ADS-
 
 ## 📝 Version Information
 
-**Current Version:** 2.51.1  
+**Current Version:** 2.51.2  
 **Release Date:** February 14, 2026  
 **Minimum Version:** 2.40.0
 
-### Recent Improvements (v2.51.1)
+### Recent Improvements (v2.51.2)
 
-- **Bug Fix:** Fixed detection script "cat: command not found" error
+- **Bug Fix:** Removed all external command dependencies (cat, tee) from detection script
 - **Multi-SDR Hardware Support** - FTDI UATRadio detection alongside RTL-SDR
 - **Enhanced Setup Wizard** - Device type badges and hardware-specific constraints
 - **Smart Configuration** - Automatic driver selection (rtlsdr vs hackrf)
