@@ -1,10 +1,10 @@
 {
-  "version": "2.52.2",
+  "version": "2.52.3",
   "release_date": "2026-02-14",
-  "release_name": "Private Tailscale Live Logs",
+  "release_name": "Private Tailscale OK Button",
   "download_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh",
   "changelog_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/CHANGELOG.md",
   "minimum_version": "2.40.0",
   "breaking_changes": false,
-  "release_notes": "NEW FEATURE: Private Tailscale modal now displays live container logs during connection. Added /api/private-tailscale/logs endpoint that fetches last 100 lines of container output. Logs refresh every second alongside status polling, showing real-time Tailscale authentication process. Expanded modal width to 700px to accommodate log viewer. Auto-scrolls to latest log entries. Essential for debugging timeout/authentication failures - users can now see exact error messages from Tailscale daemon."
+  "release_notes": "UX IMPROVEMENT: Private Tailscale modal now uses OK button instead of auto-dismiss. Modal stays open after success/failure until user clicks OK button, allowing time to review logs and error messages. Removed 3-second auto-close timer. Added closePrivateTailscaleModal function. Better user control over when to dismiss connection results."
 }

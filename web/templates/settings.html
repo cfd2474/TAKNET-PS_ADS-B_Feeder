@@ -2121,7 +2121,10 @@
                 <!-- Result message (hidden initially) -->
                 <div id="private-ts-result" style="display: none; padding: 15px; border-radius: 8px; margin-top: 15px;">
                     <div id="private-ts-result-icon" style="font-size: 2em; text-align: center; margin-bottom: 10px;">✓</div>
-                    <div id="private-ts-result-message" style="text-align: center; font-weight: 500;"></div>
+                    <div id="private-ts-result-message" style="text-align: center; font-weight: 500; margin-bottom: 15px;"></div>
+                    <div style="text-align: center;">
+                        <button id="private-ts-result-ok-btn" class="btn btn-primary" onclick="closePrivateTailscaleModal()" style="min-width: 100px;">OK</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -3456,15 +3459,12 @@
             
             resultMessage.textContent = message;
             resultDiv.style.display = 'block';
-            
-            // If failed, allow closing modal after delay
-            if (!success) {
-                setTimeout(() => {
-                    const modal = document.getElementById('privateTailscaleProgressModal');
-                    modal.style.display = 'none';
-                    document.body.classList.remove('modal-open');
-                }, 3000);
-            }
+        }
+        
+        function closePrivateTailscaleModal() {
+            const modal = document.getElementById('privateTailscaleProgressModal');
+            modal.style.display = 'none';
+            document.body.classList.remove('modal-open');
         }
         
         async function fetchPrivateTailscaleLogs() {

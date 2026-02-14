@@ -3,7 +3,7 @@
 **Tactical Awareness Kit Network - Public Safety**  
 **For Enhanced Tracking**
 
-**Current Version: 2.52.2**
+**Current Version: 2.52.3**
 
 A comprehensive ADS-B aircraft tracking solution designed for distributed deployment with centralized aggregation. Built for public safety, emergency services, and aviation tracking networks.
 
@@ -514,16 +514,16 @@ TAKNET-PS is an independently developed, free service providing low-latency ADS-
 
 ## 📝 Version Information
 
-**Current Version:** 2.52.2  
+**Current Version:** 2.52.3  
 **Release Date:** February 14, 2026  
 **Minimum Version:** 2.40.0
 
-### Recent Improvements (v2.52.2)
+### Recent Improvements (v2.52.3)
 
-- **Live Logs** - Private Tailscale modal shows real-time container logs
-- **Debug Authentication** - See exact Tailscale daemon messages during connection
-- **Auto-Refresh** - Logs update every second alongside status polling
-- **Auto-Scroll** - Latest log entries always visible
+- **OK Button** - Modal uses OK button instead of auto-dismiss
+- **User Control** - Review logs/errors before closing modal
+- **Live Logs** - Real-time container logs during connection (v2.52.2)
+- **Debug Authentication** - See exact Tailscale daemon messages
 - **Status API Fixed** - Returns 'running' field JavaScript checks (v2.52.1)
 - **Complete Multi-SDR Support** - Full RTL-SDR + FTDI integration
 - Automated logo installation
