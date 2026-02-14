@@ -375,7 +375,7 @@ def build_private_tailscale_service(env_vars):
         'networks': ['adsb_net'],
         'cap_add': ['NET_ADMIN', 'NET_RAW'],
         'environment': [
-            f'TS_AUTHKEY={auth_key}',  # Try TS_AUTHKEY again
+            f'TS_AUTHKEY={auth_key}',
             'TS_STATE_DIR=/var/lib/tailscale',
             'TS_USERSPACE=false',
             f'TS_HOSTNAME={hostname}',
@@ -383,12 +383,13 @@ def build_private_tailscale_service(env_vars):
         ],
         'command': [
             'sh', '-c',
-            f'echo "Auth key length: ${{#TS_AUTHKEY}}" && '
-            f'echo "TS_AUTHKEY starts with: ${{TS_AUTHKEY:0:20}}" && '
+            # Use $$ to escape $ for docker-compose, becomes $ in container
+            f'echo "Auth key length: $$$${#TS_AUTHKEY}" && '
+            f'echo "TS_AUTHKEY starts with: $$$${TS_AUTHKEY:0:20}" && '
             f'tailscaled --state=/var/lib/tailscale/tailscaled.state --socket=/var/run/tailscale/tailscaled.sock & '
             f'sleep 2 && '
             f'tailscale --socket=/var/run/tailscale/tailscaled.sock up '
-            f'--authkey="$TS_AUTHKEY" '
+            f'--authkey="$$TS_AUTHKEY" '
             f'--hostname="{hostname}" '
             f'--accept-routes=false && '
             f'wait'
