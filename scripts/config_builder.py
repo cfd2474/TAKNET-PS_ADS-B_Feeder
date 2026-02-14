@@ -350,6 +350,32 @@ def build_dump978_service(env_vars):
     
     return service
 
+def build_private_tailscale_service(env_vars):
+    """
+    Build private Tailscale service for agency-specific networks
+    This is a containerized Tailscale instance separate from the native TAKNET-PS connection
+    """
+    service = {
+        'image': 'tailscale/tailscale:latest',
+        'container_name': 'tailscale-private',
+        'hostname': 'taknet-ps-private',
+        'restart': 'unless-stopped',
+        'networks': ['adsb_net'],
+        'cap_add': ['NET_ADMIN', 'NET_RAW'],
+        'environment': [
+            'TS_AUTHKEY=${PRIVATE_TAILSCALE_KEY:-}',
+            'TS_STATE_DIR=/var/lib/tailscale',
+            'TS_USERSPACE=false'
+        ],
+        'volumes': [
+            '/opt/adsb/private-tailscale:/var/lib/tailscale',
+            '/dev/net/tun:/dev/net/tun'
+        ],
+        'profiles': ['private-tailscale']
+    }
+    
+    return service
+
 def build_docker_compose(env_vars):
     """Build docker-compose.yml with conditional FR24 service"""
     compose = {
@@ -458,6 +484,11 @@ def build_docker_compose(env_vars):
     dump978_service = build_dump978_service(env_vars)
     if dump978_service:
         compose['services']['dump978'] = dump978_service
+    
+    # Always include private Tailscale service (uses profile for enabling)
+    private_tailscale_service = build_private_tailscale_service(env_vars)
+    if private_tailscale_service:
+        compose['services']['tailscale-private'] = private_tailscale_service
     
     return compose
 

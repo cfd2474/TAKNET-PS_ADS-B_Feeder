@@ -1,10 +1,10 @@
 {
-  "version": "2.51.6",
+  "version": "2.51.7",
   "release_date": "2026-02-14",
-  "release_name": "Modal Layout & Serial Display Fixed",
+  "release_name": "Private Tailscale Service Fixed",
   "download_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh",
   "changelog_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/CHANGELOG.md",
   "minimum_version": "2.40.0",
   "breaking_changes": false,
-  "release_notes": "BUG FIXES: Modal width increased to 600px with proper text wrapping to prevent content spillage. Button layout uses flex-wrap to prevent boundary overflow on small screens. Bias tee checkbox added to wizard SDR configuration. Serial number detection improved - shows 'N/A' for both RTL-SDR and FTDI when serial cannot be detected. All modal content now fits properly within boundaries."
+  "release_notes": "BUG FIX: Added missing private Tailscale service to docker-compose generation. Created build_private_tailscale_service function for agency-specific network isolation. Private Tailscale service now properly included with private-tailscale profile. Service enables multi-agency deployments where different agencies can manage hardware via their own secure networks while feeding to central TAKNET-PS aggregator. Complete dual Tailscale architecture now functional."
 }
