@@ -1,10 +1,10 @@
 {
-  "version": "2.52.5",
+  "version": "2.52.6",
   "release_date": "2026-02-14",
-  "release_name": "Private Tailscale Direct Auth Key",
+  "release_name": "Private Tailscale --authkey Fix",
   "download_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh",
   "changelog_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/CHANGELOG.md",
   "minimum_version": "2.40.0",
   "breaking_changes": false,
-  "release_notes": "CRITICAL FIX: Auth key now written directly into docker-compose.yml instead of using variable substitution. Previous approach used ${PRIVATE_TAILSCALE_KEY:-} which relied on docker-compose reading .env file - this was unreliable. Now config_builder writes actual auth key value directly: TS_AUTHKEY=tskey-xxx. Also added docker compose down before up to force container recreation with new environment. Logs showed interactive login because TS_AUTHKEY was empty - now guaranteed to have value."
+  "release_notes": "CRITICAL FIX: Auth key now passed via TS_EXTRA_ARGS=--authkey=xxx instead of TS_AUTHKEY environment variable. Container boot script was ignoring TS_AUTHKEY causing interactive login. Now auth key passed as command line argument to tailscale up which actually works."
 }
