@@ -361,6 +361,12 @@ def build_private_tailscale_service(env_vars):
     # Get auth key directly from env_vars
     auth_key = env_vars.get('PRIVATE_TAILSCALE_KEY', '')
     
+    # If no auth key, return service without it (will fail but show error)
+    if not auth_key:
+        print("[WARNING] No PRIVATE_TAILSCALE_KEY found in env_vars!")
+    else:
+        print(f"[INFO] Building Private Tailscale with key: {auth_key[:20]}...")
+    
     service = {
         'image': 'tailscale/tailscale:latest',
         'container_name': 'tailscale-private',
@@ -369,11 +375,23 @@ def build_private_tailscale_service(env_vars):
         'networks': ['adsb_net'],
         'cap_add': ['NET_ADMIN', 'NET_RAW'],
         'environment': [
+            f'TS_AUTHKEY={auth_key}',  # Try TS_AUTHKEY again
             'TS_STATE_DIR=/var/lib/tailscale',
             'TS_USERSPACE=false',
             f'TS_HOSTNAME={hostname}',
-            'TS_ACCEPT_DNS=false',
-            f'TS_EXTRA_ARGS=--authkey={auth_key} --accept-routes=false'
+            'TS_ACCEPT_DNS=false'
+        ],
+        'command': [
+            'sh', '-c',
+            f'echo "Auth key length: ${{#TS_AUTHKEY}}" && '
+            f'echo "TS_AUTHKEY starts with: ${{TS_AUTHKEY:0:20}}" && '
+            f'tailscaled --state=/var/lib/tailscale/tailscaled.state --socket=/var/run/tailscale/tailscaled.sock & '
+            f'sleep 2 && '
+            f'tailscale --socket=/var/run/tailscale/tailscaled.sock up '
+            f'--authkey="$TS_AUTHKEY" '
+            f'--hostname="{hostname}" '
+            f'--accept-routes=false && '
+            f'wait'
         ],
         'volumes': [
             '/opt/adsb/private-tailscale:/var/lib/tailscale',
