@@ -365,6 +365,47 @@
                 </div>
             </div>
 
+            <!-- 978 MHz UAT Section -->
+            <div class="card">
+                <h3>978 MHz UAT (Dual SDR)</h3>
+                <div class="info-note" style="margin-bottom: 15px;">
+                    <p>ℹ️ Optional 978 MHz UAT receiver for dual SDR setups</p>
+                    <p style="margin-top: 10px; color: #6b7280; font-size: 0.9em;">
+                        Requires second RTL-SDR dongle. Adds general aviation traffic (US only).
+                    </p>
+                </div>
+                
+                <!-- dump978 Status -->
+                <div class="form-group" style="margin-bottom: 20px;">
+                    <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 10px;">
+                        <div style="flex: 1;">
+                            <strong style="display: block; margin-bottom: 5px;">978 MHz UAT Status</strong>
+                            <div id="dump978-status-indicator" style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: #f3f4f6; border-radius: 6px; font-size: 0.95em;">
+                                <span id="dump978-status-icon">⭕</span>
+                                <span id="dump978-status-text">Disabled</span>
+                            </div>
+                        </div>
+                        <div>
+                            <button class="btn btn-primary" id="dump978-toggle-btn" style="min-width: 150px;" onclick="toggleDump978()">
+                                <span id="dump978-toggle-text">🟢 Enable</span>
+                            </button>
+                        </div>
+                    </div>
+                    <small style="color: #666; display: block; margin-top: 5px;">
+                        Second SDR on device index 1 for 978 MHz UAT reception
+                    </small>
+                </div>
+                
+                <div class="info-note" style="margin-top: 15px;">
+                    <p><strong>Dual SDR Configuration:</strong></p>
+                    <p style="margin-top: 10px; color: #6b7280; font-size: 0.9em;">
+                        • SDR 0: 1090 MHz (commercial aircraft)<br>
+                        • SDR 1: 978 MHz (general aviation, US only)<br>
+                        • Enable this if you have two RTL-SDR dongles
+                    </p>
+                </div>
+            </div>
+
             <!-- WiFi Configuration Section -->
             <div class="card">
                 <h3>📶 WiFi Configuration</h3>
@@ -3002,6 +3043,130 @@
                     }
                 } catch (error) {
                     showStatus('Error enabling Private Tailscale: ' + error.message, 'error');
+                } finally {
+                    toggleBtn.disabled = false;
+                }
+            }
+        }
+    
+        // =============================================================
+        // 978 MHz UAT / dump978 Functions
+        // =============================================================
+        
+        // Initialize dump978 status on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            checkDump978Status();
+        });
+        
+        async function checkDump978Status() {
+            try {
+                const response = await fetch('/api/dump978/status');
+                const data = await response.json();
+                
+                updateDump978UI(data.enabled, data.running);
+            } catch (error) {
+                console.error('Error checking dump978 status:', error);
+                updateDump978UI(false, false);
+            }
+        }
+        
+        function updateDump978UI(enabled, running) {
+            const statusIcon = document.getElementById('dump978-status-icon');
+            const statusText = document.getElementById('dump978-status-text');
+            const statusIndicator = document.getElementById('dump978-status-indicator');
+            const toggleBtn = document.getElementById('dump978-toggle-btn');
+            const toggleText = document.getElementById('dump978-toggle-text');
+            
+            if (enabled && running) {
+                // Enabled and running
+                statusIcon.textContent = '✓';
+                statusText.textContent = 'Active';
+                statusIndicator.style.background = '#dcfce7';
+                statusIndicator.style.border = '1px solid #22c55e';
+                toggleBtn.className = 'btn';
+                toggleText.textContent = '🔴 Disable';
+            } else if (enabled && !running) {
+                // Enabled but not running
+                statusIcon.textContent = '⚠️';
+                statusText.textContent = 'Not Running';
+                statusIndicator.style.background = '#fef3c7';
+                statusIndicator.style.border = '1px solid #f59e0b';
+                toggleBtn.className = 'btn btn-primary';
+                toggleText.textContent = '🔄 Restart';
+            } else {
+                // Disabled
+                statusIcon.textContent = '⭕';
+                statusText.textContent = 'Disabled';
+                statusIndicator.style.background = '#f3f4f6';
+                statusIndicator.style.border = '1px solid #d1d5db';
+                toggleBtn.className = 'btn btn-primary';
+                toggleText.textContent = '🟢 Enable';
+            }
+        }
+        
+        async function toggleDump978() {
+            const toggleBtn = document.getElementById('dump978-toggle-btn');
+            const toggleText = document.getElementById('dump978-toggle-text');
+            const statusText = document.getElementById('dump978-status-text').textContent;
+            const isEnabled = statusText !== 'Disabled';
+            
+            if (isEnabled) {
+                // Disable dump978
+                if (!confirm('Disable 978 MHz UAT? You will lose general aviation traffic.')) {
+                    return;
+                }
+                
+                toggleBtn.disabled = true;
+                toggleText.textContent = '⏳ Disabling...';
+                
+                try {
+                    const response = await fetch('/api/dump978/disable', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' }
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        showStatus('978 MHz UAT disabled. Restarting services...', 'success');
+                        updateDump978UI(false, false);
+                    } else {
+                        showStatus('Failed to disable: ' + result.message, 'error');
+                    }
+                } catch (error) {
+                    showStatus('Error disabling 978 MHz UAT: ' + error.message, 'error');
+                } finally {
+                    toggleBtn.disabled = false;
+                }
+                
+            } else {
+                // Enable dump978
+                if (!confirm('Enable 978 MHz UAT? Make sure you have a second RTL-SDR dongle connected.')) {
+                    return;
+                }
+                
+                toggleBtn.disabled = true;
+                toggleText.textContent = '⏳ Enabling...';
+                
+                try {
+                    const response = await fetch('/api/dump978/enable', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' }
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        showStatus('978 MHz UAT enabled. Services restarting...', 'success');
+                        // Wait a few seconds then check status
+                        setTimeout(() => {
+                            checkDump978Status();
+                        }, 5000);
+                    } else {
+                        showStatus('Failed to enable: ' + result.message, 'error');
+                    }
+                } catch (error) {
+                    showStatus('Error enabling 978 MHz UAT: ' + error.message, 'error');
                 } finally {
                     toggleBtn.disabled = false;
                 }

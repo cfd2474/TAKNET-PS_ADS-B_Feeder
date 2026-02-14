@@ -2287,6 +2287,133 @@ def api_private_tailscale_disable():
         traceback.print_exc()
         return jsonify({'success': False, 'message': str(e)}), 500
 
+# =============================================================
+# 978 MHz UAT / dump978 API Endpoints
+# =============================================================
+
+@app.route('/api/dump978/status', methods=['GET'])
+def api_dump978_status():
+    """Get dump978 container status"""
+    try:
+        env = read_env()
+        enabled = env.get('DUMP978_ENABLED', 'false') == 'true'
+        
+        if not enabled:
+            return jsonify({
+                'success': True,
+                'enabled': False,
+                'running': False,
+                'message': '978 MHz UAT is disabled'
+            })
+        
+        # Check if container is running
+        result = subprocess.run(
+            ['docker', 'ps', '--filter', 'name=dump978', '--format', '{{.Status}}'],
+            capture_output=True,
+            text=True,
+            timeout=5
+        )
+        
+        running = result.returncode == 0 and result.stdout.strip() != ''
+        
+        return jsonify({
+            'success': True,
+            'enabled': True,
+            'running': running,
+            'message': 'Running' if running else 'Container not running'
+        })
+        
+    except Exception as e:
+        print(f"Error checking dump978 status: {e}")
+        return jsonify({
+            'success': False,
+            'enabled': False,
+            'running': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/dump978/enable', methods=['POST'])
+def api_dump978_enable():
+    """Enable 978 MHz UAT via dump978 container"""
+    try:
+        # Update environment
+        env = read_env()
+        env['DUMP978_ENABLED'] = 'true'
+        write_env(env)
+        
+        # Rebuild configuration with UAT connector
+        if rebuild_config():
+            # Start dump978 container with profile
+            result = subprocess.run(
+                ['docker', 'compose', '--profile', 'dump978', 'up', '-d', 'dump978'],
+                cwd='/opt/adsb/config',
+                capture_output=True,
+                text=True,
+                timeout=30
+            )
+            
+            if result.returncode == 0:
+                # Restart ultrafeeder to pick up new UAT connector
+                restart_service()
+                return jsonify({
+                    'success': True,
+                    'message': '978 MHz UAT enabled. Restarting services...'
+                })
+            else:
+                return jsonify({
+                    'success': False,
+                    'message': f'Failed to start dump978: {result.stderr}'
+                }), 500
+        else:
+            return jsonify({'success': False, 'message': 'Failed to rebuild configuration'}), 500
+            
+    except Exception as e:
+        print(f"Error enabling dump978: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/api/dump978/disable', methods=['POST'])
+def api_dump978_disable():
+    """Disable 978 MHz UAT"""
+    try:
+        # Stop and remove container
+        subprocess.run(
+            ['docker', 'compose', 'stop', 'dump978'],
+            cwd='/opt/adsb/config',
+            capture_output=True,
+            timeout=10
+        )
+        
+        subprocess.run(
+            ['docker', 'compose', 'rm', '-f', 'dump978'],
+            cwd='/opt/adsb/config',
+            capture_output=True,
+            timeout=10
+        )
+        
+        # Update environment
+        env = read_env()
+        env['DUMP978_ENABLED'] = 'false'
+        write_env(env)
+        
+        # Rebuild configuration to remove UAT connector
+        if rebuild_config():
+            # Restart ultrafeeder to apply changes
+            restart_service()
+            return jsonify({
+                'success': True,
+                'message': '978 MHz UAT disabled'
+            })
+        else:
+            return jsonify({'success': False, 'message': 'Failed to rebuild configuration'}), 500
+        
+    except Exception as e:
+        print(f"Error disabling dump978: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'message': str(e)}), 500
+
 @app.route('/api/fr24/activate', methods=['POST'])
 def api_activate_fr24():
     """Activate FR24 service - start container and monitor download"""

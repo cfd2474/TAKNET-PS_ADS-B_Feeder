@@ -23,6 +23,7 @@ services:
       - READSB_GAIN=${READSB_GAIN:-autogain}
       - READSB_RX_LOCATION_ACCURACY=2
       - READSB_STATS_RANGE=true
+      - READSB_NET_UAT_INPUT_PORT=30978
       - MLAT_USER=${MLAT_SITE_NAME:-feeder}
       - UPDATE_TAR1090=true
       - TAR1090_ENABLE_AC_DB=true
@@ -39,6 +40,28 @@ services:
     tmpfs:
       - /run:exec,size=256M
       - /tmp:size=128M
+
+  dump978:
+    image: ghcr.io/sdr-enthusiasts/docker-dump978:latest
+    container_name: dump978
+    hostname: dump978
+    restart: unless-stopped
+    networks:
+      - adsb_net
+    environment:
+      - TZ=${FEEDER_TZ:-UTC}
+      - LAT=${FEEDER_LAT}
+      - LONG=${FEEDER_LONG}
+      - DUMP978_DEVICE=${DUMP978_DEVICE:-1}
+      - DUMP978_GAIN=${DUMP978_GAIN:-autogain}
+      - DUMP978_SDR_GAIN=${DUMP978_GAIN:-autogain}
+    devices:
+      - /dev/bus/usb:/dev/bus/usb
+    tmpfs:
+      - /run:exec,size=64M
+      - /var/log
+    profiles:
+      - dump978
 
   fr24:
     image: ghcr.io/sdr-enthusiasts/docker-flightradar24:latest

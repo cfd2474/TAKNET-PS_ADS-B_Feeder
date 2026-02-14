@@ -18,6 +18,15 @@ MLAT_SITE_NAME=TAKNET-PS-ADSB-Feeder
 # READSB_GAIN=autogain
 
 # ============================================
+# 978 MHz UAT Configuration (Optional)
+# For dual SDR setups with 978 MHz UAT receiver
+# Enable via: docker-compose --profile dump978 up -d
+# ============================================
+DUMP978_ENABLED=false
+DUMP978_DEVICE=1
+DUMP978_GAIN=autogain
+
+# ============================================
 # Tailscale VPN (Optional but Recommended)
 # Provides secure connection to TAKNET-PS Server
 # ============================================

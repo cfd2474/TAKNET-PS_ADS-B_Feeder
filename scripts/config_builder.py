@@ -285,6 +285,11 @@ def build_config(env_vars):
         config_parts.append("mlat,feed.airplanes.live,31090,39002")
         print("✓ Airplanes.Live")
     
+    # 978 MHz UAT Input (if dump978 enabled)
+    if env_vars.get('DUMP978_ENABLED', 'false').lower() == 'true':
+        config_parts.append("uat_in,dump978,30978,uat_in")
+        print("✓ 978 MHz UAT (dump978 container)")
+    
     return ';'.join(config_parts)
 
 def build_docker_compose(env_vars):

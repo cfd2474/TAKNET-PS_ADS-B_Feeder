@@ -1,10 +1,10 @@
 {
-  "version": "2.48.3",
+  "version": "2.49.0",
   "release_date": "2026-02-14",
-  "release_name": "UI Improvements",
+  "release_name": "978 MHz UAT Support",
   "download_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh",
   "changelog_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/CHANGELOG.md",
   "minimum_version": "2.40.0",
   "breaking_changes": false,
-  "release_notes": "Cosmetic UI improvements: Setup wizard timezone defaults to blank and requires selection before proceeding (prevents UTC default). Settings page: renamed 'Tailscale VPN' to 'TAKNET-PS Tailscale VPN' for clarity. Private Tailscale description changed to 'user/agency remote management' for better inclusivity. Minor polish updates."
+  "release_notes": "MAJOR FEATURE: Added 978 MHz UAT support for dual SDR configurations. New dump978 container decodes general aviation traffic (US only). Enable via Settings → 978 MHz UAT with second RTL-SDR dongle. Provides 40-50% more aircraft coverage in US. Fully optional - disabled by default. Works on clean installs and updates. Configure via web UI or docker-compose profile."
 }
