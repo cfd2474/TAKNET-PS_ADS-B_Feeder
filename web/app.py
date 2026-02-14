@@ -2364,6 +2364,8 @@ def api_configure_sdrs():
             index = sdr.get('index')
             use = sdr.get('use')
             gain = sdr.get('gain', 'autogain')
+            device_type = sdr.get('type', 'rtlsdr')  # NEW: device type
+            device_path = sdr.get('device_path', str(index))  # NEW: device path
             
             if use == '1090':
                 if sdr_1090 is not None:
@@ -2374,7 +2376,11 @@ def api_configure_sdrs():
                 sdr_1090 = sdr
                 env['READSB_DEVICE'] = str(index)
                 env['READSB_GAIN'] = gain
-                print(f"✓ SDR {index} configured for 1090 MHz (gain: {gain})")
+                env['SDR_1090_DEVICE'] = str(index)
+                env['SDR_1090_TYPE'] = device_type  # NEW
+                env['SDR_1090_PATH'] = device_path  # NEW
+                env['SDR_1090_GAIN'] = gain
+                print(f"✓ SDR {index} ({device_type}) configured for 1090 MHz (gain: {gain})")
                 
             elif use == '978':
                 if sdr_978 is not None:
@@ -2386,7 +2392,11 @@ def api_configure_sdrs():
                 env['DUMP978_ENABLED'] = 'true'
                 env['DUMP978_DEVICE'] = str(index)
                 env['DUMP978_GAIN'] = gain
-                print(f"✓ SDR {index} configured for 978 MHz (gain: {gain})")
+                env['SDR_978_DEVICE'] = str(index)
+                env['SDR_978_TYPE'] = device_type  # NEW
+                env['SDR_978_PATH'] = device_path  # NEW
+                env['SDR_978_GAIN'] = gain
+                print(f"✓ SDR {index} ({device_type}) configured for 978 MHz (gain: {gain})")
         
         # Validate we have at least 1090 MHz
         if sdr_1090 is None:

@@ -46,17 +46,17 @@
         <div class="wizard">
             <!-- Step 1: SDR Detection & Configuration -->
             <div class="step active" id="step-sdr">
-                <h2>Step 1: RTL-SDR Configuration</h2>
-                <p>Configure your RTL-SDR receiver(s)</p>
+                <h2>Step 1: SDR Configuration</h2>
+                <p>Configure your SDR receiver(s)</p>
                 
                 <div class="info-note" style="margin-bottom: 20px;">
-                    <p>📡 TAKNET-PS will automatically detect connected RTL-SDR dongles.</p>
-                    <p>If you have multiple SDRs, you can assign each to different frequencies.</p>
+                    <p>📡 TAKNET-PS will automatically detect connected SDR devices.</p>
+                    <p>Supports RTL-SDR dongles and FTDI-based Stratux UATRadio.</p>
                 </div>
                 
                 <div style="margin-bottom: 20px;">
                     <button type="button" onclick="detectSDRsInWizard()" class="btn btn-primary" id="detectSDRsBtn">
-                        🔍 Detect RTL-SDR Devices
+                        🔍 Detect SDR Devices
                     </button>
                 </div>
                 
@@ -272,7 +272,7 @@
                     // No SDRs found
                     errorDiv.style.display = 'block';
                     document.getElementById('sdr-error-text').textContent = 
-                        data.error || 'No RTL-SDR devices detected. Please connect at least one RTL-SDR dongle and try again.';
+                        data.error || 'No SDR devices detected. Please connect at least one RTL-SDR dongle or FTDI UATRadio and try again.';
                     btn.innerHTML = '🔍 Retry Detection';
                     btn.disabled = false;
                     return;
@@ -281,11 +281,21 @@
                 // Store detected SDRs
                 detectedSDRs = data.devices;
                 
+                // Count device types
+                const rtlCount = data.devices.filter(d => d.type === 'rtlsdr').length;
+                const ftdiCount = data.devices.filter(d => d.type === 'ftdi').length;
+                
                 // Show count
-                countDisplay.innerHTML = `
-                    <strong>✅ Found ${data.count} RTL-SDR Device${data.count > 1 ? 's' : ''}</strong>
-                    <p style="margin-top: 5px; color: #059669;">Configure each device below:</p>
-                `;
+                let countMsg = `<strong>✅ Found ${data.count} SDR Device${data.count > 1 ? 's' : ''}</strong>`;
+                if (rtlCount > 0 && ftdiCount > 0) {
+                    countMsg += `<p style="margin-top: 5px; color: #059669;">${rtlCount} RTL-SDR + ${ftdiCount} FTDI UATRadio</p>`;
+                } else if (rtlCount > 0) {
+                    countMsg += `<p style="margin-top: 5px; color: #059669;">${rtlCount} RTL-SDR</p>`;
+                } else if (ftdiCount > 0) {
+                    countMsg += `<p style="margin-top: 5px; color: #059669;">${ftdiCount} FTDI UATRadio</p>`;
+                }
+                countMsg += `<p style="margin-top: 5px; color: #059669;">Configure each device below:</p>`;
+                countDisplay.innerHTML = countMsg;
                 
                 // Build configuration cards
                 configList.innerHTML = '';
@@ -294,31 +304,72 @@
                     card.className = 'sdr-config-card';
                     card.style.cssText = 'padding: 15px; border: 2px solid #e5e7eb; border-radius: 8px; margin-bottom: 15px; background: #f9fafb;';
                     
+                    // Device type badge
+                    const deviceTypeBadge = sdr.type === 'ftdi' 
+                        ? '<span style="background: #fef3c7; color: #92400e; padding: 4px 10px; border-radius: 12px; font-size: 0.85em; font-weight: 600;">FTDI</span>'
+                        : '<span style="background: #dbeafe; color: #1e40af; padding: 4px 10px; border-radius: 12px; font-size: 0.85em; font-weight: 600;">RTL-SDR</span>';
+                    
+                    // Device path display (for FTDI)
+                    const devicePathInfo = sdr.type === 'ftdi'
+                        ? `<span style="font-family: monospace; font-size: 0.85em; color: #6b7280; background: #f3f4f6; padding: 2px 6px; border-radius: 4px; margin-left: 10px;">${sdr.device_path}</span>`
+                        : '';
+                    
+                    // Frequency options
+                    let freqOptions = '';
+                    if (sdr.supports_1090 && sdr.supports_978) {
+                        freqOptions = `
+                            <option value="1090" ${sdr.suggested_use === '1090' ? 'selected' : ''}>1090 MHz (ADS-B)</option>
+                            <option value="978" ${sdr.suggested_use === '978' ? 'selected' : ''}>978 MHz (UAT)</option>
+                            <option value="disabled">Disabled</option>
+                        `;
+                    } else if (!sdr.supports_1090 && sdr.supports_978) {
+                        // FTDI: 978 only
+                        freqOptions = `
+                            <option value="1090" disabled>1090 MHz (Not Supported)</option>
+                            <option value="978" selected>978 MHz (UAT)</option>
+                            <option value="disabled">Disabled</option>
+                        `;
+                    }
+                    
+                    // Gain control - disabled for FTDI
+                    const gainDisabled = sdr.type === 'ftdi' ? 'disabled' : '';
+                    const gainNote = sdr.type === 'ftdi' 
+                        ? '<p style="margin-top: 5px; color: #6b7280; font-size: 0.85em; font-style: italic;">FTDI devices manage gain automatically</p>'
+                        : '';
+                    
+                    // FTDI warning
+                    const ftdiWarning = sdr.type === 'ftdi'
+                        ? `<div style="margin-top: 10px; padding: 10px; background: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 6px;">
+                             <p style="margin: 0; font-size: 0.9em; color: #92400e;">
+                               <strong>ℹ️ Stratux UATRadio Detected</strong><br>
+                               This FTDI-based device is designed for 978 MHz UAT only (US general aviation).
+                             </p>
+                           </div>`
+                        : '';
+                    
                     card.innerHTML = `
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                            <h3 style="margin: 0;">SDR #${sdr.index}</h3>
-                            <span style="font-size: 0.9em; color: #6b7280;">Serial: ${sdr.serial}</span>
+                            <div>
+                                <h3 style="margin: 0;">${sdr.name || 'SDR #' + sdr.index}</h3>
+                                <div style="margin-top: 5px;">
+                                    ${deviceTypeBadge}
+                                    <span style="font-size: 0.9em; color: #6b7280; margin-left: 10px;">SN: ${sdr.serial}</span>
+                                    ${devicePathInfo}
+                                </div>
+                            </div>
                         </div>
                         
                         <div class="form-group" style="margin-bottom: 10px;">
                             <label style="font-weight: 600;">Use For:</label>
                             <select id="sdr_${sdr.index}_use" class="form-control" onchange="updateSDRConfig(${sdr.index})">
-                                <option value="1090" ${sdr.suggested_use === '1090' ? 'selected' : ''}>
-                                    1090 MHz (ADS-B - Commercial Aircraft)
-                                </option>
-                                <option value="978" ${sdr.suggested_use === '978' ? 'selected' : ''}>
-                                    978 MHz (UAT - General Aviation, US Only)
-                                </option>
-                                <option value="disabled" ${sdr.suggested_use === 'disabled' ? 'selected' : ''}>
-                                    Disabled
-                                </option>
+                                ${freqOptions}
                             </select>
                         </div>
                         
                         <div class="form-group" style="margin-bottom: 0;">
                             <label style="font-weight: 600;">Gain:</label>
-                            <select id="sdr_${sdr.index}_gain" class="form-control">
-                                <option value="autogain" selected>Auto Gain (Recommended)</option>
+                            <select id="sdr_${sdr.index}_gain" class="form-control" ${gainDisabled}>
+                                <option value="autogain" selected>Auto Gain ${sdr.type === 'ftdi' ? '(Hardware Managed)' : '(Recommended)'}</option>
                                 <option value="20">20 dB</option>
                                 <option value="22">22 dB</option>
                                 <option value="25">25 dB</option>
@@ -327,10 +378,11 @@
                                 <option value="35">35 dB</option>
                                 <option value="40">40 dB</option>
                             </select>
+                            ${gainNote}
                         </div>
                         
-                        ${idx === 0 ? '<p style="margin-top: 10px; color: #059669; font-size: 0.9em;">✓ Primary SDR (required)</p>' : ''}
-                        ${idx === 1 && sdr.suggested_use === '978' ? '<p style="margin-top: 10px; color: #2563eb; font-size: 0.9em;">ℹ️ 978 MHz UAT is only useful in the United States</p>' : ''}
+                        ${idx === 0 ? '<p style="margin-top: 10px; color: #059669; font-size: 0.9em;">✓ Primary SDR</p>' : ''}
+                        ${ftdiWarning}
                     `;
                     
                     configList.appendChild(card);
@@ -367,7 +419,9 @@
                     index: sdr.index,
                     serial: sdr.serial,
                     use: use,
-                    gain: gain
+                    gain: gain,
+                    type: sdr.type || 'rtlsdr',  // NEW: device type
+                    device_path: sdr.device_path || sdr.index.toString()  // NEW: device path
                 });
             });
             return sdrs;

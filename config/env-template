@@ -17,14 +17,27 @@ MLAT_SITE_NAME=TAKNET-PS-ADSB-Feeder
 # READSB_DEVICE=
 # READSB_GAIN=autogain
 
+# SDR Device Details (Auto-configured)
+SDR_1090_DEVICE=0
+SDR_1090_TYPE=rtlsdr
+SDR_1090_PATH=0
+SDR_1090_GAIN=autogain
+
 # ============================================
 # 978 MHz UAT Configuration (Optional)
 # For dual SDR setups with 978 MHz UAT receiver
+# Supports both RTL-SDR and FTDI UATRadio hardware
 # Enable via: docker-compose --profile dump978 up -d
 # ============================================
 DUMP978_ENABLED=false
 DUMP978_DEVICE=1
 DUMP978_GAIN=autogain
+
+# SDR 978 MHz Device Details (Auto-configured)
+SDR_978_DEVICE=
+SDR_978_TYPE=rtlsdr
+SDR_978_PATH=1
+SDR_978_GAIN=autogain
 
 # ============================================
 # Tailscale VPN (Optional but Recommended)

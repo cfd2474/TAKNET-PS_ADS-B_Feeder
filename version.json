@@ -1,10 +1,10 @@
 {
-  "version": "2.50.1",
+  "version": "2.51.0",
   "release_date": "2026-02-14",
-  "release_name": "UI Cleanup & Bug Fixes",
+  "release_name": "Multi-SDR Hardware Support (FTDI UATRadio)",
   "download_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh",
   "changelog_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/CHANGELOG.md",
   "minimum_version": "2.40.0",
   "breaking_changes": false,
-  "release_notes": "BUG FIX: Added missing version variable to feeds-account-required route, preventing 500 error when accessing Account-Required Feeds page. UI CLEANUP: Removed standalone 978 MHz UAT section from Settings page - now handled through SDR detection in Setup wizard. Simplifies configuration and eliminates duplicate controls."
+  "release_notes": "MAJOR FEATURE: Full support for FTDI-based Stratux UATRadio devices alongside RTL-SDR dongles. Enhanced detection script finds both RTL-SDR and FTDI devices in unified interface. Setup wizard displays device type badges (RTL-SDR blue, FTDI amber) with hardware-specific constraints (978 MHz only for FTDI, disabled gain control). Config builder generates correct docker-compose with device-specific mappings (USB bus for RTL-SDR, /dev/ttyUSB for FTDI, hackrf driver for FTDI). Seamless multi-SDR support for mixed hardware setups. Backward compatible with RTL-SDR only systems."
 }

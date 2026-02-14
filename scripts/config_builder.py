@@ -292,6 +292,64 @@ def build_config(env_vars):
     
     return ';'.join(config_parts)
 
+def build_dump978_service(env_vars):
+    """
+    Build dump978 service configuration
+    Supports both RTL-SDR and FTDI UATRadio hardware
+    """
+    sdr_978_device = env_vars.get('SDR_978_DEVICE', '')
+    sdr_978_type = env_vars.get('SDR_978_TYPE', 'rtlsdr')
+    sdr_978_path = env_vars.get('SDR_978_PATH', '1')
+    sdr_978_gain = env_vars.get('SDR_978_GAIN', 'autogain')
+    
+    # Don't create service if 978 not configured
+    if not sdr_978_device or sdr_978_device == 'disabled':
+        return None
+    
+    service = {
+        'image': 'ghcr.io/sdr-enthusiasts/docker-dump978:latest',
+        'container_name': 'dump978',
+        'hostname': 'dump978',
+        'restart': 'unless-stopped',
+        'networks': ['adsb_net'],
+        'environment': [
+            'TZ=${FEEDER_TZ:-UTC}',
+            'LAT=${FEEDER_LAT}',
+            'LONG=${FEEDER_LONG}'
+        ],
+        'tmpfs': [
+            '/run:exec,size=64M',
+            '/var/log'
+        ],
+        'profiles': ['dump978']
+    }
+    
+    # Device mapping differs for RTL-SDR vs FTDI
+    if sdr_978_type == 'ftdi':
+        # FTDI UATRadio: Map specific device path
+        service['devices'] = [f'{sdr_978_path}:{sdr_978_path}:rw']
+        service['environment'].extend([
+            f'DUMP978_DEVICE={sdr_978_path}',
+            'DUMP978_DRIVER=hackrf',
+            'DUMP978_SDR_AGC=off',
+            'DUMP978_JSON_STDOUT=true'
+        ])
+    else:
+        # RTL-SDR: Map USB bus and use device index
+        service['devices'] = ['/dev/bus/usb:/dev/bus/usb']
+        service['environment'].extend([
+            f'DUMP978_DEVICE={sdr_978_path}',
+            'DUMP978_SDR_GAIN={sdr_978_gain}',
+            'DUMP978_SDR_AGC=off',
+            'DUMP978_JSON_STDOUT=true'
+        ])
+        
+        # Add gain if not autogain
+        if sdr_978_gain and sdr_978_gain != 'autogain':
+            service['environment'].append(f'DUMP978_GAIN={sdr_978_gain}')
+    
+    return service
+
 def build_docker_compose(env_vars):
     """Build docker-compose.yml with conditional FR24 service"""
     compose = {
@@ -395,6 +453,11 @@ def build_docker_compose(env_vars):
             'CLIENTKEY=${ADSBHUB_STATION_KEY}'
         ]
     }
+    
+    # Include dump978 service if 978 MHz is configured
+    dump978_service = build_dump978_service(env_vars)
+    if dump978_service:
+        compose['services']['dump978'] = dump978_service
     
     return compose
 

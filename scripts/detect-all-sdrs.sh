@@ -2,7 +2,8 @@
 
 ###############################################################################
 # TAKNET-PS: Enhanced Multi-SDR Detection
-# Detects all RTL-SDR devices and returns JSON with details
+# Detects RTL-SDR devices AND FTDI-based UATRadio devices
+# Returns unified JSON with all devices
 ###############################################################################
 
 set -e
@@ -10,70 +11,167 @@ set -e
 # Output file
 OUTPUT="/tmp/sdrs_detected.json"
 
-# Check if rtl_test is available
-if ! command -v rtl_test &> /dev/null; then
-    echo '{"error": "rtl_test not found", "count": 0, "devices": []}'
-    exit 1
+# Device arrays
+declare -a ALL_DEVICES=()
+declare -a DEVICE_TYPES=()
+declare -a DEVICE_SERIALS=()
+declare -a SUGGESTED_USE=()
+declare -a DEVICE_PATHS=()
+
+echo "Scanning for SDR devices..." >&2
+
+###############################################################################
+# 1. Detect RTL-SDR devices (Realtek chipset)
+###############################################################################
+
+RTL_COUNT=0
+if command -v rtl_test &> /dev/null; then
+    echo "Checking for RTL-SDR devices..." >&2
+    DETECTION=$(rtl_test 2>&1 || true)
+    RTL_COUNT=$(echo "$DETECTION" | grep "^Found" | awk '{print $2}' || echo "0")
+    
+    if [ "$RTL_COUNT" != "0" ]; then
+        echo "Found $RTL_COUNT RTL-SDR device(s)" >&2
+        
+        for i in $(seq 0 $((RTL_COUNT-1))); do
+            # Get serial number
+            SERIAL=$(rtl_eeprom -d $i 2>&1 | grep "Serial number" | awk '{print $NF}' || echo "rtlsdr_$i")
+            
+            # Suggest use based on serial
+            USE="disabled"
+            if [[ "$SERIAL" == *"1090"* ]]; then
+                USE="1090"
+            elif [[ "$SERIAL" == *"978"* ]]; then
+                USE="978"
+            elif [ $i -eq 0 ]; then
+                USE="1090"  # First RTL-SDR defaults to 1090
+            fi
+            
+            ALL_DEVICES+=("RTL-SDR #$i")
+            DEVICE_TYPES+=("rtlsdr")
+            DEVICE_SERIALS+=("$SERIAL")
+            SUGGESTED_USE+=("$USE")
+            DEVICE_PATHS+=("$i")
+            
+            echo "  - RTL-SDR device $i: $SERIAL (suggested: $USE)" >&2
+        done
+    fi
+else
+    echo "rtl_test not found, skipping RTL-SDR detection" >&2
 fi
 
-# Detect devices
-echo "Detecting RTL-SDR devices..." >&2
-DETECTION=$(rtl_test 2>&1 || true)
+###############################################################################
+# 2. Detect FTDI UATRadio devices (Stratux hardware)
+###############################################################################
 
-# Get device count
-DEVICE_COUNT=$(echo "$DETECTION" | grep "^Found" | awk '{print $2}' || echo "0")
+FTDI_COUNT=0
+if command -v lsusb &> /dev/null; then
+    echo "Checking for FTDI UATRadio devices..." >&2
+    
+    # Look for FTDI devices with UATRadio in product name
+    FTDI_LINES=$(lsusb | grep -i "UATRadio" || echo "")
+    
+    if [ -n "$FTDI_LINES" ]; then
+        while IFS= read -r line; do
+            [ -z "$line" ] && continue
+            
+            echo "Found FTDI UATRadio device" >&2
+            
+            # Try to get serial from lsusb -v
+            BUS=$(echo "$line" | awk '{print $2}')
+            DEV=$(echo "$line" | awk '{print $4}' | tr -d ':')
+            
+            SERIAL=$(lsusb -v -s ${BUS}:${DEV} 2>/dev/null | grep "iSerial" | awk '{print $3}' || echo "uatradio_0")
+            
+            # Find the /dev/serial/by-id path for this device
+            DEV_PATH=""
+            for path in /dev/serial/by-id/*; do
+                if [ -e "$path" ]; then
+                    # Check if this is an FTDI or Stratux device
+                    if [[ "$path" == *"FTDI"* ]] || [[ "$path" == *"Stratux"* ]]; then
+                        DEV_PATH="$path"
+                        break
+                    fi
+                fi
+            done
+            
+            # Fallback to /dev/ttyUSB0 if no by-id found
+            if [ -z "$DEV_PATH" ]; then
+                if [ -e "/dev/ttyUSB0" ]; then
+                    DEV_PATH="/dev/ttyUSB0"
+                else
+                    DEV_PATH="/dev/ttyUSB0"  # Will fail later, but document expected path
+                fi
+            fi
+            
+            ALL_DEVICES+=("FTDI UATRadio")
+            DEVICE_TYPES+=("ftdi")
+            DEVICE_SERIALS+=("$SERIAL")
+            SUGGESTED_USE+=("978")  # UATRadio is 978 MHz only
+            DEVICE_PATHS+=("$DEV_PATH")
+            
+            FTDI_COUNT=$((FTDI_COUNT + 1))
+            
+            echo "  - FTDI UATRadio: $SERIAL → $DEV_PATH (978 MHz only)" >&2
+            
+        done <<< "$FTDI_LINES"
+    fi
+else
+    echo "lsusb not found, skipping FTDI detection" >&2
+fi
 
-if [ "$DEVICE_COUNT" = "0" ]; then
-    echo '{"count": 0, "devices": [], "message": "No RTL-SDR devices detected"}'
+###############################################################################
+# 3. Generate unified JSON output
+###############################################################################
+
+TOTAL_COUNT=$((RTL_COUNT + FTDI_COUNT))
+
+if [ "$TOTAL_COUNT" = "0" ]; then
+    echo '{"count": 0, "devices": [], "message": "No SDR devices detected"}' | tee "$OUTPUT"
     exit 0
 fi
 
-echo "Found $DEVICE_COUNT RTL-SDR device(s)" >&2
+echo "Total devices detected: $TOTAL_COUNT" >&2
 
-# Start JSON output
-cat > "$OUTPUT" << 'EOF'
+# Start JSON
+cat > "$OUTPUT" << EOF
 {
-  "count": 
-EOF
-
-echo "$DEVICE_COUNT" >> "$OUTPUT"
-
-cat >> "$OUTPUT" << 'EOF'
-,
+  "count": $TOTAL_COUNT,
   "devices": [
 EOF
 
-# Get details for each device
-for i in $(seq 0 $((DEVICE_COUNT-1))); do
-    echo "Checking device $i..." >&2
+# Add each device to JSON
+for idx in "${!ALL_DEVICES[@]}"; do
+    DEVICE_NAME="${ALL_DEVICES[$idx]}"
+    DEVICE_TYPE="${DEVICE_TYPES[$idx]}"
+    SERIAL="${DEVICE_SERIALS[$idx]}"
+    USE="${SUGGESTED_USE[$idx]}"
+    PATH="${DEVICE_PATHS[$idx]}"
     
-    # Get serial number
-    SERIAL=$(rtl_eeprom -d $i 2>&1 | grep "Serial number" | awk '{print $NF}' || echo "unknown_$i")
-    
-    # Suggest use based on serial or index
-    SUGGESTED_USE="disabled"
-    if [[ "$SERIAL" == *"1090"* ]]; then
-        SUGGESTED_USE="1090"
-    elif [[ "$SERIAL" == *"978"* ]]; then
-        SUGGESTED_USE="978"
-    elif [ $i -eq 0 ]; then
-        SUGGESTED_USE="1090"  # First SDR defaults to 1090
-    elif [ $i -eq 1 ]; then
-        SUGGESTED_USE="978"   # Second SDR defaults to 978
+    # Determine if device can do 1090/978
+    SUPPORTS_1090="true"
+    SUPPORTS_978="true"
+    if [ "$DEVICE_TYPE" = "ftdi" ]; then
+        SUPPORTS_1090="false"
+        SUPPORTS_978="true"
     fi
     
-    # Add device to JSON
-    cat >> "$OUTPUT" << EOF
+    cat >> "$OUTPUT" << DEVICE_EOF
     {
-      "index": $i,
+      "index": $idx,
+      "name": "$DEVICE_NAME",
+      "type": "$DEVICE_TYPE",
       "serial": "$SERIAL",
-      "suggested_use": "$SUGGESTED_USE",
-      "suggested_gain": "autogain"
+      "device_path": "$PATH",
+      "suggested_use": "$USE",
+      "suggested_gain": "autogain",
+      "supports_1090": $SUPPORTS_1090,
+      "supports_978": $SUPPORTS_978
     }
-EOF
+DEVICE_EOF
     
     # Add comma if not last device
-    if [ $i -lt $((DEVICE_COUNT-1)) ]; then
+    if [ $idx -lt $((TOTAL_COUNT - 1)) ]; then
         echo "," >> "$OUTPUT"
     fi
 done
@@ -87,3 +185,5 @@ EOF
 
 # Output JSON
 cat "$OUTPUT"
+
+echo "Detection complete!" >&2
