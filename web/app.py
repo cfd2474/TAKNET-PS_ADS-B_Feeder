@@ -1840,7 +1840,8 @@ def feeds_account_required():
                          piaware_status=piaware_status,
                          adsbhub_key=adsbhub_key,
                          adsbhub_enabled=adsbhub_enabled,
-                         adsbhub_status=adsbhub_status)
+                         adsbhub_status=adsbhub_status,
+                         version=VERSION)
 
 # API Endpoints
 

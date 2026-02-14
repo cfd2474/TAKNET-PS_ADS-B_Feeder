@@ -1,10 +1,10 @@
 {
-  "version": "2.50.0",
+  "version": "2.50.1",
   "release_date": "2026-02-14",
-  "release_name": "Multi-SDR Detection & Configuration",
+  "release_name": "UI Cleanup & Bug Fixes",
   "download_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh",
   "changelog_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/CHANGELOG.md",
   "minimum_version": "2.40.0",
   "breaking_changes": false,
-  "release_notes": "MAJOR FEATURE: Full multi-SDR detection and configuration system. Setup wizard now auto-detects all connected RTL-SDR dongles as Step 1, allowing individual configuration (1090 MHz/978 MHz/Disabled) with gain settings. New API endpoints: /api/sdrs/detect, /api/sdrs/configure, /api/sdrs/current-config. Enhanced detect-all-sdrs.sh script with JSON output. Each SDR individually configurable with dropdown selection and gain control. Automatic dump978 activation when 978 MHz assigned. Complete dual-band setup in wizard."
+  "release_notes": "BUG FIX: Added missing version variable to feeds-account-required route, preventing 500 error when accessing Account-Required Feeds page. UI CLEANUP: Removed standalone 978 MHz UAT section from Settings page - now handled through SDR detection in Setup wizard. Simplifies configuration and eliminates duplicate controls."
 }
