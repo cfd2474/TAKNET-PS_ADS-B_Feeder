@@ -1,10 +1,10 @@
 {
-  "version": "2.49.2",
+  "version": "2.49.3",
   "release_date": "2026-02-14",
-  "release_name": "978 MHz UAT - Upgrade Fix",
+  "release_name": "978 MHz UAT - Import Fix",
   "download_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh",
   "changelog_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/CHANGELOG.md",
   "minimum_version": "2.40.0",
   "breaking_changes": false,
-  "release_notes": "CRITICAL FIX: Automatic upgrade handling for 978 MHz UAT. When enabling dump978 on systems upgraded from older versions, automatically detects missing docker-compose.yml service definition and downloads latest version. Adds missing DUMP978 environment variables. Seamless upgrade path from v2.48.x to v2.49.x. No manual intervention required."
+  "release_notes": "CRITICAL FIX: Added missing urllib.request import causing 500 error when enabling dump978. Fixes 'no such service: dump978' error on upgraded systems. Import moved to top of app.py for proper module loading. Upgrade detection and automatic docker-compose.yml download now works correctly."
 }

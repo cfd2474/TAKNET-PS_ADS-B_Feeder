@@ -13,6 +13,7 @@ import threading
 import time
 import uuid
 import socket
+import urllib.request
 
 app = Flask(__name__)
 
@@ -2357,7 +2358,6 @@ def api_dump978_enable():
         if needs_update:
             print("→ Updating docker-compose.yml with dump978 service...")
             try:
-                import urllib.request
                 url = 'https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/config/docker-compose.yml'
                 urllib.request.urlretrieve(url, compose_file)
                 print("✓ docker-compose.yml updated")
