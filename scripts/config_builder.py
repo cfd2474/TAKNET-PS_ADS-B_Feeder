@@ -358,6 +358,10 @@ def build_private_tailscale_service(env_vars):
     # Get hostname from env or use default
     hostname = env_vars.get('PRIVATE_TAILSCALE_HOSTNAME', 'taknet-ps-private')
     
+    # Get auth key directly from env_vars - write actual value to docker-compose
+    # Don't use ${VARIABLE} substitution as it may not work reliably
+    auth_key = env_vars.get('PRIVATE_TAILSCALE_KEY', '')
+    
     service = {
         'image': 'tailscale/tailscale:latest',
         'container_name': 'tailscale-private',
@@ -366,7 +370,7 @@ def build_private_tailscale_service(env_vars):
         'networks': ['adsb_net'],
         'cap_add': ['NET_ADMIN', 'NET_RAW'],
         'environment': [
-            'TS_AUTHKEY=${PRIVATE_TAILSCALE_KEY:-}',
+            f'TS_AUTHKEY={auth_key}',  # Write actual value, not ${VARIABLE}
             'TS_STATE_DIR=/var/lib/tailscale',
             'TS_USERSPACE=false',
             f'TS_HOSTNAME={hostname}',

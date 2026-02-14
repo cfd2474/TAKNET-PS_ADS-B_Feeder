@@ -3,7 +3,7 @@
 **Tactical Awareness Kit Network - Public Safety**  
 **For Enhanced Tracking**
 
-**Current Version: 2.52.4**
+**Current Version: 2.52.5**
 
 A comprehensive ADS-B aircraft tracking solution designed for distributed deployment with centralized aggregation. Built for public safety, emergency services, and aviation tracking networks.
 
@@ -514,18 +514,18 @@ TAKNET-PS is an independently developed, free service providing low-latency ADS-
 
 ## 📝 Version Information
 
-**Current Version:** 2.52.4  
+**Current Version:** 2.52.5  
 **Release Date:** February 14, 2026  
 **Minimum Version:** 2.40.0
 
-### Recent Improvements (v2.52.4)
+### Recent Improvements (v2.52.5)
 
-- **CRITICAL AUTH FIX** - Clears Tailscale state before enable to force fresh auth
-- **No More Interactive Login** - Auth key now actually used instead of ignored
-- **Fresh Start Each Time** - State directory cleared for clean authentication
-- **OK Button** - Modal uses OK button instead of auto-dismiss (v2.52.3)
-- **Live Logs** - Real-time container logs during connection (v2.52.2)
-- **Complete Multi-SDR Support** - Full RTL-SDR + FTDI integration
+- **Direct Auth Key** - Writes auth key value directly into docker-compose
+- **No Variable Substitution** - Eliminates docker-compose .env reliability issues  
+- **Force Recreate** - Stops old container before starting new one
+- **Guaranteed Auth** - TS_AUTHKEY always has value in container
+- **State Clearing** - Fresh state directory each enable (v2.52.4)
+- **Live Logs & OK Button** - Full debugging visibility (v2.52.2-3)
 - Automated logo installation
 - Improved Tailscale integration
 - ADSBHub toggle button (matches other feeds)

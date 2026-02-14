@@ -2220,6 +2220,17 @@ def api_private_tailscale_enable():
         else:
             print("[Private Tailscale] ✓ Docker-compose rebuilt successfully")
         
+        # Stop and remove old container to force recreation with new env vars
+        print("[Private Tailscale] Stopping old container if exists...")
+        stop_result = subprocess.run(
+            ['docker', 'compose', 'down', 'tailscale-private'],
+            cwd='/opt/adsb/config',
+            capture_output=True,
+            text=True,
+            timeout=10
+        )
+        print(f"[Private Tailscale] Container stop: {stop_result.returncode}")
+        
         # Start Private Tailscale container with profile
         print("[Private Tailscale] Starting container with docker compose...")
         result = subprocess.run(
