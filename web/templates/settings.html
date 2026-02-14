@@ -1441,14 +1441,43 @@
             status.className = 'info';
             
             try {
-                const response = await fetch('/api/sdr/detect');
+                // Use enhanced detection endpoint
+                const response = await fetch('/api/sdrs/detect');
                 const data = await response.json();
                 
-                if (data.success && data.devices && data.devices.length > 0) {
-                    sdrDevices = data.devices;
+                if (data.count > 0 && data.devices && data.devices.length > 0) {
+                    // Get current configuration
+                    const configResponse = await fetch('/api/sdrs/current-config');
+                    const currentConfig = await configResponse.json();
+                    
+                    // Merge detection data with current configuration
+                    sdrDevices = data.devices.map(device => {
+                        // Determine current use and gain from config
+                        let useFor = '';
+                        let gain = 'autogain';
+                        
+                        if (device.type === 'rtlsdr' && device.index === 0 && currentConfig.readsb_device === device.index.toString()) {
+                            useFor = '1090';
+                            gain = currentConfig.readsb_gain || 'autogain';
+                        } else if (device.type === 'ftdi' || (device.type === 'rtlsdr' && currentConfig.dump978_enabled)) {
+                            if (currentConfig.dump978_device === device.index.toString() || 
+                                (device.type === 'ftdi' && currentConfig.dump978_enabled)) {
+                                useFor = '978';
+                                gain = currentConfig.dump978_gain || 'autogain';
+                            }
+                        }
+                        
+                        return {
+                            ...device,
+                            useFor: useFor,
+                            gain: gain,
+                            biastee: false
+                        };
+                    });
+                    
                     displaySDRDevices();
                     section.style.display = 'block';
-                    status.textContent = `✓ Found ${data.devices.length} device(s)`;
+                    status.textContent = `✓ Found ${data.count} device(s)`;
                     status.className = 'success';
                 } else {
                     status.textContent = '⚠ No SDR devices detected';
@@ -1456,6 +1485,7 @@
                     section.style.display = 'none';
                 }
             } catch (error) {
+                console.error('Detection error:', error);
                 status.textContent = 'Error detecting devices: ' + error.message;
                 status.className = 'error';
                 section.style.display = 'none';
@@ -1477,8 +1507,19 @@
                     row.classList.add('configured');
                 }
                 
+                // Device type badge
+                const typeBadge = device.type === 'ftdi' 
+                    ? '<span style="background: #fef3c7; color: #92400e; padding: 4px 10px; border-radius: 12px; font-size: 0.85em; font-weight: 600;">FTDI</span>'
+                    : '<span style="background: #dbeafe; color: #1e40af; padding: 4px 10px; border-radius: 12px; font-size: 0.85em; font-weight: 600;">RTL-SDR</span>';
+                
+                // Device name with type badge
+                const deviceName = device.name || `${device.type.toUpperCase()} #${device.index}`;
+                
                 row.innerHTML = `
-                    <td><strong>${device.type.toUpperCase()}</strong></td>
+                    <td>
+                        <div>${typeBadge}</div>
+                        <div style="margin-top: 5px; font-size: 0.9em; color: #6b7280;">${deviceName}</div>
+                    </td>
                     <td>${device.serial}</td>
                     <td>
                         ${device.useFor ? 
@@ -1486,7 +1527,7 @@
                             '<span style="color: #9ca3af;">Not Configured</span>'
                         }
                     </td>
-                    <td>${device.gain || 'autogain'}</td>
+                    <td><strong>${device.gain || 'autogain'}</strong></td>
                     <td>${device.biastee ? '✓ Enabled' : '—'}</td>
                 `;
                 
@@ -1498,11 +1539,43 @@
             currentSDRIndex = index;
             const device = sdrDevices[index];
             
-            document.getElementById('sdrModalDeviceInfo').textContent = 
-                `${device.type.toUpperCase()} - Serial: ${device.serial}`;
+            // Device info with type badge
+            const typeBadge = device.type === 'ftdi' 
+                ? '<span style="background: #fef3c7; color: #92400e; padding: 4px 10px; border-radius: 12px; font-size: 0.85em; font-weight: 600; margin-left: 10px;">FTDI</span>'
+                : '<span style="background: #dbeafe; color: #1e40af; padding: 4px 10px; border-radius: 12px; font-size: 0.85em; font-weight: 600; margin-left: 10px;">RTL-SDR</span>';
             
-            document.getElementById('sdrModalUseFor').value = device.useFor || '';
-            document.getElementById('sdrModalGain').value = device.gain || 'autogain';
+            document.getElementById('sdrModalDeviceInfo').innerHTML = 
+                `${device.name || device.type.toUpperCase()} - Serial: ${device.serial}${typeBadge}`;
+            
+            // Frequency dropdown
+            const useForSelect = document.getElementById('sdrModalUseFor');
+            useForSelect.innerHTML = '<option value="">-- Select Frequency --</option>';
+            
+            if (device.supports_1090) {
+                useForSelect.innerHTML += '<option value="1090">1090 MHz (ADS-B)</option>';
+            } else {
+                useForSelect.innerHTML += '<option value="1090" disabled>1090 MHz (Not Supported)</option>';
+            }
+            
+            if (device.supports_978) {
+                useForSelect.innerHTML += '<option value="978">978 MHz (UAT)</option>';
+            }
+            
+            useForSelect.value = device.useFor || '';
+            
+            // Gain control
+            const gainInput = document.getElementById('sdrModalGain');
+            if (device.type === 'ftdi') {
+                gainInput.value = 'autogain';
+                gainInput.disabled = true;
+                gainInput.placeholder = 'Hardware Managed';
+            } else {
+                gainInput.value = device.gain || 'autogain';
+                gainInput.disabled = false;
+                gainInput.placeholder = 'autogain';
+            }
+            
+            // Bias tee
             document.getElementById('sdrModalBiasTee').checked = device.biastee || false;
             
             document.getElementById('sdrConfigModal').style.display = 'flex';
@@ -1534,17 +1607,28 @@
                 }
             }
             
-            // Update device
+            // Update local device
+            sdrDevices[currentSDRIndex].use = useFor;
             sdrDevices[currentSDRIndex].useFor = useFor;
             sdrDevices[currentSDRIndex].gain = gain === 'auto' ? 'autogain' : gain;
             sdrDevices[currentSDRIndex].biastee = biastee;
             
-            // Save to backend
+            // Build configuration in format expected by /api/sdrs/configure
+            const sdrsConfig = sdrDevices.map(device => ({
+                index: device.index,
+                serial: device.serial,
+                use: device.use || device.useFor || 'disabled',
+                gain: device.gain || 'autogain',
+                type: device.type || 'rtlsdr',
+                device_path: device.device_path || device.index.toString()
+            }));
+            
+            // Save to backend using correct endpoint
             try {
-                const response = await fetch('/api/sdr/configure', {
+                const response = await fetch('/api/sdrs/configure', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ devices: sdrDevices })
+                    body: JSON.stringify({ sdrs: sdrsConfig })
                 });
                 
                 const result = await response.json();
@@ -1557,6 +1641,7 @@
                     alert('Error saving configuration: ' + (result.message || 'Unknown error'));
                 }
             } catch (error) {
+                console.error('Error saving SDR config:', error);
                 alert('Error saving configuration: ' + error.message);
             }
         }
