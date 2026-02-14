@@ -2328,6 +2328,40 @@ def api_private_tailscale_disable():
         traceback.print_exc()
         return jsonify({'success': False, 'message': str(e)}), 500
 
+@app.route('/api/private-tailscale/logs', methods=['GET'])
+def api_private_tailscale_logs():
+    """Get Private Tailscale container logs"""
+    try:
+        # Get last 100 lines of container logs
+        result = subprocess.run(
+            ['docker', 'logs', '--tail', '100', 'tailscale-private'],
+            capture_output=True,
+            text=True,
+            timeout=5
+        )
+        
+        if result.returncode == 0:
+            # Combine stdout and stderr
+            logs = result.stdout
+            if result.stderr:
+                logs += result.stderr
+            
+            return jsonify({
+                'success': True,
+                'logs': logs if logs else 'No logs yet...'
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'logs': 'Container not found or not started yet'
+            })
+            
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'logs': f'Error fetching logs: {str(e)}'
+        })
+
 # =============================================================
 # Multi-SDR Detection & Configuration API Endpoints
 # =============================================================

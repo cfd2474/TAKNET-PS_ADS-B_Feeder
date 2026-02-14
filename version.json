@@ -1,10 +1,10 @@
 {
-  "version": "2.52.1",
+  "version": "2.52.2",
   "release_date": "2026-02-14",
-  "release_name": "Private Tailscale Status API Fixed",
+  "release_name": "Private Tailscale Live Logs",
   "download_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh",
   "changelog_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/CHANGELOG.md",
   "minimum_version": "2.40.0",
   "breaking_changes": false,
-  "release_notes": "CRITICAL FIX: Private Tailscale status API now returns 'running' field that JavaScript polling checks for. Previously API returned 'enabled' and 'connected' but JavaScript checked 'data.running', causing false 'container failed to start' errors after 10 seconds even when container was starting successfully. Added comprehensive debug logging throughout enable process. Config rebuild now fails fast with clear error message if it fails. Status detection now properly distinguishes between container not started vs container starting vs container running."
+  "release_notes": "NEW FEATURE: Private Tailscale modal now displays live container logs during connection. Added /api/private-tailscale/logs endpoint that fetches last 100 lines of container output. Logs refresh every second alongside status polling, showing real-time Tailscale authentication process. Expanded modal width to 700px to accommodate log viewer. Auto-scrolls to latest log entries. Essential for debugging timeout/authentication failures - users can now see exact error messages from Tailscale daemon."
 }

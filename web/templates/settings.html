@@ -2083,7 +2083,7 @@
 
     <!-- Private Tailscale Progress Modal -->
     <div id="privateTailscaleProgressModal" class="modal" style="display: none;">
-        <div class="modal-content" style="max-width: 500px;">
+        <div class="modal-content" style="max-width: 700px; width: 90%;">
             <h2 class="modal-header">🔗 Configuring Private Tailscale</h2>
             <div class="modal-body">
                 <div style="display: flex; align-items: center; justify-content: center; padding: 30px 20px;">
@@ -2097,6 +2097,25 @@
                             Please wait...
                         </div>
                     </div>
+                </div>
+                
+                <!-- Live Logs Section -->
+                <div style="margin-bottom: 20px;">
+                    <label style="font-weight: 600; display: block; margin-bottom: 8px; color: #374151;">Container Logs:</label>
+                    <div id="private-ts-logs" style="
+                        background: #1a1a1a;
+                        color: #e5e7eb;
+                        padding: 15px;
+                        border-radius: 8px;
+                        font-family: 'Courier New', monospace;
+                        font-size: 0.85em;
+                        max-height: 250px;
+                        overflow-y: auto;
+                        line-height: 1.6;
+                        white-space: pre-wrap;
+                        word-wrap: break-word;
+                    ">Waiting for container to start...
+</div>
                 </div>
                 
                 <!-- Result message (hidden initially) -->
@@ -3278,6 +3297,9 @@
             document.getElementById('private-ts-spinner').style.display = 'block';
             document.getElementById('private-ts-result').style.display = 'none';
             
+            // Reset logs
+            document.getElementById('private-ts-logs').textContent = 'Waiting for container to start...';
+            
             if (action === 'enable') {
                 document.getElementById('private-ts-progress-status-text').textContent = 'Enabling Private Tailscale...';
                 document.getElementById('private-ts-progress-status-detail').textContent = 'This may take 10-30 seconds';
@@ -3368,8 +3390,12 @@
                 attempts++;
                 
                 try {
+                    // Fetch status
                     const response = await fetch('/api/private-tailscale/status');
                     const data = await response.json();
+                    
+                    // Fetch and display logs
+                    fetchPrivateTailscaleLogs();
                     
                     // Update UI based on status
                     if (data.running && data.connected) {
@@ -3438,6 +3464,24 @@
                     modal.style.display = 'none';
                     document.body.classList.remove('modal-open');
                 }, 3000);
+            }
+        }
+        
+        async function fetchPrivateTailscaleLogs() {
+            try {
+                const response = await fetch('/api/private-tailscale/logs');
+                const data = await response.json();
+                
+                const logsDiv = document.getElementById('private-ts-logs');
+                if (data.success && data.logs) {
+                    logsDiv.textContent = data.logs;
+                    // Auto-scroll to bottom
+                    logsDiv.scrollTop = logsDiv.scrollHeight;
+                } else {
+                    logsDiv.textContent = data.logs || 'Waiting for container to start...';
+                }
+            } catch (error) {
+                console.error('Error fetching Private Tailscale logs:', error);
             }
         }
     
