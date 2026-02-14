@@ -1,10 +1,10 @@
 {
-  "version": "2.53.5",
+  "version": "2.53.6",
   "release_date": "2026-02-14",
-  "release_name": "JavaScript Null Reference Fix",
+  "release_name": "ADSBHub Toggle Fix",
   "download_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh",
   "changelog_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/CHANGELOG.md",
   "minimum_version": "2.40.0",
   "breaking_changes": false,
-  "release_notes": "Fixed JavaScript errors when clicking FR24 and ADSBHub buttons. Functions were trying to access non-existent DOM elements (setup-fr24-btn, setup-adsbhub-btn). Now all functions check if elements exist before using them."
+  "release_notes": "Fixed ADSBHub toggle button to read and save station key from input field. Same issue as FR24 - toggle function checked if key existed but didn't save it. Now calls setupADSBHub() when enabling with key in input field."
 }

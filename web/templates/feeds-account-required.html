@@ -1156,13 +1156,22 @@
             const statusText = document.getElementById('adsbhub-status-text');
             const toggleBtn = document.getElementById('adsbhub-toggle-btn');
             const toggleText = document.getElementById('adsbhub-toggle-text');
-            const stationKey = document.getElementById('adsbhub-station-key').value.trim();
+            const keyInput = document.getElementById('adsbhub-station-key');
             
             // Determine current state
             const isEnabled = statusText.textContent === 'Enabled';
             
-            // Check if trying to enable without a key
-            if (!isEnabled && !stationKey) {
+            // If enabling, check if we have a key in the input field
+            if (!isEnabled) {
+                const inputValue = keyInput.value.trim();
+                
+                // If input has value, we need to save it first
+                if (inputValue) {
+                    // Call setupADSBHub instead which will save the key
+                    return await setupADSBHub();
+                }
+                
+                // No key in input - show error
                 showStatusModal('Station key required');
                 updateStatusModal('Please enter your ADSBHub station key before enabling', 'error');
                 setTimeout(() => hideStatusModal(), 2500);
