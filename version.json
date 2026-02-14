@@ -1,10 +1,10 @@
 {
-  "version": "2.51.2",
+  "version": "2.51.3",
   "release_date": "2026-02-14",
-  "release_name": "Multi-SDR Hardware Support (FTDI UATRadio) - Fully Fixed",
+  "release_name": "Multi-SDR Hardware Support (FTDI UATRadio) - Complete",
   "download_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh",
   "changelog_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/CHANGELOG.md",
   "minimum_version": "2.40.0",
   "breaking_changes": false,
-  "release_notes": "BUG FIX: Removed all external command dependencies from detection script. Replaced final 'cat' and 'tee' commands with shell built-ins for complete reliability. Detection now works in all environments without any external command dependencies. FEATURES: Full FTDI UATRadio support, enhanced setup wizard with device type badges, smart configuration with automatic driver selection, seamless multi-SDR support for mixed hardware setups."
+  "release_notes": "BUG FIX: Added navigation button to SDR configuration step. Users can now save SDR configuration and proceed to location setup. PREVIOUS FIXES: Removed all external command dependencies from detection script (cat, tee replaced with shell built-ins). FEATURES: Full FTDI UATRadio support, enhanced setup wizard with device type badges, smart configuration with automatic driver selection, seamless multi-SDR support for mixed hardware setups."
 }

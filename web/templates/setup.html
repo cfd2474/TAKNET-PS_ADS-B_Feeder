@@ -74,6 +74,11 @@
                     <strong>❌ No SDRs Detected</strong>
                     <p id="sdr-error-text">Please connect at least one RTL-SDR dongle and try again.</p>
                 </div>
+                
+                <!-- Navigation Button -->
+                <div id="sdr-next-button" style="display: none; margin-top: 30px; padding-top: 20px; border-top: 2px solid #e5e7eb;">
+                    <button type="button" class="btn btn-success" onclick="saveSDRConfigAndContinue()">Save Configuration & Continue →</button>
+                </div>
             </div>
 
             <!-- Step 2: Location -->
@@ -393,6 +398,9 @@
                 btn.innerHTML = '✅ SDRs Detected';
                 btn.disabled = false;
                 
+                // Show next button
+                document.getElementById('sdr-next-button').style.display = 'block';
+                
             } catch (error) {
                 console.error('Error detecting SDRs:', error);
                 errorDiv.style.display = 'block';
@@ -406,6 +414,53 @@
         function updateSDRConfig(index) {
             // Could add validation here if needed
             console.log(`SDR ${index} configuration updated`);
+        }
+        
+        async function saveSDRConfigAndContinue() {
+            // Validate SDR configuration
+            if (detectedSDRs.length === 0) {
+                alert('Please detect SDR devices first');
+                return;
+            }
+            
+            const sdrConfig = getSDRConfiguration();
+            const has1090 = sdrConfig.some(sdr => sdr.use === '1090');
+            
+            if (!has1090) {
+                alert('At least one SDR must be configured for 1090 MHz');
+                return;
+            }
+            
+            // Save SDR configuration
+            try {
+                const response = await fetch('/api/sdrs/configure', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ sdrs: sdrConfig })
+                });
+                
+                const result = await response.json();
+                
+                if (!result.success) {
+                    alert('Failed to save SDR configuration: ' + result.message);
+                    return;
+                }
+                
+                console.log('✓ SDR configuration saved');
+                
+                // Hide SDR step and show Location step
+                document.getElementById('step-sdr').classList.remove('active');
+                document.getElementById('step-sdr').style.display = 'none';
+                document.getElementById('step1').classList.add('active');
+                document.getElementById('step1').style.display = 'block';
+                
+                // Scroll to top
+                window.scrollTo(0, 0);
+                
+            } catch (error) {
+                console.error('Error saving SDR configuration:', error);
+                alert('Error saving SDR configuration: ' + error.message);
+            }
         }
         
         function getSDRConfiguration() {
