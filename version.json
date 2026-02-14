@@ -1,10 +1,10 @@
 {
-  "version": "2.53.9",
+  "version": "2.53.10",
   "release_date": "2026-02-14",
-  "release_name": "PiAware Toggle Fix",
+  "release_name": "PiAware Button Reference Fix",
   "download_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh",
   "changelog_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/CHANGELOG.md",
   "minimum_version": "2.40.0",
   "breaking_changes": false,
-  "release_notes": "Fixed PiAware toggle button to read input field. Same issue as FR24/ADSBHub - toggle function bypassed input field and always generated new ID. Now calls setupPiaware() when enabling, which respects the input field (use existing ID if present, generate new if empty)."
+  "release_notes": "Fixed 'Cannot set properties of null (setting disabled)' error in PiAware setup. Function referenced setup-piaware-btn which doesn't exist after toggle button refactor. Now uses piaware-toggle-btn with null checks throughout."
 }

@@ -968,13 +968,18 @@
         
         // Setup PiAware with smart detection
         async function setupPiaware() {
-            const setupBtn = document.getElementById('setup-piaware-btn');
-            const setupText = document.getElementById('setup-piaware-text');
+            const toggleBtn = document.getElementById('piaware-toggle-btn');
+            const toggleText = document.getElementById('piaware-toggle-text');
             const input = document.getElementById('piaware-feeder-id').value.trim();
             const resultDiv = document.getElementById('piaware-result');
             
-            setupBtn.disabled = true;
-            resultDiv.style.display = 'none';  // Hide old result div
+            // Disable button during operation
+            if (toggleBtn) {
+                toggleBtn.disabled = true;
+            }
+            if (resultDiv) {
+                resultDiv.style.display = 'none';
+            }
             
             try {
                 if (input === '') {
@@ -1025,8 +1030,9 @@
                         setTimeout(() => hideStatusModal(), 3000);
                     }
                     
-                    setupBtn.disabled = false;
-                    setupText.textContent = 'Save & Enable FlightAware';
+                    if (toggleBtn) {
+                        toggleBtn.disabled = false;
+                    }
                     
                 } else {
                     // Feeder ID provided - USE it directly
@@ -1052,15 +1058,14 @@
                         updateStatusModal(`Setup failed: ${data.message}`, 'error');
                         setTimeout(() => hideStatusModal(), 3000);
                     }
-                    
-                    setupBtn.disabled = false;
-                    setupText.textContent = 'Save & Enable FlightAware';
                 }
             } catch (error) {
                 updateStatusModal(`Error: ${error.message}`, 'error');
                 setTimeout(() => hideStatusModal(), 2000);
-                setupBtn.disabled = false;
-                setupText.textContent = 'Save & Enable FlightAware';
+            } finally {
+                if (toggleBtn) {
+                    toggleBtn.disabled = false;
+                }
             }
         }
         
