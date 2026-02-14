@@ -1,10 +1,10 @@
 {
-  "version": "2.53.10",
+  "version": "2.53.11",
   "release_date": "2026-02-14",
-  "release_name": "PiAware Button Reference Fix",
+  "release_name": "PiAware Config Rebuild Fix",
   "download_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh",
   "changelog_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/CHANGELOG.md",
   "minimum_version": "2.40.0",
   "breaking_changes": false,
-  "release_notes": "Fixed 'Cannot set properties of null (setting disabled)' error in PiAware setup. Function referenced setup-piaware-btn which doesn't exist after toggle button refactor. Now uses piaware-toggle-btn with null checks throughout."
+  "release_notes": "CRITICAL FIX: PiAware now rebuilds config when using existing Feeder ID. Previously only generated IDs triggered config rebuild, causing existing IDs to be ignored (variable substitution doesn't work). Now both paths rebuild config to write actual FEEDER_ID value into docker-compose.yml."
 }

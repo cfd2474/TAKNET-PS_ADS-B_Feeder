@@ -1532,6 +1532,20 @@ def api_piaware_setup():
             update_env_var('PIAWARE_FEEDER_ID', feeder_id_input)
             update_env_var('PIAWARE_ENABLED', 'true')
             
+            # Rebuild config to write FEEDER_ID value into docker-compose.yml
+            try:
+                rebuild_result = subprocess.run(
+                    ['python3', '/opt/adsb/scripts/config_builder.py'],
+                    capture_output=True, text=True, timeout=30
+                )
+                if rebuild_result.returncode != 0:
+                    return jsonify({
+                        'success': False,
+                        'message': f'Config rebuild failed: {rebuild_result.stderr}'
+                    })
+            except Exception as e:
+                return jsonify({'success': False, 'message': f'Config rebuild failed: {str(e)}'})
+            
             # Start PiAware container
             compose_file = '/opt/adsb/config/docker-compose.yml'
             env_file = str(ENV_FILE)
