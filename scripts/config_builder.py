@@ -469,7 +469,18 @@ def build_docker_compose(env_vars):
     
     # Always include FR24 service (can be started/stopped via docker compose)
     # Get FR24 key from env_vars and write actual value (not ${VARIABLE})
-    fr24_key = env_vars.get('FR24_KEY', '')
+    fr24_key = env_vars.get('FR24_KEY', '').strip()
+    
+    # Build environment array
+    fr24_env = [
+        'BEASTHOST=ultrafeeder',
+        'BEASTPORT=30005',
+        'MLAT=yes'
+    ]
+    
+    # Only add FR24KEY if it has a value
+    if fr24_key:
+        fr24_env.insert(2, f'FR24KEY={fr24_key}')
     
     compose['services']['fr24'] = {
         'image': 'ghcr.io/sdr-enthusiasts/docker-flightradar24:latest',
@@ -479,12 +490,7 @@ def build_docker_compose(env_vars):
         'networks': ['adsb_net'],
         'depends_on': ['ultrafeeder'],
         'ports': ['8754:8754'],
-        'environment': [
-            'BEASTHOST=ultrafeeder',
-            'BEASTPORT=30005',
-            f'FR24KEY={fr24_key}',  # Write actual value, not ${VARIABLE}
-            'MLAT=yes'
-        ],
+        'environment': fr24_env,
         'tmpfs': ['/var/log']
     }
     
