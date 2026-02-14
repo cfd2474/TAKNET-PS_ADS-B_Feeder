@@ -95,3 +95,24 @@ services:
       - CLIENTKEY=${ADSBHUB_STATION_KEY}
     depends_on:
       - ultrafeeder
+
+  tailscale-private:
+    image: tailscale/tailscale:latest
+    container_name: tailscale-private
+    hostname: ${PRIVATE_TS_HOSTNAME:-${MLAT_SITE_NAME}-private}
+    restart: unless-stopped
+    network_mode: host
+    privileged: true
+    environment:
+      - TS_AUTHKEY=${PRIVATE_TS_KEY}
+      - TS_STATE_DIR=/var/lib/tailscale
+      - TS_SOCKET=/var/run/tailscale/tailscaled.sock
+      - TS_USERSPACE=false
+    volumes:
+      - /var/lib/tailscale-private:/var/lib/tailscale
+      - /dev/net/tun:/dev/net/tun
+    cap_add:
+      - NET_ADMIN
+      - SYS_MODULE
+    profiles:
+      - private-tailscale

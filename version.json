@@ -1,10 +1,10 @@
 {
-  "version": "2.47.47",
-  "release_date": "2026-02-13",
-  "release_name": "Tailnet Validation",
+  "version": "2.48.2",
+  "release_date": "2026-02-14",
+  "release_name": "Dual Tailscale + LAN Access",
   "download_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh",
   "changelog_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/CHANGELOG.md",
   "minimum_version": "2.40.0",
   "breaking_changes": false,
-  "release_notes": "SECURITY: Added tailnet validation to prevent connection to wrong Tailscale network. System now verifies DNS suffix (tail4d77be.ts.net) and only uses Tailscale connection if on correct TAKNET-PS tailnet. Wrong tailnet detection shows red error in UI and falls back to public IP connection. Protects against improper auth key installation."
+  "release_notes": "SSH now accessible via LAN for initial setup and local troubleshooting. Updated configure-ssh-dual-tailscale.sh to listen on all interfaces (0.0.0.0) providing access from: LAN (192.168.x.x), TAKNET-PS Tailscale (100.x.x.x), and Private Tailscale (100.y.y.y). All three networks can SSH simultaneously. Firewall should block public internet SSH. Perfect for local setup, remote TAKNET-PS admin, and agency owner access."
 }

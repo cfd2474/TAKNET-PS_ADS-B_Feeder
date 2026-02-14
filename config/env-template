@@ -25,6 +25,15 @@ TAILSCALE_ENABLED=false
 TAILSCALE_AUTH_KEY=
 
 # ============================================
+# Private Tailscale (Optional)
+# For agency/organization remote management
+# Separate from TAKNET-PS Tailscale network
+# ============================================
+PRIVATE_TAILSCALE_ENABLED=false
+PRIVATE_TS_KEY=
+PRIVATE_TS_HOSTNAME=
+
+# ============================================
 # TAKNET-PS Server (HARDCODED - Always Enabled)
 # Tactical Awareness Kit Network for Enhanced Tracking – Public Safety
 # Priority feed for all aircraft data

@@ -293,6 +293,78 @@
                 </div>
             </div>
 
+            <!-- Private Tailscale Section -->
+            <div class="card">
+                <h3>Private Tailscale</h3>
+                <div class="info-note" style="margin-bottom: 15px;">
+                    <p>ℹ️ Optional private Tailscale network for agency/organization remote management</p>
+                    <p style="margin-top: 10px; color: #6b7280; font-size: 0.9em;">
+                        This is separate from TAKNET-PS Tailscale. Use your organization's auth key to enable remote access to this feeder.
+                    </p>
+                </div>
+                
+                <!-- Private Tailscale Enable/Disable Section -->
+                <div class="form-group" style="margin-bottom: 20px;">
+                    <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 10px;">
+                        <div style="flex: 1;">
+                            <strong style="display: block; margin-bottom: 5px;">Private Tailscale Status</strong>
+                            <div id="private-ts-status-indicator" style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: #f3f4f6; border-radius: 6px; font-size: 0.95em;">
+                                <span id="private-ts-status-icon">⭕</span>
+                                <span id="private-ts-status-text">Disabled</span>
+                            </div>
+                        </div>
+                        <div>
+                            <button class="btn btn-primary" id="private-ts-toggle-btn" style="min-width: 150px;" onclick="togglePrivateTailscale()">
+                                <span id="private-ts-toggle-text">🟢 Enable</span>
+                            </button>
+                        </div>
+                    </div>
+                    <small style="color: #666; display: block; margin-top: 5px;">
+                        Provides remote SSH and Web UI access via your organization's Tailscale network
+                    </small>
+                </div>
+                
+                <!-- Auth Key Input (shown when disabled) -->
+                <div id="private-ts-disabled-section" style="display: block; margin-top: 15px;">
+                    <div class="form-group">
+                        <label>Private Tailscale Auth Key</label>
+                        <input type="text" id="private_ts_key" placeholder="tskey-auth-xxxxxxxxxxxxxxxxxxxxx">
+                        <small style="color: #666; display: block; margin-top: 5px;">
+                            Your organization's Tailscale auth key for remote management
+                        </small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Hostname (Optional)</label>
+                        <input type="text" id="private_ts_hostname" placeholder="agency-feeder-1">
+                        <small style="color: #666; display: block; margin-top: 5px;">
+                            Custom hostname for this device on your Tailscale network (leave blank to use feeder name)
+                        </small>
+                    </div>
+                    
+                    <div class="info-note" style="margin-top: 15px;">
+                        <p><strong>How to get an auth key:</strong></p>
+                        <p style="margin-top: 10px; color: #6b7280; font-size: 0.9em;">
+                            1. Log in to your Tailscale admin console<br>
+                            2. Go to Settings → Keys<br>
+                            3. Generate an auth key for this device<br>
+                            4. Paste it above and click Enable
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- Connection Info (shown when connected) -->
+                <div id="private-ts-connected-section" style="display: none; margin-top: 15px;">
+                    <div style="padding: 15px; background: #f0f9ff; border-left: 4px solid #3b82f6; border-radius: 6px;">
+                        <p style="margin: 0 0 10px 0; font-weight: 600; color: #1e40af;">✓ Connected</p>
+                        <p style="margin: 0; color: #1e3a8a; font-size: 0.9em;">
+                            <strong>Tailscale IP:</strong> <span id="private-ts-ip">-</span><br>
+                            <strong>DNS Name:</strong> <span id="private-ts-dns">-</span>
+                        </p>
+                    </div>
+                </div>
+            </div>
+
             <!-- WiFi Configuration Section -->
             <div class="card">
                 <h3>📶 WiFi Configuration</h3>
@@ -2777,6 +2849,163 @@
                     }
                 }
             }, 2000); // Check every 2 seconds
+        }
+    
+        // =============================================================
+        // Private Tailscale Functions
+        // =============================================================
+        
+        // Initialize Private Tailscale status on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            checkPrivateTailscaleStatus();
+        });
+        
+        async function checkPrivateTailscaleStatus() {
+            try {
+                const response = await fetch('/api/private-tailscale/status');
+                const data = await response.json();
+                
+                if (data.enabled) {
+                    if (data.connected) {
+                        updatePrivateTailscaleUI(true, true, data.ip, data.hostname);
+                    } else {
+                        updatePrivateTailscaleUI(true, false);
+                    }
+                } else {
+                    updatePrivateTailscaleUI(false, false);
+                }
+            } catch (error) {
+                console.error('Error checking Private Tailscale status:', error);
+                updatePrivateTailscaleUI(false, false);
+            }
+        }
+        
+        function updatePrivateTailscaleUI(enabled, connected, ip, hostname) {
+            const statusIcon = document.getElementById('private-ts-status-icon');
+            const statusText = document.getElementById('private-ts-status-text');
+            const toggleBtn = document.getElementById('private-ts-toggle-btn');
+            const toggleText = document.getElementById('private-ts-toggle-text');
+            const disabledSection = document.getElementById('private-ts-disabled-section');
+            const connectedSection = document.getElementById('private-ts-connected-section');
+            const statusIndicator = document.getElementById('private-ts-status-indicator');
+            
+            if (enabled && connected) {
+                // Connected
+                statusIcon.textContent = '✓';
+                statusText.textContent = 'Connected';
+                statusIndicator.style.background = '#dcfce7';
+                statusIndicator.style.border = '1px solid #22c55e';
+                toggleBtn.className = 'btn';
+                toggleText.textContent = '🔴 Disable';
+                disabledSection.style.display = 'none';
+                connectedSection.style.display = 'block';
+                
+                // Update connection info
+                if (ip) document.getElementById('private-ts-ip').textContent = ip;
+                if (hostname) document.getElementById('private-ts-dns').textContent = hostname;
+                
+            } else if (enabled && !connected) {
+                // Enabled but not connected
+                statusIcon.textContent = '⚠️';
+                statusText.textContent = 'Not Connected';
+                statusIndicator.style.background = '#fef3c7';
+                statusIndicator.style.border = '1px solid #f59e0b';
+                toggleBtn.className = 'btn btn-primary';
+                toggleText.textContent = '🔄 Retry';
+                disabledSection.style.display = 'block';
+                connectedSection.style.display = 'none';
+                
+            } else {
+                // Disabled
+                statusIcon.textContent = '⭕';
+                statusText.textContent = 'Disabled';
+                statusIndicator.style.background = '#f3f4f6';
+                statusIndicator.style.border = '1px solid #d1d5db';
+                toggleBtn.className = 'btn btn-primary';
+                toggleText.textContent = '🟢 Enable';
+                disabledSection.style.display = 'block';
+                connectedSection.style.display = 'none';
+            }
+        }
+        
+        async function togglePrivateTailscale() {
+            const toggleBtn = document.getElementById('private-ts-toggle-btn');
+            const toggleText = document.getElementById('private-ts-toggle-text');
+            
+            // Check current state
+            const statusText = document.getElementById('private-ts-status-text').textContent;
+            const isEnabled = statusText !== 'Disabled';
+            
+            if (isEnabled) {
+                // Disable Private Tailscale
+                if (!confirm('Disable Private Tailscale? You will lose remote management access via this network.')) {
+                    return;
+                }
+                
+                toggleBtn.disabled = true;
+                toggleText.textContent = '⏳ Disabling...';
+                
+                try {
+                    const response = await fetch('/api/private-tailscale/disable', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' }
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        showStatus('Private Tailscale disabled', 'success');
+                        updatePrivateTailscaleUI(false, false);
+                    } else {
+                        showStatus('Failed to disable: ' + result.message, 'error');
+                    }
+                } catch (error) {
+                    showStatus('Error disabling Private Tailscale: ' + error.message, 'error');
+                } finally {
+                    toggleBtn.disabled = false;
+                }
+                
+            } else {
+                // Enable Private Tailscale
+                const authKey = document.getElementById('private_ts_key').value.trim();
+                const hostname = document.getElementById('private_ts_hostname').value.trim();
+                
+                if (!authKey) {
+                    showStatus('Please enter your organization\'s Tailscale auth key', 'error');
+                    document.getElementById('private_ts_key').focus();
+                    return;
+                }
+                
+                toggleBtn.disabled = true;
+                toggleText.textContent = '⏳ Enabling...';
+                
+                try {
+                    const response = await fetch('/api/private-tailscale/enable', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            auth_key: authKey,
+                            hostname: hostname || null
+                        })
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        showStatus('Private Tailscale enabled. Connecting...', 'success');
+                        // Wait a few seconds then check status
+                        setTimeout(() => {
+                            checkPrivateTailscaleStatus();
+                        }, 5000);
+                    } else {
+                        showStatus('Failed to enable: ' + result.message, 'error');
+                    }
+                } catch (error) {
+                    showStatus('Error enabling Private Tailscale: ' + error.message, 'error');
+                } finally {
+                    toggleBtn.disabled = false;
+                }
+            }
         }
     
     </script>

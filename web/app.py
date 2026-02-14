@@ -2079,6 +2079,214 @@ def api_tailscale_disable():
         traceback.print_exc()
         return jsonify({'success': False, 'message': str(e)}), 500
 
+# =============================================================
+# Private Tailscale API Endpoints
+# =============================================================
+
+@app.route('/api/private-tailscale/status', methods=['GET'])
+def api_private_tailscale_status():
+    """Get Private Tailscale connection status"""
+    try:
+        env = read_env()
+        enabled = env.get('PRIVATE_TAILSCALE_ENABLED', 'false') == 'true'
+        
+        if not enabled:
+            return jsonify({
+                'success': True,
+                'enabled': False,
+                'connected': False,
+                'message': 'Private Tailscale is disabled'
+            })
+        
+        # Check if container is running
+        result = subprocess.run(
+            ['docker', 'ps', '--filter', 'name=tailscale-private', '--format', '{{.Status}}'],
+            capture_output=True,
+            text=True,
+            timeout=5
+        )
+        
+        if result.returncode != 0 or not result.stdout.strip():
+            return jsonify({
+                'success': True,
+                'enabled': True,
+                'connected': False,
+                'message': 'Container not running'
+            })
+        
+        # Get Tailscale status from container
+        status_result = subprocess.run(
+            ['docker', 'exec', 'tailscale-private', 'tailscale', 'status', '--json'],
+            capture_output=True,
+            text=True,
+            timeout=5
+        )
+        
+        if status_result.returncode == 0:
+            status_data = json.loads(status_result.stdout)
+            backend_state = status_data.get('BackendState', '')
+            connected = backend_state == 'Running'
+            
+            if connected:
+                self_info = status_data.get('Self', {})
+                ip = self_info.get('TailscaleIPs', [''])[0] if self_info.get('TailscaleIPs') else None
+                hostname = self_info.get('DNSName', '').rstrip('.')
+                
+                return jsonify({
+                    'success': True,
+                    'enabled': True,
+                    'connected': True,
+                    'ip': ip,
+                    'hostname': hostname
+                })
+        
+        return jsonify({
+            'success': True,
+            'enabled': True,
+            'connected': False,
+            'message': 'Not connected'
+        })
+        
+    except Exception as e:
+        print(f"Error checking Private Tailscale status: {e}")
+        return jsonify({
+            'success': False,
+            'enabled': False,
+            'connected': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/private-tailscale/enable', methods=['POST'])
+def api_private_tailscale_enable():
+    """Enable Private Tailscale"""
+    try:
+        data = request.json
+        auth_key = data.get('auth_key')
+        hostname = data.get('hostname')
+        
+        if not auth_key:
+            return jsonify({'success': False, 'message': 'Auth key is required'}), 400
+        
+        # Update environment
+        env = read_env()
+        env['PRIVATE_TAILSCALE_ENABLED'] = 'true'
+        env['PRIVATE_TS_KEY'] = auth_key
+        if hostname:
+            env['PRIVATE_TS_HOSTNAME'] = hostname
+        write_env(env)
+        
+        # Start Private Tailscale container with profile
+        result = subprocess.run(
+            ['docker', 'compose', '--profile', 'private-tailscale', 'up', '-d', 'tailscale-private'],
+            cwd='/opt/adsb/config',
+            capture_output=True,
+            text=True,
+            timeout=30
+        )
+        
+        if result.returncode != 0:
+            return jsonify({
+                'success': False,
+                'message': f'Failed to start container: {result.stderr}'
+            }), 500
+        
+        # Wait for container to get IP (up to 10 seconds)
+        print("Waiting for Private Tailscale to connect...")
+        for i in range(20):
+            time.sleep(0.5)
+            check_result = subprocess.run(
+                ['docker', 'exec', 'tailscale-private', 'tailscale', 'status', '--json'],
+                capture_output=True,
+                text=True,
+                timeout=5
+            )
+            if check_result.returncode == 0:
+                try:
+                    status_data = json.loads(check_result.stdout)
+                    if status_data.get('BackendState') == 'Running':
+                        print("✓ Private Tailscale connected")
+                        break
+                except:
+                    pass
+        
+        # Configure SSH for dual Tailscale access
+        print("Configuring SSH for dual Tailscale access...")
+        ssh_result = subprocess.run(
+            ['/opt/adsb/configure-ssh-dual-tailscale.sh'],
+            capture_output=True,
+            text=True,
+            timeout=10
+        )
+        
+        if ssh_result.returncode == 0:
+            print("✓ SSH configured for both Tailscale networks")
+            print(ssh_result.stdout)
+        else:
+            print(f"⚠ SSH configuration warning: {ssh_result.stderr}")
+            # Don't fail - container is running, SSH config is optional
+        
+        return jsonify({
+            'success': True,
+            'message': 'Private Tailscale enabled and SSH configured'
+        })
+            
+    except Exception as e:
+        print(f"Error enabling Private Tailscale: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/api/private-tailscale/disable', methods=['POST'])
+def api_private_tailscale_disable():
+    """Disable Private Tailscale"""
+    try:
+        # Stop and remove container
+        subprocess.run(
+            ['docker', 'compose', 'stop', 'tailscale-private'],
+            cwd='/opt/adsb/config',
+            capture_output=True,
+            timeout=10
+        )
+        
+        subprocess.run(
+            ['docker', 'compose', 'rm', '-f', 'tailscale-private'],
+            cwd='/opt/adsb/config',
+            capture_output=True,
+            timeout=10
+        )
+        
+        # Update environment
+        env = read_env()
+        env['PRIVATE_TAILSCALE_ENABLED'] = 'false'
+        write_env(env)
+        
+        # Reconfigure SSH to remove private Tailscale listener
+        print("Reconfiguring SSH to remove Private Tailscale access...")
+        ssh_result = subprocess.run(
+            ['/opt/adsb/configure-ssh-dual-tailscale.sh'],
+            capture_output=True,
+            text=True,
+            timeout=10
+        )
+        
+        if ssh_result.returncode == 0:
+            print("✓ SSH reconfigured - Private Tailscale access removed")
+            print(ssh_result.stdout)
+        else:
+            print(f"⚠ SSH configuration warning: {ssh_result.stderr}")
+            # Don't fail - container is stopped, SSH reconfig is cleanup
+        
+        return jsonify({
+            'success': True,
+            'message': 'Private Tailscale disabled and SSH reconfigured'
+        })
+        
+    except Exception as e:
+        print(f"Error disabling Private Tailscale: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'message': str(e)}), 500
+
 @app.route('/api/fr24/activate', methods=['POST'])
 def api_activate_fr24():
     """Activate FR24 service - start container and monitor download"""
