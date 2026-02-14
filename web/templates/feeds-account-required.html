@@ -983,31 +983,29 @@
                     const data = await response.json();
                     
                     if (data.success && data.mode === 'generated') {
-                        // New ID generated - show success
+                        // New ID generated and automatically enabled!
                         document.getElementById('piaware-feeder-id').value = data.feeder_id;
                         
-                        // Open local PiAware page in new tab
-                        const localPiawareUrl = `http://${window.location.hostname}:8082`;
-                        window.open(localPiawareUrl, '_blank');
+                        // Refresh status to update UI
+                        await checkPiawareStatus();
                         
-                        updateStatusModal('Feeder ID generated! Opening claim page...', 'success');
+                        updateStatusModal('Feeder ID generated and enabled!', 'success');
                         
-                        // Show extended instructions in the result div after modal closes
+                        // Show instructions in the result div after modal closes
                         setTimeout(() => {
                             hideStatusModal();
                             
                             let message = `<div style="line-height: 1.6;">`;
-                            message += `<div style="font-size: 1.1em; margin-bottom: 12px;">✅ <strong>New Feeder ID Generated!</strong></div>`;
+                            message += `<div style="font-size: 1.1em; margin-bottom: 12px;">✅ <strong>FlightAware Feed Enabled!</strong></div>`;
                             message += `<div style="background: #1e293b; color: #e2e8f0; padding: 10px; border-radius: 4px; font-family: monospace; margin: 10px 0; word-break: break-all;">${data.feeder_id}</div>`;
-                            message += `<div style="margin: 15px 0;"><strong>Next Steps:</strong></div>`;
+                            message += `<div style="margin: 15px 0;"><strong>Next Step: Claim Your Feeder</strong></div>`;
                             message += `<ol style="margin: 8px 0; padding-left: 20px;">`;
-                            message += `<li style="margin: 6px 0;">The Feeder ID has been filled in above</li>`;
-                            message += `<li style="margin: 6px 0;">A new tab with your local PiAware page has opened</li>`;
-                            message += `<li style="margin: 6px 0;">On that page, click the "Claim this feeder on FlightAware" button</li>`;
-                            message += `<li style="margin: 6px 0;">After claiming, return here and click "Save & Enable FlightAware"</li>`;
+                            message += `<li style="margin: 6px 0;">Your feeder is now running with the ID above</li>`;
+                            message += `<li style="margin: 6px 0;">Click the button below to claim it on FlightAware</li>`;
+                            message += `<li style="margin: 6px 0;">After claiming, you'll see your aircraft on FlightAware.com</li>`;
                             message += `</ol>`;
                             message += `<div style="margin-top: 15px;">`;
-                            message += `<a href="${localPiawareUrl}" target="_blank" style="display: inline-block; color: #2563eb; text-decoration: underline; font-weight: 600;">→ Open Local PiAware Page Again</a>`;
+                            message += `<a href="${data.claim_url}" target="_blank" style="display: inline-block; background: #2563eb; color: white; padding: 10px 20px; border-radius: 6px; text-decoration: none; font-weight: 600;">→ Claim Feeder on FlightAware</a>`;
                             message += `</div>`;
                             message += `</div>`;
                             

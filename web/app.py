@@ -1639,21 +1639,49 @@ def api_piaware_setup():
                     process.wait(timeout=5)
                 
                 if feeder_id:
-                    # Success! Got the ID
+                    # Success! Got the ID - now save it and enable
                     elapsed = time.time() - start_time
-                    return jsonify({
-                        'success': True,
-                        'feeder_id': feeder_id,
-                        'mode': 'generated',
-                        'message': f'New FlightAware Feeder ID generated in {int(elapsed)} seconds: {feeder_id}',
-                        'next_steps': [
-                            f'Your new Feeder ID: {feeder_id}',
-                            'Claim this feeder at FlightAware (link below)',
-                            'Come back and enter the Feeder ID above',
-                            'Click "Save & Enable FlightAware"'
-                        ],
-                        'claim_url': f'https://flightaware.com/adsb/piaware/claim/{feeder_id}'
-                    })
+                    
+                    # Save feeder ID and enable PiAware
+                    update_env_var('PIAWARE_FEEDER_ID', feeder_id)
+                    update_env_var('PIAWARE_ENABLED', 'true')
+                    
+                    # Rebuild config to write FEEDER_ID value into docker-compose.yml
+                    try:
+                        rebuild_result = subprocess.run(
+                            ['python3', '/opt/adsb/scripts/config_builder.py'],
+                            capture_output=True, text=True, timeout=30
+                        )
+                        if rebuild_result.returncode != 0:
+                            return jsonify({
+                                'success': False,
+                                'message': f'Config rebuild failed: {rebuild_result.stderr}'
+                            })
+                    except Exception as e:
+                        return jsonify({'success': False, 'message': f'Config rebuild failed: {str(e)}'})
+                    
+                    # Start PiAware container
+                    compose_file = '/opt/adsb/config/docker-compose.yml'
+                    env_file = str(ENV_FILE)
+                    
+                    result = subprocess.run(
+                        ['docker', 'compose', '-f', compose_file, '--env-file', env_file, 'up', '-d', 'piaware'],
+                        capture_output=True, text=True, timeout=60
+                    )
+                    
+                    if result.returncode == 0:
+                        return jsonify({
+                            'success': True,
+                            'feeder_id': feeder_id,
+                            'mode': 'generated',
+                            'message': f'New FlightAware Feeder ID generated in {int(elapsed)} seconds and enabled: {feeder_id}',
+                            'claim_url': f'https://flightaware.com/adsb/piaware/claim/{feeder_id}'
+                        })
+                    else:
+                        return jsonify({
+                            'success': False,
+                            'message': f'ID generated but failed to start PiAware: {result.stderr}'
+                        })
                 else:
                     # Failed to extract ID
                     output_str = ''.join(full_output)

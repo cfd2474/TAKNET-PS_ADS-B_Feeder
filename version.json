@@ -1,10 +1,10 @@
 {
-  "version": "2.53.7",
+  "version": "2.53.8",
   "release_date": "2026-02-14",
-  "release_name": "Checkbox Reference Fix",
+  "release_name": "PiAware Auto-Save Fix",
   "download_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh",
   "changelog_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/CHANGELOG.md",
   "minimum_version": "2.40.0",
   "breaking_changes": false,
-  "release_notes": "Fixed 'Cannot set properties of null (setting checked)' error in ADSBHub and PiAware setup. Functions were trying to update checkboxes that don't exist after toggle button refactor. Now calls checkADSBHubStatus() and checkPiawareStatus() to refresh UI instead."
+  "release_notes": "CRITICAL FIX: PiAware now automatically saves generated Feeder ID to .env and starts container. Previously, generated IDs were only shown to user but not saved, causing PiAware to generate a new ID on every restart. Now the ID is saved immediately after generation and PiAware starts with that ID locked in."
 }
