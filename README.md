@@ -3,7 +3,7 @@
 **Tactical Awareness Kit Network - Public Safety**  
 **For Enhanced Tracking**
 
-**Current Version: 2.52.9**
+**Current Version: 2.53.0**
 
 A comprehensive ADS-B aircraft tracking solution designed for distributed deployment with centralized aggregation. Built for public safety, emergency services, and aviation tracking networks.
 
@@ -514,18 +514,16 @@ TAKNET-PS is an independently developed, free service providing low-latency ADS-
 
 ## 📝 Version Information
 
-**Current Version:** 2.52.9  
+**Current Version:** 2.53.0  
 **Release Date:** February 14, 2026  
 **Minimum Version:** 2.40.0
 
-### Recent Improvements (v2.52.9)
+### Recent Improvements (v2.53.0)
 
-- **Manual Command** - Overrides container to run tailscaled + tailscale up directly
-- **Diagnostic Logging** - Shows auth key length and prefix in logs
-- **Explicit --authkey** - Passes auth key directly to tailscale up command
-- **Boot Script Bypass** - Doesn't rely on container's default behavior
-- **Debugging Version** - Will show if auth key reaches container
-- **Live Logs & OK Button** - Full debugging visibility (v2.52.2-3)
+- **Update Modal** - Confirmation now uses modal popup instead of browser alert
+- **Dashboard Layout** - Vertical layout for system status sections
+- **Floating Status** - Ultrafeeder core status now at top right corner
+- **Better Organization** - Network on top, Location below for clearer view
 - Automated logo installation
 - Improved Tailscale integration
 - ADSBHub toggle button (matches other feeds)

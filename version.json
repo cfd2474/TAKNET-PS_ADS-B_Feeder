@@ -1,10 +1,10 @@
 {
-  "version": "2.52.9",
+  "version": "2.53.0",
   "release_date": "2026-02-14",
-  "release_name": "Private Tailscale F-String Fix",
+  "release_name": "UI Improvements",
   "download_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh",
   "changelog_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/CHANGELOG.md",
   "minimum_version": "2.40.0",
   "breaking_changes": false,
-  "release_notes": "Fixed Python f-string syntax error. Changed from f-string to regular string concatenation for shell command building to avoid hash symbol limitation in f-string expressions."
+  "release_notes": "Cosmetic improvements: Update confirmation now uses modal instead of browser popup. Dashboard system status reorganized to vertical layout with Network on top, Location below, and ultrafeeder core status as floating indicator at top right."
 }

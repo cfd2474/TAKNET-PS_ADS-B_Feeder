@@ -2023,6 +2023,29 @@
         </div>
     </div>
 
+    <!-- System Update Confirmation Modal -->
+    <div id="updateConfirmModal" class="modal" style="display: none;">
+        <div class="modal-content" style="max-width: 500px;">
+            <h2 style="margin-bottom: 15px; color: #f59e0b;">⚠️ Confirm System Update</h2>
+            <p style="color: #374151; margin-bottom: 20px; line-height: 1.6;">
+                Are you sure you want to update TAKNET-PS?
+            </p>
+            <div style="padding: 15px; background: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 6px; margin-bottom: 20px;">
+                <p style="margin: 0; font-size: 0.9em; color: #92400e; line-height: 1.6;">
+                    <strong>What will happen:</strong><br>
+                    • Your configuration will be preserved<br>
+                    • Services will restart briefly<br>
+                    • Update may take a few minutes<br>
+                    • Do not close or refresh the page
+                </p>
+            </div>
+            <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                <button onclick="closeUpdateConfirmModal()" class="btn" style="background: #6b7280;">Cancel</button>
+                <button onclick="confirmUpdate()" class="btn" style="background: #f59e0b;">Update Now</button>
+            </div>
+        </div>
+    </div>
+
     <!-- System Update Progress Modal -->
     <div id="updateProgressModal" class="modal" style="display: none;">
         <div class="modal-content" style="max-width: 700px; width: 90%;">
@@ -2937,11 +2960,26 @@
         }
 
         async function startUpdate() {
-            if (!confirm('Are you sure you want to update TAKNET-PS?\n\nYour current configuration will be preserved, but services will restart. This may take a few minutes.')) {
-                return;
-            }
+            // Show confirmation modal instead of browser confirm
+            showUpdateConfirmModal();
+        }
+        
+        function showUpdateConfirmModal() {
+            const modal = document.getElementById('updateConfirmModal');
+            modal.style.display = 'flex';
+            document.body.classList.add('modal-open');
+        }
+        
+        function closeUpdateConfirmModal() {
+            const modal = document.getElementById('updateConfirmModal');
+            modal.style.display = 'none';
+            document.body.classList.remove('modal-open');
+        }
+        
+        async function confirmUpdate() {
+            closeUpdateConfirmModal();
 
-            // Show modal and lock UI
+            // Show progress modal and lock UI
             const modal = document.getElementById('updateProgressModal');
             const modalLog = document.getElementById('updateModalLog');
             const statusText = document.getElementById('updateStatusText');
