@@ -133,12 +133,10 @@ fi
 
 echo "Total devices detected: $TOTAL_COUNT" >&2
 
-# Start JSON
-cat > "$OUTPUT" << EOF
-{
-  "count": $TOTAL_COUNT,
-  "devices": [
-EOF
+# Start JSON - use echo instead of cat
+echo "{" > "$OUTPUT"
+echo "  \"count\": $TOTAL_COUNT," >> "$OUTPUT"
+echo "  \"devices\": [" >> "$OUTPUT"
 
 # Add each device to JSON
 for idx in "${!ALL_DEVICES[@]}"; do
@@ -156,32 +154,29 @@ for idx in "${!ALL_DEVICES[@]}"; do
         SUPPORTS_978="true"
     fi
     
-    cat >> "$OUTPUT" << DEVICE_EOF
-    {
-      "index": $idx,
-      "name": "$DEVICE_NAME",
-      "type": "$DEVICE_TYPE",
-      "serial": "$SERIAL",
-      "device_path": "$PATH",
-      "suggested_use": "$USE",
-      "suggested_gain": "autogain",
-      "supports_1090": $SUPPORTS_1090,
-      "supports_978": $SUPPORTS_978
-    }
-DEVICE_EOF
+    # Build device JSON using echo
+    echo "    {" >> "$OUTPUT"
+    echo "      \"index\": $idx," >> "$OUTPUT"
+    echo "      \"name\": \"$DEVICE_NAME\"," >> "$OUTPUT"
+    echo "      \"type\": \"$DEVICE_TYPE\"," >> "$OUTPUT"
+    echo "      \"serial\": \"$SERIAL\"," >> "$OUTPUT"
+    echo "      \"device_path\": \"$PATH\"," >> "$OUTPUT"
+    echo "      \"suggested_use\": \"$USE\"," >> "$OUTPUT"
+    echo "      \"suggested_gain\": \"autogain\"," >> "$OUTPUT"
+    echo "      \"supports_1090\": $SUPPORTS_1090," >> "$OUTPUT"
+    echo "      \"supports_978\": $SUPPORTS_978" >> "$OUTPUT"
     
     # Add comma if not last device
     if [ $idx -lt $((TOTAL_COUNT - 1)) ]; then
-        echo "," >> "$OUTPUT"
+        echo "    }," >> "$OUTPUT"
+    else
+        echo "    }" >> "$OUTPUT"
     fi
 done
 
 # Close JSON
-cat >> "$OUTPUT" << 'EOF'
-
-  ]
-}
-EOF
+echo "  ]" >> "$OUTPUT"
+echo "}" >> "$OUTPUT"
 
 # Output JSON
 cat "$OUTPUT"

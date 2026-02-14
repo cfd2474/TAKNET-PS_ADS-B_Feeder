@@ -3,7 +3,7 @@
 **Tactical Awareness Kit Network - Public Safety**  
 **For Enhanced Tracking**
 
-**Current Version: 2.50.0**
+**Current Version: 2.51.0**
 
 A comprehensive ADS-B aircraft tracking solution designed for distributed deployment with centralized aggregation. Built for public safety, emergency services, and aviation tracking networks.
 
@@ -42,6 +42,11 @@ TAKNET-PS is an independently developed project focused on delivering free, low-
 - Quality outdoor antenna with proper mounting
 - Ethernet connection (more stable than WiFi)
 - Power supply (5V/3A USB-C for Pi 4)
+
+**Optional 978 MHz UAT (US Only):**
+- Second RTL-SDR dongle (for 978 MHz)
+- **OR** FTDI-based Stratux UATRadio (978 MHz only)
+- 978 MHz antenna (for general aviation tracking)
 
 ### Software
 
@@ -509,15 +514,17 @@ TAKNET-PS is an independently developed, free service providing low-latency ADS-
 
 ## 📝 Version Information
 
-**Current Version:** 2.47.35  
-**Release Date:** February 13, 2026  
+**Current Version:** 2.51.0  
+**Release Date:** February 14, 2026  
 **Minimum Version:** 2.40.0
 
-### Recent Improvements
+### Recent Improvements (v2.51.0)
 
-- TAKNET-PS shield logo on dashboard
-- Redesigned status section with color-coded panels
-- Statistics tab added to navigation
+- **Multi-SDR Hardware Support** - FTDI UATRadio detection alongside RTL-SDR
+- **Enhanced Setup Wizard** - Device type badges and hardware-specific constraints
+- **Smart Configuration** - Automatic driver selection (rtlsdr vs hackrf)
+- **Seamless Integration** - Mixed RTL-SDR + FTDI setups fully supported
+- Bug fixes for feeds-account-required page
 - Automated logo installation
 - Improved Tailscale integration
 - ADSBHub toggle button (matches other feeds)
