@@ -1,10 +1,10 @@
 {
-  "version": "2.51.9",
+  "version": "2.52.1",
   "release_date": "2026-02-14",
-  "release_name": "Private Tailscale Progress Modal",
+  "release_name": "Private Tailscale Status API Fixed",
   "download_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh",
   "changelog_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/CHANGELOG.md",
   "minimum_version": "2.40.0",
   "breaking_changes": false,
-  "release_notes": "CRITICAL FIX: Private Tailscale now uses dedicated progress modal identical to TAKNET-PS Tailscale. Shows real-time connection status during enable/disable/retry operations. Modal displays spinner, status updates, and success/failure messages. Polls connection status every second with 60-second timeout. Prevents user confusion by providing clear visual feedback during connection process. Modal locks screen until operation completes. Matches professional UX of main Tailscale connection flow."
+  "release_notes": "CRITICAL FIX: Private Tailscale status API now returns 'running' field that JavaScript polling checks for. Previously API returned 'enabled' and 'connected' but JavaScript checked 'data.running', causing false 'container failed to start' errors after 10 seconds even when container was starting successfully. Added comprehensive debug logging throughout enable process. Config rebuild now fails fast with clear error message if it fails. Status detection now properly distinguishes between container not started vs container starting vs container running."
 }

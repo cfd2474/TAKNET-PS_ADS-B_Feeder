@@ -2096,6 +2096,7 @@ def api_private_tailscale_status():
             return jsonify({
                 'success': True,
                 'enabled': False,
+                'running': False,
                 'connected': False,
                 'message': 'Private Tailscale is disabled'
             })
@@ -2108,15 +2109,18 @@ def api_private_tailscale_status():
             timeout=5
         )
         
-        if result.returncode != 0 or not result.stdout.strip():
+        container_running = result.returncode == 0 and result.stdout.strip() != ''
+        
+        if not container_running:
             return jsonify({
                 'success': True,
                 'enabled': True,
+                'running': False,
                 'connected': False,
                 'message': 'Container not running'
             })
         
-        # Get Tailscale status from container
+        # Container is running - get Tailscale status
         status_result = subprocess.run(
             ['docker', 'exec', 'tailscale-private', 'tailscale', 'status', '--json'],
             capture_output=True,
@@ -2137,14 +2141,17 @@ def api_private_tailscale_status():
                 return jsonify({
                     'success': True,
                     'enabled': True,
+                    'running': True,
                     'connected': True,
                     'ip': ip,
                     'hostname': hostname
                 })
         
+        # Container running but not connected yet
         return jsonify({
             'success': True,
             'enabled': True,
+            'running': True,
             'connected': False,
             'message': 'Not connected'
         })
@@ -2154,6 +2161,7 @@ def api_private_tailscale_status():
         return jsonify({
             'success': False,
             'enabled': False,
+            'running': False,
             'connected': False,
             'error': str(e)
         }), 500
@@ -2169,15 +2177,41 @@ def api_private_tailscale_enable():
         if not auth_key:
             return jsonify({'success': False, 'message': 'Auth key is required'}), 400
         
-        # Update environment
+        print(f"[Private Tailscale] Enabling with auth_key (first 20 chars): {auth_key[:20]}...")
+        if hostname:
+            print(f"[Private Tailscale] Custom hostname: {hostname}")
+        
+        # Update environment with correct variable names
         env = read_env()
         env['PRIVATE_TAILSCALE_ENABLED'] = 'true'
-        env['PRIVATE_TS_KEY'] = auth_key
+        env['PRIVATE_TAILSCALE_KEY'] = auth_key
         if hostname:
-            env['PRIVATE_TS_HOSTNAME'] = hostname
+            env['PRIVATE_TAILSCALE_HOSTNAME'] = hostname
         write_env(env)
+        print("[Private Tailscale] Environment variables saved to .env")
+        
+        # Rebuild docker-compose to include updated env vars
+        print("[Private Tailscale] Rebuilding docker-compose...")
+        rebuild_result = subprocess.run(
+            ['python3', '/opt/adsb/scripts/config_builder.py'],
+            capture_output=True,
+            text=True,
+            timeout=10
+        )
+        
+        if rebuild_result.returncode != 0:
+            print(f"[Private Tailscale] ⚠ Config rebuild error (returncode {rebuild_result.returncode}):")
+            print(f"  stdout: {rebuild_result.stdout}")
+            print(f"  stderr: {rebuild_result.stderr}")
+            return jsonify({
+                'success': False,
+                'message': f'Config rebuild failed: {rebuild_result.stderr}'
+            }), 500
+        else:
+            print("[Private Tailscale] ✓ Docker-compose rebuilt successfully")
         
         # Start Private Tailscale container with profile
+        print("[Private Tailscale] Starting container with docker compose...")
         result = subprocess.run(
             ['docker', 'compose', '--profile', 'private-tailscale', 'up', '-d', 'tailscale-private'],
             cwd='/opt/adsb/config',
@@ -2186,14 +2220,20 @@ def api_private_tailscale_enable():
             timeout=30
         )
         
+        print(f"[Private Tailscale] Docker compose stdout: {result.stdout}")
+        if result.stderr:
+            print(f"[Private Tailscale] Docker compose stderr: {result.stderr}")
+        
         if result.returncode != 0:
             return jsonify({
                 'success': False,
                 'message': f'Failed to start container: {result.stderr}'
             }), 500
         
+        print("[Private Tailscale] ✓ Container start command completed successfully")
+        
         # Wait for container to get IP (up to 10 seconds)
-        print("Waiting for Private Tailscale to connect...")
+        print("[Private Tailscale] Waiting for Tailscale connection...")
         for i in range(20):
             time.sleep(0.5)
             check_result = subprocess.run(
@@ -2206,13 +2246,13 @@ def api_private_tailscale_enable():
                 try:
                     status_data = json.loads(check_result.stdout)
                     if status_data.get('BackendState') == 'Running':
-                        print("✓ Private Tailscale connected")
+                        print("[Private Tailscale] ✓ Connected to Tailscale network")
                         break
                 except:
                     pass
         
         # Configure SSH for dual Tailscale access
-        print("Configuring SSH for dual Tailscale access...")
+        print("[Private Tailscale] Configuring SSH for dual Tailscale access...")
         ssh_result = subprocess.run(
             ['/opt/adsb/configure-ssh-dual-tailscale.sh'],
             capture_output=True,
@@ -2221,10 +2261,9 @@ def api_private_tailscale_enable():
         )
         
         if ssh_result.returncode == 0:
-            print("✓ SSH configured for both Tailscale networks")
-            print(ssh_result.stdout)
+            print("[Private Tailscale] ✓ SSH configured for both Tailscale networks")
         else:
-            print(f"⚠ SSH configuration warning: {ssh_result.stderr}")
+            print(f"[Private Tailscale] ⚠ SSH configuration warning: {ssh_result.stderr}")
             # Don't fail - container is running, SSH config is optional
         
         return jsonify({
@@ -2233,7 +2272,7 @@ def api_private_tailscale_enable():
         })
             
     except Exception as e:
-        print(f"Error enabling Private Tailscale: {e}")
+        print(f"[Private Tailscale] ERROR: {e}")
         import traceback
         traceback.print_exc()
         return jsonify({'success': False, 'message': str(e)}), 500

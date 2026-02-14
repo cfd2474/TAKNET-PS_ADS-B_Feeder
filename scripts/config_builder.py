@@ -355,17 +355,21 @@ def build_private_tailscale_service(env_vars):
     Build private Tailscale service for agency-specific networks
     This is a containerized Tailscale instance separate from the native TAKNET-PS connection
     """
+    # Get hostname from env or use default
+    hostname = env_vars.get('PRIVATE_TAILSCALE_HOSTNAME', 'taknet-ps-private')
+    
     service = {
         'image': 'tailscale/tailscale:latest',
         'container_name': 'tailscale-private',
-        'hostname': 'taknet-ps-private',
+        'hostname': hostname,
         'restart': 'unless-stopped',
         'networks': ['adsb_net'],
         'cap_add': ['NET_ADMIN', 'NET_RAW'],
         'environment': [
             'TS_AUTHKEY=${PRIVATE_TAILSCALE_KEY:-}',
             'TS_STATE_DIR=/var/lib/tailscale',
-            'TS_USERSPACE=false'
+            'TS_USERSPACE=false',
+            f'TS_HOSTNAME={hostname}'
         ],
         'volumes': [
             '/opt/adsb/private-tailscale:/var/lib/tailscale',
