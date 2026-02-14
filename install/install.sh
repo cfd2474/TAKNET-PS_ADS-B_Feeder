@@ -1,5 +1,5 @@
 #!/bin/bash
-# TAKNET-PS-ADSB-Feeder One-Line Installer v2.49.3
+# TAKNET-PS-ADSB-Feeder One-Line Installer v2.50.0
 # curl -fsSL https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh | sudo bash
 
 set -e
@@ -42,7 +42,7 @@ fi
 if [ "$UPDATE_MODE" != true ]; then
     echo ""
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    echo "  TAKNET-PS-ADSB-Feeder Installer v2.49.3"
+    echo "  TAKNET-PS-ADSB-Feeder Installer v2.50.0"
     echo "  Ultrafeeder + TAKNET-PS + Web UI"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo ""
@@ -375,6 +375,10 @@ echo "  - config_builder.py..."
 wget -q $REPO/scripts/config_builder.py -O /opt/adsb/scripts/config_builder.py
 chmod +x /opt/adsb/scripts/config_builder.py
 
+echo "  - detect-all-sdrs.sh..."
+wget -q $REPO/scripts/detect-all-sdrs.sh -O /opt/adsb/scripts/detect-all-sdrs.sh
+chmod +x /opt/adsb/scripts/detect-all-sdrs.sh
+
 echo "  - updater.sh..."
 wget -q $REPO/scripts/updater.sh -O /opt/adsb/scripts/updater.sh
 chmod +x /opt/adsb/scripts/updater.sh
@@ -385,7 +389,7 @@ wget -q $REPO/version.json -O /opt/adsb/version.json 2>/dev/null || echo "  (ver
 
 # Download VERSION file
 echo "  - VERSION..."
-wget -q $REPO/VERSION -O /opt/adsb/VERSION 2>/dev/null || echo "2.49.3" > /opt/adsb/VERSION
+wget -q $REPO/VERSION -O /opt/adsb/VERSION 2>/dev/null || echo "2.50.0" > /opt/adsb/VERSION
 
 # Web UI files
 echo "Installing Web UI..."

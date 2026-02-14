@@ -2289,6 +2289,165 @@ def api_private_tailscale_disable():
         return jsonify({'success': False, 'message': str(e)}), 500
 
 # =============================================================
+# Multi-SDR Detection & Configuration API Endpoints
+# =============================================================
+
+@app.route('/api/sdrs/detect', methods=['GET'])
+def api_detect_sdrs():
+    """Detect all RTL-SDR devices"""
+    try:
+        result = subprocess.run(
+            ['/opt/adsb/scripts/detect-all-sdrs.sh'],
+            capture_output=True,
+            text=True,
+            timeout=15
+        )
+        
+        if result.returncode == 0:
+            try:
+                sdrs_data = json.loads(result.stdout)
+                return jsonify(sdrs_data)
+            except json.JSONDecodeError as e:
+                print(f"Error parsing SDR detection output: {e}")
+                print(f"Output was: {result.stdout}")
+                return jsonify({
+                    'count': 0,
+                    'devices': [],
+                    'error': 'Failed to parse detection output'
+                })
+        else:
+            print(f"SDR detection script failed: {result.stderr}")
+            return jsonify({
+                'count': 0,
+                'devices': [],
+                'error': result.stderr
+            })
+            
+    except subprocess.TimeoutExpired:
+        return jsonify({
+            'count': 0,
+            'devices': [],
+            'error': 'Detection timeout'
+        })
+    except Exception as e:
+        print(f"Error detecting SDRs: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({
+            'count': 0,
+            'devices': [],
+            'error': str(e)
+        })
+
+@app.route('/api/sdrs/configure', methods=['POST'])
+def api_configure_sdrs():
+    """Configure multiple SDRs based on user selections"""
+    try:
+        data = request.json
+        sdrs = data.get('sdrs', [])
+        
+        if not sdrs:
+            return jsonify({
+                'success': False,
+                'message': 'No SDR configuration provided'
+            }), 400
+        
+        env = read_env()
+        
+        # Reset SDR configuration
+        sdr_1090 = None
+        sdr_978 = None
+        
+        # Process each SDR
+        for sdr in sdrs:
+            index = sdr.get('index')
+            use = sdr.get('use')
+            gain = sdr.get('gain', 'autogain')
+            
+            if use == '1090':
+                if sdr_1090 is not None:
+                    return jsonify({
+                        'success': False,
+                        'message': 'Cannot assign multiple SDRs to 1090 MHz'
+                    }), 400
+                sdr_1090 = sdr
+                env['READSB_DEVICE'] = str(index)
+                env['READSB_GAIN'] = gain
+                print(f"✓ SDR {index} configured for 1090 MHz (gain: {gain})")
+                
+            elif use == '978':
+                if sdr_978 is not None:
+                    return jsonify({
+                        'success': False,
+                        'message': 'Cannot assign multiple SDRs to 978 MHz'
+                    }), 400
+                sdr_978 = sdr
+                env['DUMP978_ENABLED'] = 'true'
+                env['DUMP978_DEVICE'] = str(index)
+                env['DUMP978_GAIN'] = gain
+                print(f"✓ SDR {index} configured for 978 MHz (gain: {gain})")
+        
+        # Validate we have at least 1090 MHz
+        if sdr_1090 is None:
+            return jsonify({
+                'success': False,
+                'message': 'At least one SDR must be assigned to 1090 MHz'
+            }), 400
+        
+        # Disable 978 MHz if not configured
+        if sdr_978 is None:
+            env['DUMP978_ENABLED'] = 'false'
+            print("ℹ 978 MHz UAT disabled (no SDR assigned)")
+        
+        # Write environment
+        write_env(env)
+        
+        # Rebuild configuration
+        if rebuild_config():
+            return jsonify({
+                'success': True,
+                'message': 'SDR configuration saved',
+                'config': {
+                    '1090_mhz': sdr_1090 is not None,
+                    '978_mhz': sdr_978 is not None
+                }
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'message': 'Failed to rebuild configuration'
+            }), 500
+        
+    except Exception as e:
+        print(f"Error configuring SDRs: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({
+            'success': False,
+            'message': str(e)
+        }), 500
+
+@app.route('/api/sdrs/current-config', methods=['GET'])
+def api_get_current_sdr_config():
+    """Get current SDR configuration from environment"""
+    try:
+        env = read_env()
+        
+        config = {
+            'readsb_device': env.get('READSB_DEVICE', '0'),
+            'readsb_gain': env.get('READSB_GAIN', 'autogain'),
+            'dump978_enabled': env.get('DUMP978_ENABLED', 'false') == 'true',
+            'dump978_device': env.get('DUMP978_DEVICE', '1'),
+            'dump978_gain': env.get('DUMP978_GAIN', 'autogain')
+        }
+        
+        return jsonify(config)
+        
+    except Exception as e:
+        print(f"Error getting current SDR config: {e}")
+        return jsonify({}), 500
+
+# =============================================================
 # 978 MHz UAT / dump978 API Endpoints
 # =============================================================
 

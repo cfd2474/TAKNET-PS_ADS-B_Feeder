@@ -44,8 +44,40 @@
         </div>
 
         <div class="wizard">
+            <!-- Step 1: SDR Detection & Configuration -->
+            <div class="step active" id="step-sdr">
+                <h2>Step 1: RTL-SDR Configuration</h2>
+                <p>Configure your RTL-SDR receiver(s)</p>
+                
+                <div class="info-note" style="margin-bottom: 20px;">
+                    <p>📡 TAKNET-PS will automatically detect connected RTL-SDR dongles.</p>
+                    <p>If you have multiple SDRs, you can assign each to different frequencies.</p>
+                </div>
+                
+                <div style="margin-bottom: 20px;">
+                    <button type="button" onclick="detectSDRsInWizard()" class="btn btn-primary" id="detectSDRsBtn">
+                        🔍 Detect RTL-SDR Devices
+                    </button>
+                </div>
+                
+                <div id="sdr-detection-result" style="display: none; margin-bottom: 20px;">
+                    <div id="sdr-count-display" style="padding: 15px; background: #f0fdf4; border-left: 4px solid #22c55e; border-radius: 6px; margin-bottom: 15px;">
+                        <!-- Populated by JavaScript -->
+                    </div>
+                    
+                    <div id="sdr-config-list">
+                        <!-- Populated by JavaScript with SDR configuration cards -->
+                    </div>
+                </div>
+                
+                <div id="sdr-error-message" style="display: none; padding: 15px; background: #fee2e2; border-left: 4px solid #dc2626; border-radius: 6px; margin-bottom: 15px;">
+                    <strong>❌ No SDRs Detected</strong>
+                    <p id="sdr-error-text">Please connect at least one RTL-SDR dongle and try again.</p>
+                </div>
+            </div>
+
             <!-- Step 2: Location -->
-            <div class="step active" id="step1">
+            <div class="step" id="step1">
                 <h2>Step 2: Location</h2>
                 <p>Enter your receiver location</p>
                 
@@ -197,6 +229,9 @@
 
     <script src="/static/js/setup.js"></script>
     <script>
+        // Global variable to store detected SDRs
+        let detectedSDRs = [];
+        
         // Set timezone dropdown to current value
         document.addEventListener('DOMContentLoaded', function() {
             // Initialize offline mode detection
@@ -207,7 +242,192 @@
             if (currentTz) {
                 tzSelect.value = currentTz;
             }
+            
+            // Auto-detect SDRs on page load
+            detectSDRsInWizard();
         });
+        
+        // =============================================================
+        // SDR Detection Functions
+        // =============================================================
+        
+        async function detectSDRsInWizard() {
+            const btn = document.getElementById('detectSDRsBtn');
+            const resultDiv = document.getElementById('sdr-detection-result');
+            const errorDiv = document.getElementById('sdr-error-message');
+            const countDisplay = document.getElementById('sdr-count-display');
+            const configList = document.getElementById('sdr-config-list');
+            
+            // Show loading
+            btn.disabled = true;
+            btn.innerHTML = '⏳ Detecting...';
+            resultDiv.style.display = 'none';
+            errorDiv.style.display = 'none';
+            
+            try {
+                const response = await fetch('/api/sdrs/detect');
+                const data = await response.json();
+                
+                if (data.count === 0) {
+                    // No SDRs found
+                    errorDiv.style.display = 'block';
+                    document.getElementById('sdr-error-text').textContent = 
+                        data.error || 'No RTL-SDR devices detected. Please connect at least one RTL-SDR dongle and try again.';
+                    btn.innerHTML = '🔍 Retry Detection';
+                    btn.disabled = false;
+                    return;
+                }
+                
+                // Store detected SDRs
+                detectedSDRs = data.devices;
+                
+                // Show count
+                countDisplay.innerHTML = `
+                    <strong>✅ Found ${data.count} RTL-SDR Device${data.count > 1 ? 's' : ''}</strong>
+                    <p style="margin-top: 5px; color: #059669;">Configure each device below:</p>
+                `;
+                
+                // Build configuration cards
+                configList.innerHTML = '';
+                data.devices.forEach((sdr, idx) => {
+                    const card = document.createElement('div');
+                    card.className = 'sdr-config-card';
+                    card.style.cssText = 'padding: 15px; border: 2px solid #e5e7eb; border-radius: 8px; margin-bottom: 15px; background: #f9fafb;';
+                    
+                    card.innerHTML = `
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                            <h3 style="margin: 0;">SDR #${sdr.index}</h3>
+                            <span style="font-size: 0.9em; color: #6b7280;">Serial: ${sdr.serial}</span>
+                        </div>
+                        
+                        <div class="form-group" style="margin-bottom: 10px;">
+                            <label style="font-weight: 600;">Use For:</label>
+                            <select id="sdr_${sdr.index}_use" class="form-control" onchange="updateSDRConfig(${sdr.index})">
+                                <option value="1090" ${sdr.suggested_use === '1090' ? 'selected' : ''}>
+                                    1090 MHz (ADS-B - Commercial Aircraft)
+                                </option>
+                                <option value="978" ${sdr.suggested_use === '978' ? 'selected' : ''}>
+                                    978 MHz (UAT - General Aviation, US Only)
+                                </option>
+                                <option value="disabled" ${sdr.suggested_use === 'disabled' ? 'selected' : ''}>
+                                    Disabled
+                                </option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label style="font-weight: 600;">Gain:</label>
+                            <select id="sdr_${sdr.index}_gain" class="form-control">
+                                <option value="autogain" selected>Auto Gain (Recommended)</option>
+                                <option value="20">20 dB</option>
+                                <option value="22">22 dB</option>
+                                <option value="25">25 dB</option>
+                                <option value="28">28 dB</option>
+                                <option value="30">30 dB</option>
+                                <option value="35">35 dB</option>
+                                <option value="40">40 dB</option>
+                            </select>
+                        </div>
+                        
+                        ${idx === 0 ? '<p style="margin-top: 10px; color: #059669; font-size: 0.9em;">✓ Primary SDR (required)</p>' : ''}
+                        ${idx === 1 && sdr.suggested_use === '978' ? '<p style="margin-top: 10px; color: #2563eb; font-size: 0.9em;">ℹ️ 978 MHz UAT is only useful in the United States</p>' : ''}
+                    `;
+                    
+                    configList.appendChild(card);
+                });
+                
+                // Show result
+                resultDiv.style.display = 'block';
+                btn.innerHTML = '✅ SDRs Detected';
+                btn.disabled = false;
+                
+            } catch (error) {
+                console.error('Error detecting SDRs:', error);
+                errorDiv.style.display = 'block';
+                document.getElementById('sdr-error-text').textContent = 
+                    'Error detecting SDRs: ' + error.message;
+                btn.innerHTML = '🔍 Retry Detection';
+                btn.disabled = false;
+            }
+        }
+        
+        function updateSDRConfig(index) {
+            // Could add validation here if needed
+            console.log(`SDR ${index} configuration updated`);
+        }
+        
+        function getSDRConfiguration() {
+            // Gather all SDR configurations
+            const sdrs = [];
+            detectedSDRs.forEach(sdr => {
+                const use = document.getElementById(`sdr_${sdr.index}_use`).value;
+                const gain = document.getElementById(`sdr_${sdr.index}_gain`).value;
+                
+                sdrs.push({
+                    index: sdr.index,
+                    serial: sdr.serial,
+                    use: use,
+                    gain: gain
+                });
+            });
+            return sdrs;
+        }
+        
+        // =============================================================
+        // Original Setup Functions (modified to include SDR config)
+        // =============================================================
+        
+        // Store original submitSetup function if it exists
+        if (typeof submitSetup !== 'undefined') {
+            window.originalSubmitSetup = submitSetup;
+        }
+        
+        // Override submitSetup to include SDR configuration
+        async function submitSetup(event) {
+            event.preventDefault();
+            
+            // Validate SDR configuration
+            if (detectedSDRs.length === 0) {
+                alert('Please detect RTL-SDR devices first');
+                return;
+            }
+            
+            const sdrConfig = getSDRConfiguration();
+            const has1090 = sdrConfig.some(sdr => sdr.use === '1090');
+            
+            if (!has1090) {
+                alert('At least one SDR must be configured for 1090 MHz');
+                return;
+            }
+            
+            // Save SDR configuration first
+            try {
+                const sdrResponse = await fetch('/api/sdrs/configure', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ sdrs: sdrConfig })
+                });
+                
+                const sdrResult = await sdrResponse.json();
+                
+                if (!sdrResult.success) {
+                    alert('Failed to save SDR configuration: ' + sdrResult.message);
+                    return;
+                }
+                
+                console.log('✓ SDR configuration saved');
+                
+            } catch (error) {
+                console.error('Error saving SDR configuration:', error);
+                alert('Error saving SDR configuration: ' + error.message);
+                return;
+            }
+            
+            // Continue with original setup submission
+            if (typeof window.originalSubmitSetup === 'function') {
+                window.originalSubmitSetup(event);
+            }
+        }
     </script>
 
 </body>
