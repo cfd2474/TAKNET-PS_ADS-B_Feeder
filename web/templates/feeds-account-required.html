@@ -689,8 +689,7 @@
         // Smart setup - detects email or key automatically
         async function setupFR24() {
             const input = document.getElementById('fr24-key-or-email').value.trim();
-            const setupBtn = document.getElementById('setup-fr24-btn');
-            const setupText = document.getElementById('setup-fr24-text');
+            const toggleBtn = document.getElementById('fr24-toggle-btn');
             const resultDiv = document.getElementById('fr24-result');
             
             if (!input) {
@@ -704,9 +703,15 @@
             // Smart detection: contains @ = email, otherwise = key
             const isEmail = input.includes('@');
             
-            // Disable button and hide old result div
-            setupBtn.disabled = true;
-            resultDiv.style.display = 'none';
+            // Disable toggle button during setup
+            if (toggleBtn) {
+                toggleBtn.disabled = true;
+            }
+            
+            // Hide old result div if exists
+            if (resultDiv) {
+                resultDiv.style.display = 'none';
+            }
             
             try {
                 if (isEmail) {
@@ -736,6 +741,11 @@
                         updateStatusModal(errorMessage, 'error');
                         setTimeout(() => hideStatusModal(), 3000);
                         
+                        // Re-enable toggle button
+                        if (toggleBtn) {
+                            toggleBtn.disabled = false;
+                        }
+                        
                         // Keep field editable for manual key entry
                         document.getElementById('fr24-key-or-email').disabled = false;
                         document.getElementById('fr24-key-or-email').focus();
@@ -749,17 +759,21 @@
                 updateStatusModal(`Error: ${error.message}`, 'error');
                 setTimeout(() => hideStatusModal(), 2000);
             } finally {
-                setupBtn.disabled = false;
-                setupText.textContent = 'Save & Enable FR24';
+                // Re-enable toggle button
+                if (toggleBtn) {
+                    toggleBtn.disabled = false;
+                }
             }
         }
         
         // Helper function to setup with a key
         async function setupWithKey(sharingKey) {
-            const setupBtn = document.getElementById('setup-fr24-btn');
-            const setupText = document.getElementById('setup-fr24-text');
+            const toggleBtn = document.getElementById('fr24-toggle-btn');
             
-            setupBtn.disabled = true;
+            if (toggleBtn) {
+                toggleBtn.disabled = true;
+            }
+            
             showStatusModal('Starting FR24 feed...');
             
             try {
@@ -773,9 +787,9 @@
                 
                 if (data.success) {
                     updateStatusModal('FR24 feed enabled successfully!', 'success');
-                    document.getElementById('fr24-status').textContent = 'Active';
-                    document.getElementById('fr24-status').className = 'feed-status-badge status-active';
-                    document.getElementById('fr24-enabled').checked = true;
+                    
+                    // Update status after successful setup
+                    await checkFR24Status();
                     
                     // Auto-dismiss after 2 seconds
                     setTimeout(() => hideStatusModal(), 2000);
@@ -787,8 +801,10 @@
                 updateStatusModal(`Error: ${error.message}`, 'error');
                 setTimeout(() => hideStatusModal(), 2000);
             } finally {
-                setupBtn.disabled = false;
-                setupText.textContent = 'Save & Enable FR24';
+                // Re-enable toggle button
+                if (toggleBtn) {
+                    toggleBtn.disabled = false;
+                }
             }
         }
         
@@ -1214,8 +1230,10 @@
             const stationKey = document.getElementById('adsbhub-station-key').value.trim();
             const setupBtn = document.getElementById('setup-adsbhub-btn');
             
-            // Enable button only if key is entered
-            setupBtn.disabled = !stationKey;
+            // Enable button only if key is entered and button exists
+            if (setupBtn) {
+                setupBtn.disabled = !stationKey;
+            }
         }
         
         async function setupADSBHub() {
@@ -1233,8 +1251,12 @@
             }
             
             // Disable button and hide old result div
-            setupBtn.disabled = true;
-            resultDiv.style.display = 'none';
+            if (setupBtn) {
+                setupBtn.disabled = true;
+            }
+            if (resultDiv) {
+                resultDiv.style.display = 'none';
+            }
             
             try {
                 showStatusModal('Configuring ADSBHub feed...');
@@ -1275,8 +1297,12 @@
                 updateStatusModal(`Error: ${error.message}`, 'error');
                 setTimeout(() => hideStatusModal(), 2000);
             } finally {
-                setupBtn.disabled = false;
-                setupText.textContent = 'Save & Enable ADSBHub';
+                if (setupBtn) {
+                    setupBtn.disabled = false;
+                }
+                if (setupText) {
+                    setupText.textContent = 'Save & Enable ADSBHub';
+                }
             }
         }
         
