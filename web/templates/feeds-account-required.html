@@ -903,30 +903,37 @@
             const statusText = document.getElementById('piaware-status-text');
             const toggleBtn = document.getElementById('piaware-toggle-btn');
             const toggleText = document.getElementById('piaware-toggle-text');
+            const keyInput = document.getElementById('piaware-feeder-id');
             
             // Determine current state
             const isEnabled = statusText.textContent === 'Enabled';
             
-            // Disable button during operation
+            // If enabling, check for Feeder ID in input field
+            if (!isEnabled) {
+                const inputValue = keyInput.value.trim();
+                
+                // If input has value OR is empty (for generation), call setupPiaware
+                // setupPiaware handles both cases: existing ID or generate new
+                return await setupPiaware();
+            }
+            
+            // Disabling - proceed with toggle
             toggleBtn.disabled = true;
-            toggleText.textContent = isEnabled ? '⏳ Disabling...' : '⏳ Enabling...';
+            toggleText.textContent = '⏳ Disabling...';
             
-            const statusTextAction = isEnabled ? 'disabling' : 'enabling';
-            const statusTextPast = isEnabled ? 'disabled' : 'enabled';
-            
-            showStatusModal(`${statusTextAction.charAt(0).toUpperCase() + statusTextAction.slice(1)} FlightAware feed...`);
+            showStatusModal('Disabling FlightAware feed...');
             
             try {
                 const response = await fetch('/api/feeds/piaware/toggle', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ enabled: !isEnabled })
+                    body: JSON.stringify({ enabled: false })
                 });
                 
                 const data = await response.json();
                 
                 if (data.success) {
-                    updateStatusModal(`FlightAware feed ${statusTextPast} successfully`, 'success');
+                    updateStatusModal('FlightAware feed disabled successfully', 'success');
                     
                     // Refresh status
                     await checkPiawareStatus();
@@ -936,7 +943,7 @@
                         hideStatusModal();
                     }, 1500);
                 } else {
-                    updateStatusModal(`Failed to ${statusTextAction} FlightAware feed: ${data.message}`, 'error');
+                    updateStatusModal(`Failed to disable FlightAware feed: ${data.message}`, 'error');
                     
                     // Re-enable button
                     toggleBtn.disabled = false;
@@ -947,7 +954,7 @@
                     }, 2000);
                 }
             } catch (error) {
-                updateStatusModal(`Error ${statusTextAction} FlightAware feed: ${error.message}`, 'error');
+                updateStatusModal(`Error disabling FlightAware feed: ${error.message}`, 'error');
                 
                 // Re-enable button
                 toggleBtn.disabled = false;
