@@ -2336,9 +2336,46 @@ def api_dump978_status():
 def api_dump978_enable():
     """Enable 978 MHz UAT via dump978 container"""
     try:
-        # Update environment
+        # Check if docker-compose.yml has dump978 service (upgrade detection)
+        compose_file = '/opt/adsb/config/docker-compose.yml'
+        needs_update = False
+        
+        try:
+            with open(compose_file, 'r') as f:
+                compose_content = f.read()
+                if 'dump978:' not in compose_content:
+                    print("⚠ docker-compose.yml missing dump978 service - upgrading from older version")
+                    needs_update = True
+        except Exception as e:
+            print(f"Error reading docker-compose.yml: {e}")
+            return jsonify({
+                'success': False,
+                'message': 'Failed to read docker-compose.yml'
+            }), 500
+        
+        # If upgrading, download latest docker-compose.yml
+        if needs_update:
+            print("→ Updating docker-compose.yml with dump978 service...")
+            try:
+                import urllib.request
+                url = 'https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/config/docker-compose.yml'
+                urllib.request.urlretrieve(url, compose_file)
+                print("✓ docker-compose.yml updated")
+            except Exception as e:
+                print(f"Error downloading docker-compose.yml: {e}")
+                return jsonify({
+                    'success': False,
+                    'message': f'Failed to update docker-compose.yml: {str(e)}'
+                }), 500
+        
+        # Update environment with all dump978 variables
         env = read_env()
         env['DUMP978_ENABLED'] = 'true'
+        # Add dump978 vars if they don't exist (upgrade from older version)
+        if 'DUMP978_DEVICE' not in env:
+            env['DUMP978_DEVICE'] = '1'
+        if 'DUMP978_GAIN' not in env:
+            env['DUMP978_GAIN'] = 'autogain'
         write_env(env)
         
         # Rebuild configuration with UAT connector
