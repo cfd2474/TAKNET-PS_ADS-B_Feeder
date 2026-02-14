@@ -607,9 +607,27 @@
             const statusText = document.getElementById('fr24-status-text');
             const toggleBtn = document.getElementById('fr24-toggle-btn');
             const toggleText = document.getElementById('fr24-toggle-text');
+            const keyInput = document.getElementById('fr24-key-or-email');
             
             // Determine current state
             const isEnabled = statusText.textContent === 'Enabled';
+            
+            // If enabling, check if we have a key in the input field
+            if (!isEnabled) {
+                const inputValue = keyInput.value.trim();
+                
+                // If input has value, we need to save it first
+                if (inputValue) {
+                    // Call setupFR24 instead which will save the key
+                    return await setupFR24();
+                }
+                
+                // No key in input and no key saved - need a key
+                showStatusModal('Please enter your FR24 sharing key');
+                updateStatusModal('Please enter your FlightRadar24 sharing key in the field above', 'error');
+                setTimeout(() => hideStatusModal(), 3000);
+                return;
+            }
             
             // Disable button during operation
             toggleBtn.disabled = true;
