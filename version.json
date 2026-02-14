@@ -1,10 +1,10 @@
 {
-  "version": "2.52.8",
+  "version": "2.52.9",
   "release_date": "2026-02-14",
-  "release_name": "Private Tailscale Docker Escape Fix",
+  "release_name": "Private Tailscale F-String Fix",
   "download_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh",
   "changelog_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/CHANGELOG.md",
   "minimum_version": "2.40.0",
   "breaking_changes": false,
-  "release_notes": "Fixed docker-compose variable interpolation error. Escaped dollar signs in command with $$ so docker-compose doesn't try to interpolate shell variables. Now $$TS_AUTHKEY becomes $TS_AUTHKEY in container."
+  "release_notes": "Fixed Python f-string syntax error. Changed from f-string to regular string concatenation for shell command building to avoid hash symbol limitation in f-string expressions."
 }

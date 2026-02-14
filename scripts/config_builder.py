@@ -367,6 +367,19 @@ def build_private_tailscale_service(env_vars):
     else:
         print(f"[INFO] Building Private Tailscale with key: {auth_key[:20]}...")
     
+    # Build command as regular string to avoid f-string expression limitations
+    cmd = (
+        'echo "Auth key length: $${#TS_AUTHKEY}" && '
+        'echo "TS_AUTHKEY starts with: $${TS_AUTHKEY:0:20}" && '
+        'tailscaled --state=/var/lib/tailscale/tailscaled.state --socket=/var/run/tailscale/tailscaled.sock & '
+        'sleep 2 && '
+        'tailscale --socket=/var/run/tailscale/tailscaled.sock up '
+        '--authkey="$$TS_AUTHKEY" '
+        f'--hostname="{hostname}" '
+        '--accept-routes=false && '
+        'wait'
+    )
+    
     service = {
         'image': 'tailscale/tailscale:latest',
         'container_name': 'tailscale-private',
@@ -381,19 +394,7 @@ def build_private_tailscale_service(env_vars):
             f'TS_HOSTNAME={hostname}',
             'TS_ACCEPT_DNS=false'
         ],
-        'command': [
-            'sh', '-c',
-            # Use $$ to escape $ for docker-compose, becomes $ in container
-            f'echo "Auth key length: $$$${#TS_AUTHKEY}" && '
-            f'echo "TS_AUTHKEY starts with: $$$${TS_AUTHKEY:0:20}" && '
-            f'tailscaled --state=/var/lib/tailscale/tailscaled.state --socket=/var/run/tailscale/tailscaled.sock & '
-            f'sleep 2 && '
-            f'tailscale --socket=/var/run/tailscale/tailscaled.sock up '
-            f'--authkey="$$TS_AUTHKEY" '
-            f'--hostname="{hostname}" '
-            f'--accept-routes=false && '
-            f'wait'
-        ],
+        'command': ['sh', '-c', cmd],
         'volumes': [
             '/opt/adsb/private-tailscale:/var/lib/tailscale',
             '/dev/net/tun:/dev/net/tun'
