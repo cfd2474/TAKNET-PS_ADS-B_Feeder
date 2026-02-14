@@ -1037,9 +1037,9 @@
                     
                     if (data.success) {
                         updateStatusModal('FlightAware feed enabled successfully!', 'success');
-                        document.getElementById('piaware-status').textContent = 'Active';
-                        document.getElementById('piaware-status').className = 'feed-status-badge status-active';
-                        document.getElementById('piaware-enabled').checked = true;
+                        
+                        // Refresh status to update UI
+                        await checkPiawareStatus();
                         
                         // Auto-dismiss after 2 seconds
                         setTimeout(() => hideStatusModal(), 2000);
@@ -1279,15 +1279,11 @@
                 const data = await response.json();
                 
                 if (data.success) {
-                    // Update status badge
-                    document.getElementById('adsbhub-status').textContent = 'Active';
-                    document.getElementById('adsbhub-status').className = 'feed-status-badge status-active';
-                    
-                    // Update checkbox
-                    document.getElementById('adsbhub-enabled').checked = true;
-                    
                     // Show success in modal
                     updateStatusModal('ADSBHub feed enabled successfully!', 'success');
+                    
+                    // Refresh status to update UI
+                    await checkADSBHubStatus();
                     
                     // Auto-dismiss after 2 seconds
                     setTimeout(() => {
