@@ -375,7 +375,7 @@
                     
                     <div class="form-group">
                         <label>Hostname (Optional)</label>
-                        <input type="text" id="private_ts_hostname" placeholder="agency-feeder-1">
+                        <input type="text" id="private_ts_hostname">
                         <small style="color: #666; display: block; margin-top: 5px;">
                             Custom hostname for this device on your Tailscale network (leave blank to use feeder name)
                         </small>
@@ -2023,6 +2023,64 @@
         </div>
     </div>
 
+    <!-- System Update Progress Modal -->
+    <div id="updateProgressModal" class="modal" style="display: none;">
+        <div class="modal-content" style="max-width: 700px; width: 90%;">
+            <h2 style="margin-bottom: 10px;">🔄 System Update in Progress</h2>
+            <p style="color: #6b7280; margin-bottom: 20px;">Please wait while TAKNET-PS updates. Do not close this window or navigate away.</p>
+            
+            <!-- Update Status -->
+            <div style="padding: 15px; background: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 6px; margin-bottom: 20px;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <div id="updateSpinner" style="width: 20px; height: 20px; border: 3px solid #f59e0b; border-top-color: transparent; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+                    <strong id="updateStatusText" style="color: #92400e;">Initializing update...</strong>
+                </div>
+            </div>
+            
+            <!-- Live Update Log -->
+            <div style="margin-bottom: 20px;">
+                <label style="font-weight: 600; display: block; margin-bottom: 8px; color: #374151;">Update Log:</label>
+                <div id="updateModalLog" style="
+                    background: #1a1a1a;
+                    color: #e5e7eb;
+                    padding: 15px;
+                    border-radius: 8px;
+                    font-family: 'Courier New', monospace;
+                    font-size: 0.85em;
+                    max-height: 300px;
+                    overflow-y: auto;
+                    line-height: 1.6;
+                    white-space: pre-wrap;
+                    word-wrap: break-word;
+                ">Starting update process...
+</div>
+            </div>
+            
+            <!-- Warning -->
+            <div style="padding: 12px; background: #fee2e2; border-left: 4px solid #dc2626; border-radius: 6px;">
+                <p style="margin: 0; font-size: 0.9em; color: #7f1d1d;">
+                    ⚠️ <strong>Important:</strong> Do not close this window or refresh the page. The update will automatically complete and reload the interface when finished.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        /* Prevent body scroll when modal is open */
+        body.modal-open {
+            overflow: hidden;
+        }
+        
+        /* Modal overlay blocks all clicks */
+        .modal {
+            pointer-events: all;
+        }
+    </style>
+
     <script>
         // Service Progress Modal Functions
         function showServiceProgressModal(serviceName) {
@@ -2834,25 +2892,15 @@
                 return;
             }
 
-            const updateBtn = document.getElementById('update-btn');
-            const checkBtn = document.getElementById('check-update-btn');
-            const updateProgress = document.getElementById('update-progress');
-            const updateLog = document.getElementById('update-log');
-
-            // Disable buttons and change text
-            updateBtn.disabled = true;
-            updateBtn.textContent = '⏳ Updating...';
-            updateBtn.style.opacity = '0.5';
-            updateBtn.style.cursor = 'not-allowed';
+            // Show modal and lock UI
+            const modal = document.getElementById('updateProgressModal');
+            const modalLog = document.getElementById('updateModalLog');
+            const statusText = document.getElementById('updateStatusText');
             
-            checkBtn.disabled = true;
-            checkBtn.textContent = '⏳ Updating...';
-            checkBtn.style.opacity = '0.5';
-            checkBtn.style.cursor = 'not-allowed';
-
-            // Show progress
-            updateProgress.style.display = 'block';
-            updateLog.textContent = 'Starting update process...\n';
+            modal.style.display = 'flex';
+            document.body.classList.add('modal-open');
+            modalLog.textContent = 'Starting update process...\n';
+            statusText.textContent = 'Initializing update...';
 
             try {
                 const response = await fetch('/api/system/update', {
@@ -2862,46 +2910,144 @@
                 const data = await response.json();
 
                 if (data.success) {
-                    updateLog.textContent += 'Update initiated successfully!\n';
-                    updateLog.textContent += 'Downloading latest version...\n\n';
+                    modalLog.textContent += 'Update initiated successfully!\n';
+                    modalLog.textContent += 'Downloading latest version...\n\n';
+                    statusText.textContent = 'Downloading update...';
 
-                    // Poll for update status
-                    pollUpdateStatus();
+                    // Poll for update status in modal
+                    pollUpdateStatusModal();
                 } else {
-                    updateLog.textContent += `\nERROR: ${data.message}\n`;
+                    modalLog.textContent += `\nERROR: ${data.message}\n`;
+                    statusText.textContent = 'Update failed';
                     
-                    // Re-enable buttons
-                    updateBtn.disabled = false;
-                    updateBtn.textContent = '⬆️ Update Now';
-                    updateBtn.style.opacity = '1';
-                    updateBtn.style.cursor = 'pointer';
-                    
-                    checkBtn.disabled = false;
-                    checkBtn.textContent = '🔍 Check for Updates';
-                    checkBtn.style.opacity = '1';
-                    checkBtn.style.cursor = 'pointer';
+                    // Allow closing modal on error
+                    setTimeout(() => {
+                        if (confirm('Update failed. Close this window?')) {
+                            modal.style.display = 'none';
+                            document.body.classList.remove('modal-open');
+                        }
+                    }, 2000);
                 }
 
             } catch (error) {
                 console.error('Error starting update:', error);
-                updateLog.textContent += `\nERROR: ${error.message}\n`;
+                modalLog.textContent += `\nERROR: ${error.message}\n`;
+                statusText.textContent = 'Update failed';
                 
-                // Re-enable buttons
-                updateBtn.disabled = false;
-                updateBtn.textContent = '⬆️ Update Now';
-                updateBtn.style.opacity = '1';
-                updateBtn.style.cursor = 'pointer';
-                
-                checkBtn.disabled = false;
-                checkBtn.textContent = '🔍 Check for Updates';
-                checkBtn.style.opacity = '1';
-                checkBtn.style.cursor = 'pointer';
+                // Allow closing modal on error
+                setTimeout(() => {
+                    if (confirm('Update failed. Close this window?')) {
+                        modal.style.display = 'none';
+                        document.body.classList.remove('modal-open');
+                    }
+                }, 2000);
             }
         }
 
         let updatePollInterval = null;
         let noChangeCount = 0;
         let lastLogLength = 0;
+
+        async function pollUpdateStatusModal() {
+            const modalLog = document.getElementById('updateModalLog');
+            const statusText = document.getElementById('updateStatusText');
+
+            // Clear any existing interval
+            if (updatePollInterval) {
+                clearInterval(updatePollInterval);
+            }
+
+            updatePollInterval = setInterval(async () => {
+                try {
+                    const response = await fetch('/api/system/update/status');
+                    const data = await response.json();
+
+                    if (data.success && data.log) {
+                        modalLog.textContent = data.log;
+
+                        // Auto-scroll to bottom
+                        modalLog.scrollTop = modalLog.scrollHeight;
+                        
+                        // Update status text
+                        if (data.is_updating) {
+                            statusText.textContent = 'Update in progress...';
+                        } else {
+                            statusText.textContent = 'Finalizing update...';
+                        }
+
+                        // Check if update is complete (log not changing and no lock file)
+                        if (data.log.length === lastLogLength) {
+                            noChangeCount++;
+                        } else {
+                            noChangeCount = 0;
+                            lastLogLength = data.log.length;
+                        }
+
+                        // If no changes for 5 polls (10 seconds) and not updating, assume complete
+                        if (!data.is_updating && noChangeCount >= 5) {
+                            clearInterval(updatePollInterval);
+                            statusText.textContent = 'Update complete! Restarting...';
+                            modalLog.textContent += '\n\n✅ Update complete! Web interface restarting...';
+                            modalLog.textContent += '\n⏳ Waiting for service to restart (this may take 10-20 seconds)...';
+                            
+                            // Wait for web service to restart, then hard refresh
+                            setTimeout(() => {
+                                waitForServiceAndReloadModal();
+                            }, 5000); // Wait 5 seconds for service to start restarting
+                        }
+                    }
+
+                } catch (error) {
+                    console.error('Error polling update status:', error);
+                    // Don't stop polling on error, might be temporary
+                }
+
+            }, 2000); // Poll every 2 seconds
+        }
+        
+        async function waitForServiceAndReloadModal() {
+            const modalLog = document.getElementById('updateModalLog');
+            const statusText = document.getElementById('updateStatusText');
+            let attempts = 0;
+            const maxAttempts = 15; // Try for 30 seconds (15 * 2 seconds)
+            
+            statusText.textContent = 'Waiting for service to restart...';
+            
+            const checkService = setInterval(async () => {
+                attempts++;
+                
+                try {
+                    // Try to fetch a simple endpoint to check if service is up
+                    const response = await fetch('/api/system/version', {
+                        method: 'GET',
+                        cache: 'no-cache'
+                    });
+                    
+                    if (response.ok) {
+                        // Service is back up - do hard refresh
+                        clearInterval(checkService);
+                        statusText.textContent = 'Service restored! Reloading...';
+                        modalLog.textContent += '\n\n🔄 Service restored! Refreshing page now...';
+                        
+                        setTimeout(() => {
+                            // Hard refresh - clears cache
+                            location.reload(true);
+                        }, 1000);
+                    }
+                } catch (error) {
+                    // Service not ready yet
+                    if (attempts >= maxAttempts) {
+                        clearInterval(checkService);
+                        statusText.textContent = 'Service taking longer than expected';
+                        modalLog.textContent += '\n\n⚠️ Service taking longer than expected.';
+                        modalLog.textContent += '\n🔄 Please refresh this page manually in a few seconds.';
+                    } else {
+                        modalLog.textContent += '.';
+                        modalLog.scrollTop = modalLog.scrollHeight;
+                    }
+                }
+            }, 2000); // Check every 2 seconds
+        }
 
         async function pollUpdateStatus() {
             const updateLog = document.getElementById('update-log');

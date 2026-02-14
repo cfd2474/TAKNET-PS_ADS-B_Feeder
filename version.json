@@ -1,10 +1,10 @@
 {
-  "version": "2.51.7",
+  "version": "2.51.8",
   "release_date": "2026-02-14",
-  "release_name": "Private Tailscale Service Fixed",
+  "release_name": "Update Modal & Private Tailscale Polish",
   "download_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh",
   "changelog_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/CHANGELOG.md",
   "minimum_version": "2.40.0",
   "breaking_changes": false,
-  "release_notes": "BUG FIX: Added missing private Tailscale service to docker-compose generation. Created build_private_tailscale_service function for agency-specific network isolation. Private Tailscale service now properly included with private-tailscale profile. Service enables multi-agency deployments where different agencies can manage hardware via their own secure networks while feeding to central TAKNET-PS aggregator. Complete dual Tailscale architecture now functional."
+  "release_notes": "UX IMPROVEMENTS: Added modal popup for system updates that locks user on screen with live progress log until update completes. Prevents navigation away during critical updates. Removed placeholder text from Private Tailscale hostname field for cleaner appearance. Update process now shows real-time status in dedicated modal with spinner, live log scrolling, and automatic reload when complete. Professional update experience with clear progress indication."
 }
