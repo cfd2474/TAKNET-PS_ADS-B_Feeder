@@ -1,10 +1,10 @@
 {
-  "version": "2.53.0",
+  "version": "2.53.1",
   "release_date": "2026-02-14",
-  "release_name": "UI Improvements",
+  "release_name": "FR24 Fix",
   "download_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh",
   "changelog_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/CHANGELOG.md",
   "minimum_version": "2.40.0",
   "breaking_changes": false,
-  "release_notes": "Cosmetic improvements: Update confirmation now uses modal instead of browser popup. Dashboard system status reorganized to vertical layout with Network on top, Location below, and ultrafeeder core status as floating indicator at top right."
+  "release_notes": "Fixed FR24 container issues. Force container recreation when enabling/setup to ensure clean start. Added diagnostics API endpoint to troubleshoot FR24 container status and logs."
 }

@@ -1171,6 +1171,12 @@ def api_fr24_setup():
                 'message': f'.env file not found at: {env_file}\n\nPlease run the installer to create the .env file.'
             })
         
+        # Force down first to ensure clean start
+        subprocess.run(
+            ['docker', 'compose', '-f', compose_file, 'down', 'fr24'],
+            capture_output=True, text=True, timeout=30
+        )
+        
         result = subprocess.run(
             ['docker', 'compose', '-f', compose_file, '--env-file', env_file, 'up', '-d', 'fr24'],
             capture_output=True, text=True, timeout=60
@@ -1370,6 +1376,56 @@ def api_fr24_status():
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)})
 
+@app.route('/api/feeds/fr24/diagnostics', methods=['GET'])
+def api_fr24_diagnostics():
+    """Get FR24 container status and logs for troubleshooting"""
+    try:
+        # Check if container exists and is running
+        inspect = subprocess.run(
+            ['docker', 'inspect', 'fr24'],
+            capture_output=True, text=True
+        )
+        
+        if inspect.returncode != 0:
+            return jsonify({
+                'success': True,
+                'running': False,
+                'message': 'FR24 container not found. Enable FR24 first.',
+                'logs': ''
+            })
+        
+        # Get container status
+        status = subprocess.run(
+            ['docker', 'inspect', '--format={{.State.Status}}', 'fr24'],
+            capture_output=True, text=True
+        ).stdout.strip()
+        
+        # Get last 100 lines of logs
+        logs = subprocess.run(
+            ['docker', 'logs', '--tail', '100', 'fr24'],
+            capture_output=True, text=True
+        )
+        
+        # Get environment variables to check FR24KEY
+        env_check = subprocess.run(
+            ['docker', 'inspect', '--format={{range .Config.Env}}{{println .}}{{end}}', 'fr24'],
+            capture_output=True, text=True
+        )
+        
+        has_key = 'FR24KEY=' in env_check.stdout and 'FR24KEY=' not in env_check.stdout.replace('FR24KEY=\n', '')
+        
+        return jsonify({
+            'success': True,
+            'running': status == 'running',
+            'status': status,
+            'has_key': has_key,
+            'logs': logs.stdout + logs.stderr,
+            'message': f'Container status: {status}'
+        })
+        
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)})
+
 @app.route('/api/feeds/fr24/toggle', methods=['POST'])
 def api_fr24_toggle():
     """Toggle FR24 feed enabled/disabled"""
@@ -1399,6 +1455,12 @@ def api_fr24_toggle():
         
         # Start or stop FR24 container using docker compose
         if enabled:
+            # Force down first to ensure clean start
+            subprocess.run(
+                ['docker', 'compose', '-f', compose_file, 'down', 'fr24'],
+                capture_output=True, text=True, timeout=30
+            )
+            
             result = subprocess.run(
                 ['docker', 'compose', '-f', compose_file, '--env-file', env_file, 'up', '-d', 'fr24'],
                 capture_output=True, text=True, timeout=60
