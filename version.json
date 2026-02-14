@@ -1,10 +1,10 @@
 {
-  "version": "2.51.4",
+  "version": "2.51.5",
   "release_date": "2026-02-14",
-  "release_name": "Multi-SDR Hardware Support (Settings Page Fixed)",
+  "release_name": "Enhanced Gain Controls & UX Improvements",
   "download_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh",
   "changelog_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/CHANGELOG.md",
   "minimum_version": "2.40.0",
   "breaking_changes": false,
-  "release_notes": "BUG FIXES: Settings page now uses enhanced detection showing FTDI devices. Configuration saves correctly with proper gain values. Settings displays device type badges matching wizard. FTDI constraints enforced in modal (978 only, auto gain). All SDR configuration now unified between wizard and settings pages. Complete multi-SDR support throughout entire interface."
+  "release_notes": "UX IMPROVEMENTS: Simplified gain settings to 5 levels (Low 20dB, Medium-Low 27dB, Medium 34dB, Medium-High 41dB, High 48dB) plus Auto Gain. Added clear FTDI autogain notice in Settings modal explaining hardware limitations. Added 'Disabled' option for SDRs in both wizard and settings. Improved user experience with intuitive gain selection and better documentation of FTDI constraints."
 }

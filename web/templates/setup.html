@@ -375,13 +375,11 @@
                             <label style="font-weight: 600;">Gain:</label>
                             <select id="sdr_${sdr.index}_gain" class="form-control" ${gainDisabled}>
                                 <option value="autogain" selected>Auto Gain ${sdr.type === 'ftdi' ? '(Hardware Managed)' : '(Recommended)'}</option>
-                                <option value="20">20 dB</option>
-                                <option value="22">22 dB</option>
-                                <option value="25">25 dB</option>
-                                <option value="28">28 dB</option>
-                                <option value="30">30 dB</option>
-                                <option value="35">35 dB</option>
-                                <option value="40">40 dB</option>
+                                <option value="20">20 dB (Low)</option>
+                                <option value="27">27 dB (Medium-Low)</option>
+                                <option value="34">34 dB (Medium)</option>
+                                <option value="41">41 dB (Medium-High)</option>
+                                <option value="48">48 dB (High)</option>
                             </select>
                             ${gainNote}
                         </div>

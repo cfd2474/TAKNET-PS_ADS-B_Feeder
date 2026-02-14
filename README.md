@@ -3,7 +3,7 @@
 **Tactical Awareness Kit Network - Public Safety**  
 **For Enhanced Tracking**
 
-**Current Version: 2.51.4**
+**Current Version: 2.51.5**
 
 A comprehensive ADS-B aircraft tracking solution designed for distributed deployment with centralized aggregation. Built for public safety, emergency services, and aviation tracking networks.
 
@@ -514,19 +514,17 @@ TAKNET-PS is an independently developed, free service providing low-latency ADS-
 
 ## 📝 Version Information
 
-**Current Version:** 2.51.4  
+**Current Version:** 2.51.5  
 **Release Date:** February 14, 2026  
 **Minimum Version:** 2.40.0
 
-### Recent Improvements (v2.51.4)
+### Recent Improvements (v2.51.5)
 
-- **Bug Fix:** Settings page now shows FTDI devices and correct gain values
-- **Bug Fix:** Settings page uses enhanced detection (RTL-SDR + FTDI)
-- **Enhancement:** Device type badges in Settings match setup wizard
-- **Bug Fix:** Configuration saves properly with all device types
-- **Bug Fix:** Setup wizard navigation button added (v2.51.3)
-- **Bug Fix:** Detection script external commands removed (v2.51.2)
-- **Multi-SDR Hardware Support** - Complete FTDI UATRadio integration
+- **Enhanced Gain Controls** - Simplified to 5 intuitive levels (Low to High) plus Auto
+- **FTDI UX** - Clear notice in Settings modal explaining autogain is hardcoded
+- **Disabled Option** - SDRs can now be set to "Disabled" in both wizard and settings
+- **Better Documentation** - Improved clarity on FTDI hardware limitations
+- **Complete Multi-SDR Support** - Full RTL-SDR + FTDI integration throughout
 - Automated logo installation
 - Improved Tailscale integration
 - ADSBHub toggle button (matches other feeds)

@@ -1561,18 +1561,23 @@
                 useForSelect.innerHTML += '<option value="978">978 MHz (UAT)</option>';
             }
             
+            // Add Disabled option
+            useForSelect.innerHTML += '<option value="disabled">Disabled</option>';
+            
             useForSelect.value = device.useFor || '';
             
             // Gain control
-            const gainInput = document.getElementById('sdrModalGain');
+            const gainSelect = document.getElementById('sdrModalGain');
+            const ftdiNotice = document.getElementById('sdrModalFtdiNotice');
+            
             if (device.type === 'ftdi') {
-                gainInput.value = 'autogain';
-                gainInput.disabled = true;
-                gainInput.placeholder = 'Hardware Managed';
+                gainSelect.value = 'autogain';
+                gainSelect.disabled = true;
+                ftdiNotice.style.display = 'block';  // Show FTDI notice
             } else {
-                gainInput.value = device.gain || 'autogain';
-                gainInput.disabled = false;
-                gainInput.placeholder = 'autogain';
+                gainSelect.value = device.gain || 'autogain';
+                gainSelect.disabled = false;
+                ftdiNotice.style.display = 'none';  // Hide FTDI notice
             }
             
             // Bias tee
@@ -1599,18 +1604,13 @@
                 return;
             }
             
-            if (gain && gain !== 'autogain' && gain !== 'auto') {
-                const gainNum = parseFloat(gain);
-                if (isNaN(gainNum) || gainNum < 0 || gainNum > 50) {
-                    alert('Gain must be between 0 and 50, or "autogain"');
-                    return;
-                }
-            }
+            // Gain validation simplified - dropdown only allows valid values
+            const finalGain = gain === 'auto' ? 'autogain' : gain;
             
             // Update local device
             sdrDevices[currentSDRIndex].use = useFor;
             sdrDevices[currentSDRIndex].useFor = useFor;
-            sdrDevices[currentSDRIndex].gain = gain === 'auto' ? 'autogain' : gain;
+            sdrDevices[currentSDRIndex].gain = finalGain;
             sdrDevices[currentSDRIndex].biastee = biastee;
             
             // Build configuration in format expected by /api/sdrs/configure
@@ -1773,9 +1773,24 @@
             
             <div class="form-group">
                 <label>Gain</label>
-                <input type="text" id="sdrModalGain" placeholder="autogain" value="autogain">
-                <p style="margin: 5px 0 0 0; color: #6b7280; font-size: 0.85em;">
-                    Enter a value between 0 and 50, or 'autogain' (recommended)
+                <select id="sdrModalGain">
+                    <option value="autogain">Auto Gain (Recommended)</option>
+                    <option value="20">20 dB (Low)</option>
+                    <option value="27">27 dB (Medium-Low)</option>
+                    <option value="34">34 dB (Medium)</option>
+                    <option value="41">41 dB (Medium-High)</option>
+                    <option value="48">48 dB (High)</option>
+                </select>
+                <p id="sdrModalGainHelp" style="margin: 5px 0 0 0; color: #6b7280; font-size: 0.85em;">
+                    Select gain level or use auto gain (recommended)
+                </p>
+            </div>
+            
+            <!-- FTDI Autogain Notice -->
+            <div id="sdrModalFtdiNotice" style="display: none; padding: 12px; background: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 6px; margin-bottom: 15px;">
+                <p style="margin: 0; font-size: 0.9em; color: #92400e;">
+                    <strong>ℹ️ FTDI UATRadio</strong><br>
+                    Gain is hardcoded to autogain by the hardware and cannot be changed. The device automatically manages optimal gain levels.
                 </p>
             </div>
             
