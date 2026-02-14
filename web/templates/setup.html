@@ -384,6 +384,16 @@
                             ${gainNote}
                         </div>
                         
+                        <div class="form-group" style="margin-top: 15px; margin-bottom: 0;">
+                            <label style="display: flex; align-items: center; cursor: pointer; user-select: none; font-weight: 600;">
+                                <input type="checkbox" id="sdr_${sdr.index}_biastee" style="margin-right: 10px; width: 18px; height: 18px; cursor: pointer;">
+                                <span>Enable Bias Tee</span>
+                            </label>
+                            <p style="margin: 5px 0 0 0; color: #6b7280; font-size: 0.85em;">
+                                Only enable if you have an LNA that requires bias tee power
+                            </p>
+                        </div>
+                        
                         ${idx === 0 ? '<p style="margin-top: 10px; color: #059669; font-size: 0.9em;">✓ Primary SDR</p>' : ''}
                         ${ftdiWarning}
                     `;
@@ -467,14 +477,16 @@
             detectedSDRs.forEach(sdr => {
                 const use = document.getElementById(`sdr_${sdr.index}_use`).value;
                 const gain = document.getElementById(`sdr_${sdr.index}_gain`).value;
+                const biastee = document.getElementById(`sdr_${sdr.index}_biastee`).checked;
                 
                 sdrs.push({
                     index: sdr.index,
                     serial: sdr.serial,
                     use: use,
                     gain: gain,
-                    type: sdr.type || 'rtlsdr',  // NEW: device type
-                    device_path: sdr.device_path || sdr.index.toString()  // NEW: device path
+                    biastee: biastee,  // NEW: bias tee
+                    type: sdr.type || 'rtlsdr',
+                    device_path: sdr.device_path || sdr.index.toString()
                 });
             });
             return sdrs;

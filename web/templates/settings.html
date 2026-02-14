@@ -1752,10 +1752,10 @@
     
     <!-- SDR Configuration Modal -->
     <div id="sdrConfigModal" class="modal" style="display: none;">
-        <div class="modal-content" style="max-width: 500px;">
+        <div class="modal-content" style="max-width: 600px; width: 90%;">
             <h3>Configure SDR Device</h3>
             
-            <div style="background: #f9fafb; padding: 12px; border-radius: 6px; margin-bottom: 20px; font-size: 0.9em; color: #6b7280;">
+            <div style="background: #f9fafb; padding: 12px; border-radius: 6px; margin-bottom: 20px; font-size: 0.9em; color: #6b7280; word-wrap: break-word;">
                 <strong>Device:</strong> <span id="sdrModalDeviceInfo"></span>
             </div>
             
@@ -1787,8 +1787,8 @@
             </div>
             
             <!-- FTDI Autogain Notice -->
-            <div id="sdrModalFtdiNotice" style="display: none; padding: 12px; background: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 6px; margin-bottom: 15px;">
-                <p style="margin: 0; font-size: 0.9em; color: #92400e;">
+            <div id="sdrModalFtdiNotice" style="display: none; padding: 15px; background: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 6px; margin-bottom: 15px; word-wrap: break-word; overflow-wrap: break-word;">
+                <p style="margin: 0; font-size: 0.9em; color: #92400e; line-height: 1.5;">
                     <strong>ℹ️ FTDI UATRadio</strong><br>
                     Gain is hardcoded to autogain by the hardware and cannot be changed. The device automatically manages optimal gain levels.
                 </p>
@@ -1804,11 +1804,11 @@
                 </p>
             </div>
             
-            <div style="display: flex; gap: 10px; margin-top: 25px;">
-                <button class="btn btn-primary" onclick="saveSDRDeviceConfig()">
+            <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 25px;">
+                <button class="btn btn-primary" onclick="saveSDRDeviceConfig()" style="flex: 1; min-width: 150px;">
                     💾 Save Configuration
                 </button>
-                <button class="btn btn-secondary" onclick="closeSDRConfigModal()">
+                <button class="btn btn-secondary" onclick="closeSDRConfigModal()" style="flex: 1; min-width: 100px;">
                     Cancel
                 </button>
             </div>

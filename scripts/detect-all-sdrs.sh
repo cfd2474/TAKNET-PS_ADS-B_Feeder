@@ -35,7 +35,12 @@ if command -v rtl_test &> /dev/null; then
         
         for i in $(seq 0 $((RTL_COUNT-1))); do
             # Get serial number
-            SERIAL=$(rtl_eeprom -d $i 2>&1 | grep "Serial number" | awk '{print $NF}' || echo "rtlsdr_$i")
+            SERIAL=$(rtl_eeprom -d $i 2>&1 | grep "Serial number" | awk '{print $NF}' || echo "")
+            
+            # If no serial or empty, set to N/A
+            if [ -z "$SERIAL" ] || [ "$SERIAL" = "00000000" ] || [[ "$SERIAL" == rtlsdr_* ]]; then
+                SERIAL="N/A"
+            fi
             
             # Suggest use based on serial
             USE="disabled"
@@ -81,7 +86,12 @@ if command -v lsusb &> /dev/null; then
             BUS=$(echo "$line" | awk '{print $2}')
             DEV=$(echo "$line" | awk '{print $4}' | tr -d ':')
             
-            SERIAL=$(lsusb -v -s ${BUS}:${DEV} 2>/dev/null | grep "iSerial" | awk '{print $3}' || echo "uatradio_0")
+            SERIAL=$(lsusb -v -s ${BUS}:${DEV} 2>/dev/null | grep "iSerial" | awk '{print $3}' || echo "")
+            
+            # If no serial or empty, set to N/A
+            if [ -z "$SERIAL" ] || [[ "$SERIAL" == uatradio_* ]]; then
+                SERIAL="N/A"
+            fi
             
             # Find the /dev/serial/by-id path for this device
             DEV_PATH=""

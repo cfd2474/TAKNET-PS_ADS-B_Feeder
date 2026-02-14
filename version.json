@@ -1,10 +1,10 @@
 {
-  "version": "2.51.5",
+  "version": "2.51.6",
   "release_date": "2026-02-14",
-  "release_name": "Enhanced Gain Controls & UX Improvements",
+  "release_name": "Modal Layout & Serial Display Fixed",
   "download_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh",
   "changelog_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/CHANGELOG.md",
   "minimum_version": "2.40.0",
   "breaking_changes": false,
-  "release_notes": "UX IMPROVEMENTS: Simplified gain settings to 5 levels (Low 20dB, Medium-Low 27dB, Medium 34dB, Medium-High 41dB, High 48dB) plus Auto Gain. Added clear FTDI autogain notice in Settings modal explaining hardware limitations. Added 'Disabled' option for SDRs in both wizard and settings. Improved user experience with intuitive gain selection and better documentation of FTDI constraints."
+  "release_notes": "BUG FIXES: Modal width increased to 600px with proper text wrapping to prevent content spillage. Button layout uses flex-wrap to prevent boundary overflow on small screens. Bias tee checkbox added to wizard SDR configuration. Serial number detection improved - shows 'N/A' for both RTL-SDR and FTDI when serial cannot be detected. All modal content now fits properly within boundaries."
 }
