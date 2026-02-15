@@ -29,6 +29,37 @@
                 <img src="/static/taknet-ps_shield.png" alt="TAKNET-PS" style="max-width: 300px; height: auto;">
             </div>
 
+            <!-- Update Available Banner -->
+            {% if update_available %}
+            <div style="padding: 15px 20px; background: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 8px; margin-bottom: 25px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <span style="font-size: 1.5em;">🔔</span>
+                    <div style="flex: 1;">
+                        <p style="margin: 0 0 5px 0; font-weight: 600; color: #92400e; font-size: 1.05em;">
+                            System Update Available
+                        </p>
+                        <p style="margin: 0; color: #78350f; font-size: 0.9em;">
+                            Version {{ latest_version }} is now available. Current version: {{ version }}
+                        </p>
+                    </div>
+                    <a href="/settings" style="text-decoration: none;">
+                        <button style="
+                            padding: 10px 20px;
+                            background: #f59e0b;
+                            color: white;
+                            border: none;
+                            border-radius: 6px;
+                            font-weight: 600;
+                            cursor: pointer;
+                            transition: background 0.2s;
+                        " onmouseover="this.style.background='#d97706'" onmouseout="this.style.background='#f59e0b'">
+                            Go to Settings →
+                        </button>
+                    </a>
+                </div>
+            </div>
+            {% endif %}
+
             <!-- Floating Core Status Indicator (Top Right) -->
             <div style="position: fixed; top: 20px; right: 20px; z-index: 100; background: white; border-radius: 12px; padding: 15px 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); border-left: 4px solid #3b82f6;">
                 <div style="display: flex; align-items: center; gap: 10px;">

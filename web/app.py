@@ -1031,7 +1031,46 @@ def dashboard():
         'interface': connection_mode.get('interface', 'N/A')
     }
     
-    return render_template('dashboard.html', config=env, docker=docker_status, version=VERSION, taknet_status=taknet_status, feeder_uuid=feeder_uuid, network_info=network_info)
+    # Quick update check (non-blocking)
+    update_available = False
+    latest_version = None
+    try:
+        version_file = Path('/opt/adsb/VERSION')
+        current_version = version_file.read_text().strip() if version_file.exists() else 'unknown'
+        
+        if current_version != 'unknown':
+            import requests
+            repo_url = 'https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/version.json'
+            response = requests.get(repo_url, timeout=5)
+            
+            if response.status_code == 200:
+                latest_info = response.json()
+                latest_version = latest_info.get('version', 'unknown')
+                
+                # Parse and compare versions
+                current_parts = [int(x) for x in current_version.split('.')]
+                latest_parts = [int(x) for x in latest_version.split('.')]
+                
+                # Pad to same length
+                while len(current_parts) < len(latest_parts):
+                    current_parts.append(0)
+                while len(latest_parts) < len(current_parts):
+                    latest_parts.append(0)
+                
+                if latest_parts > current_parts:
+                    update_available = True
+    except:
+        pass  # Fail silently, update check is not critical for dashboard
+    
+    return render_template('dashboard.html', 
+                         config=env, 
+                         docker=docker_status, 
+                         version=VERSION, 
+                         taknet_status=taknet_status, 
+                         feeder_uuid=feeder_uuid, 
+                         network_info=network_info,
+                         update_available=update_available,
+                         latest_version=latest_version)
 
 @app.route('/logs')
 def logs():
