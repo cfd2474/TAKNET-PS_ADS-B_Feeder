@@ -57,21 +57,15 @@
                     <!-- Network Section -->
                     <tbody>
                         <tr style="background: #f9fafb;">
-                            <td colspan="2" style="padding: 8px 12px; font-weight: 600; color: #374151; border-left: 3px solid #f59e0b;">
+                            <td colspan="4" style="padding: 8px 12px; font-weight: 600; color: #374151; border-left: 3px solid #f59e0b;">
                                 🌐 Network
                             </td>
                         </tr>
                         <tr>
-                            <td style="padding: 6px 12px; color: #6b7280; width: 40%;">Machine</td>
-                            <td style="padding: 6px 12px; font-weight: 500; color: #374151;">{{ network_info.machine_name }}</td>
-                        </tr>
-                        <tr style="background: #fafafa;">
-                            <td style="padding: 6px 12px; color: #6b7280;">Hostname</td>
-                            <td style="padding: 6px 12px; font-weight: 500; color: #374151;">{{ network_info.hostname }}</td>
-                        </tr>
-                        <tr>
-                            <td style="padding: 6px 12px; color: #6b7280;">Connection</td>
-                            <td style="padding: 6px 12px; font-weight: 500;">
+                            <td style="padding: 6px 12px; color: #6b7280; width: 20%;">Machine</td>
+                            <td style="padding: 6px 12px; font-weight: 500; color: #374151; width: 30%;">{{ network_info.machine_name }}</td>
+                            <td style="padding: 6px 12px; color: #6b7280; width: 20%;">Connection</td>
+                            <td style="padding: 6px 12px; font-weight: 500; width: 30%;">
                                 {% if network_info.connection_mode == 'wifi' %}
                                     <span style="color: #3b82f6;">📶 WiFi</span>
                                 {% elif network_info.connection_mode == 'ethernet' %}
@@ -87,6 +81,8 @@
                             </td>
                         </tr>
                         <tr style="background: #fafafa;">
+                            <td style="padding: 6px 12px; color: #6b7280;">Hostname</td>
+                            <td style="padding: 6px 12px; font-weight: 500; color: #374151;">{{ network_info.hostname }}</td>
                             <td style="padding: 6px 12px; color: #6b7280;">Internet</td>
                             <td style="padding: 6px 12px;">
                                 <span id="internet-status" style="display: flex; align-items: center; gap: 6px;">
@@ -98,36 +94,21 @@
                         
                         <!-- Location Section -->
                         <tr style="background: #f9fafb;">
-                            <td colspan="2" style="padding: 8px 12px; font-weight: 600; color: #374151; border-left: 3px solid #10b981; border-top: 1px solid #e5e7eb;">
+                            <td colspan="4" style="padding: 8px 12px; font-weight: 600; color: #374151; border-left: 3px solid #10b981; border-top: 1px solid #e5e7eb;">
                                 📍 Location
                             </td>
                         </tr>
                         <tr>
                             <td style="padding: 6px 12px; color: #6b7280;">Latitude</td>
                             <td style="padding: 6px 12px; font-family: monospace; font-weight: 500; color: #374151;">{{ config.get('FEEDER_LAT', 'Not set') }}</td>
-                        </tr>
-                        <tr style="background: #fafafa;">
-                            <td style="padding: 6px 12px; color: #6b7280;">Longitude</td>
-                            <td style="padding: 6px 12px; font-family: monospace; font-weight: 500; color: #374151;">{{ config.get('FEEDER_LONG', 'Not set') }}</td>
-                        </tr>
-                        <tr>
                             <td style="padding: 6px 12px; color: #6b7280;">Altitude</td>
                             <td style="padding: 6px 12px; font-weight: 500; color: #374151;">{{ config.get('FEEDER_ALT_M', 'Not set') }}m</td>
                         </tr>
                         <tr style="background: #fafafa;">
+                            <td style="padding: 6px 12px; color: #6b7280;">Longitude</td>
+                            <td style="padding: 6px 12px; font-family: monospace; font-weight: 500; color: #374151;">{{ config.get('FEEDER_LONG', 'Not set') }}</td>
                             <td style="padding: 6px 12px; color: #6b7280;">Timezone</td>
                             <td style="padding: 6px 12px; font-weight: 500; color: #374151;">{{ config.get('FEEDER_TZ', 'UTC') }}</td>
-                        </tr>
-                        
-                        <!-- UUID Section -->
-                        <tr style="background: #f9fafb;">
-                            <td colspan="2" style="padding: 8px 12px; font-weight: 600; color: #374151; border-left: 3px solid #6b7280; border-top: 1px solid #e5e7eb;">
-                                🔑 Feeder Identification
-                            </td>
-                        </tr>
-                        <tr>
-                            <td style="padding: 6px 12px; color: #6b7280;">UUID</td>
-                            <td style="padding: 6px 12px; font-family: monospace; font-size: 0.85em; color: #374151; word-break: break-all;">{{ feeder_uuid }}</td>
                         </tr>
                     </tbody>
                 </table>

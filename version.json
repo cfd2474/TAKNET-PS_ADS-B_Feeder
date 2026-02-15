@@ -1,10 +1,10 @@
 {
-  "version": "2.53.16",
+  "version": "2.53.17",
   "release_date": "2026-02-14",
-  "release_name": "Update Modal Sizing Fix",
+  "release_name": "System Status 2-Column Layout",
   "download_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh",
   "changelog_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/CHANGELOG.md",
   "minimum_version": "2.40.0",
   "breaking_changes": false,
-  "release_notes": "Fixed update modal sizing issues. Added min-height: 500px for proper vertical size, increased log min-height to 250px, replaced individual margins with gap property for consistent spacing, preventing warning banner from overlapping logs."
+  "release_notes": "Reorganized system status table with 2-column layout per section. Network shows Machine/Hostname in left columns, Connection/Internet in right. Location shows Lat/Long in left, Altitude/Timezone in right. Removed UUID section entirely for cleaner presentation and better space efficiency."
 }
