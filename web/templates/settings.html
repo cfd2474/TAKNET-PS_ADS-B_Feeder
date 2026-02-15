@@ -3326,12 +3326,9 @@
             document.getElementById('private-ts-spinner').style.display = 'block';
             document.getElementById('private-ts-result').style.display = 'none';
             
-            // Reset logs
-            document.getElementById('private-ts-logs').textContent = 'Waiting for container to start...';
-            
             if (action === 'enable') {
                 document.getElementById('private-ts-progress-status-text').textContent = 'Enabling Private Tailscale...';
-                document.getElementById('private-ts-progress-status-detail').textContent = 'This may take 10-30 seconds';
+                document.getElementById('private-ts-progress-status-detail').textContent = 'This may take up to a minute';
             } else {
                 document.getElementById('private-ts-progress-status-text').textContent = 'Disabling Private Tailscale...';
                 document.getElementById('private-ts-progress-status-detail').textContent = 'Please wait...';
@@ -3423,9 +3420,6 @@
                     const response = await fetch('/api/private-tailscale/status');
                     const data = await response.json();
                     
-                    // Fetch and display logs
-                    fetchPrivateTailscaleLogs();
-                    
                     // Update UI based on status
                     if (data.running && data.connected) {
                         // Successfully connected
@@ -3491,24 +3485,6 @@
             const modal = document.getElementById('privateTailscaleProgressModal');
             modal.style.display = 'none';
             document.body.classList.remove('modal-open');
-        }
-        
-        async function fetchPrivateTailscaleLogs() {
-            try {
-                const response = await fetch('/api/private-tailscale/logs');
-                const data = await response.json();
-                
-                const logsDiv = document.getElementById('private-ts-logs');
-                if (data.success && data.logs) {
-                    logsDiv.textContent = data.logs;
-                    // Auto-scroll to bottom
-                    logsDiv.scrollTop = logsDiv.scrollHeight;
-                } else {
-                    logsDiv.textContent = data.logs || 'Waiting for container to start...';
-                }
-            } catch (error) {
-                console.error('Error fetching Private Tailscale logs:', error);
-            }
         }
     
     </script>

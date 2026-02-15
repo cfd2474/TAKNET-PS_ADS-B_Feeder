@@ -1,10 +1,10 @@
 {
-  "version": "2.53.20",
+  "version": "2.53.21",
   "release_date": "2026-02-14",
-  "release_name": "Dashboard Update Notification Banner",
+  "release_name": "Private Tailscale Enable Fix",
   "download_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh",
   "changelog_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/CHANGELOG.md",
   "minimum_version": "2.40.0",
   "breaking_changes": false,
-  "release_notes": "Added prominent update notification banner at top of dashboard. Yellow banner appears when system update is available, showing current and available versions with direct link to Settings page. Banner hidden when system is up-to-date. Dashboard now checks for updates on load (non-blocking, 5s timeout)."
+  "release_notes": "Fixed Private Tailscale enable button not working. Removed references to logs element that was removed in v2.53.19 when modal was cleaned up. Enable button now works properly."
 }
