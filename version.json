@@ -1,10 +1,10 @@
 {
-  "version": "2.53.11",
+  "version": "2.53.12",
   "release_date": "2026-02-14",
-  "release_name": "PiAware Config Rebuild Fix",
+  "release_name": "Restart Progress Completion Fix",
   "download_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh",
   "changelog_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/CHANGELOG.md",
   "minimum_version": "2.40.0",
   "breaking_changes": false,
-  "release_notes": "CRITICAL FIX: PiAware now rebuilds config when using existing Feeder ID. Previously only generated IDs triggered config rebuild, causing existing IDs to be ignored (variable substitution doesn't work). Now both paths rebuild config to write actual FEEDER_ID value into docker-compose.yml."
+  "release_notes": "Fixed ultrafeeder restart modal hanging. Progress monitor set status to descriptive messages but never 'complete'. JavaScript was checking status==='complete' which never happened. Now sets status='complete' when progress reaches 100%."
 }

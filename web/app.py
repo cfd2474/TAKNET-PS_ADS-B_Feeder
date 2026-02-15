@@ -403,7 +403,7 @@ def monitor_docker_progress(service_name='ultrafeeder'):
         )
         
         if 'ultrafeeder' in result.stdout:
-            update_progress(service_name, 100, 100, 'Setup complete!', 'All containers running ✓')
+            update_progress(service_name, 100, 100, 'complete', 'All containers running ✓')
         else:
             # Containers created but may still be initializing
             update_progress(service_name, 95, 100, 'Finalizing startup...', 'Please wait')
