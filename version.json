@@ -1,10 +1,10 @@
 {
-  "version": "2.53.18",
+  "version": "2.53.19",
   "release_date": "2026-02-14",
-  "release_name": "Private Tailscale Disable Timeout Fix",
+  "release_name": "Private Tailscale UX Improvements",
   "download_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh",
   "changelog_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/CHANGELOG.md",
   "minimum_version": "2.40.0",
   "breaking_changes": false,
-  "release_notes": "Fixed Private Tailscale disable timeout error. Increased graceful stop timeout from 10s to 30s, added fallback force kill if timeout occurs, preventing 500 errors when Tailscale takes longer to shut down."
+  "release_notes": "Private Tailscale UX improvements: Auto-generates hostname from machine/feeder name when left blank (same as primary Tailscale), updated modal timing note to 'up to a minute' for clearer expectations. Hostname field already labeled optional with helpful text."
 }

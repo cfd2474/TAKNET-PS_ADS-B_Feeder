@@ -2106,7 +2106,7 @@
 
     <!-- Private Tailscale Progress Modal -->
     <div id="privateTailscaleProgressModal" class="modal" style="display: none;">
-        <div class="modal-content" style="max-width: 700px; width: 90%;">
+        <div class="modal-content" style="max-width: 600px; width: 90%;">
             <h2 class="modal-header">🔗 Configuring Private Tailscale</h2>
             <div class="modal-body">
                 <div style="display: flex; align-items: center; justify-content: center; padding: 30px 20px;">
@@ -2122,23 +2122,11 @@
                     </div>
                 </div>
                 
-                <!-- Live Logs Section -->
-                <div style="margin-bottom: 20px;">
-                    <label style="font-weight: 600; display: block; margin-bottom: 8px; color: #374151;">Container Logs:</label>
-                    <div id="private-ts-logs" style="
-                        background: #1a1a1a;
-                        color: #e5e7eb;
-                        padding: 15px;
-                        border-radius: 8px;
-                        font-family: 'Courier New', monospace;
-                        font-size: 0.85em;
-                        max-height: 250px;
-                        overflow-y: auto;
-                        line-height: 1.6;
-                        white-space: pre-wrap;
-                        word-wrap: break-word;
-                    ">Waiting for container to start...
-</div>
+                <!-- Timing Note -->
+                <div style="padding: 12px; background: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 6px; margin-bottom: 20px;">
+                    <p style="margin: 0; font-size: 0.9em; color: #92400e;">
+                        ⏱️ <strong>Note:</strong> This may take up to a minute as the container connects to your Tailscale network.
+                    </p>
                 </div>
                 
                 <!-- Result message (hidden initially) -->

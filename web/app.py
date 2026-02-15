@@ -2307,21 +2307,26 @@ def api_private_tailscale_enable():
     try:
         data = request.json
         auth_key = data.get('auth_key')
-        hostname = data.get('hostname')
+        hostname = data.get('hostname', '').strip()
         
         if not auth_key:
             return jsonify({'success': False, 'message': 'Auth key is required'}), 400
         
         print(f"[Private Tailscale] Enabling with auth_key (first 20 chars): {auth_key[:20]}...")
-        if hostname:
+        
+        # Auto-generate hostname from machine name if not provided
+        if not hostname:
+            env = read_env()
+            hostname = env.get('MLAT_SITE_NAME', socket.gethostname())
+            print(f"[Private Tailscale] Auto-generated hostname from machine name: {hostname}")
+        else:
             print(f"[Private Tailscale] Custom hostname: {hostname}")
         
         # Update environment with correct variable names
         env = read_env()
         env['PRIVATE_TAILSCALE_ENABLED'] = 'true'
         env['PRIVATE_TAILSCALE_KEY'] = auth_key
-        if hostname:
-            env['PRIVATE_TAILSCALE_HOSTNAME'] = hostname
+        env['PRIVATE_TAILSCALE_HOSTNAME'] = hostname
         write_env(env)
         print("[Private Tailscale] Environment variables saved to .env")
         
