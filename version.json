@@ -1,10 +1,10 @@
 {
-  "version": "2.53.17",
+  "version": "2.53.18",
   "release_date": "2026-02-14",
-  "release_name": "System Status 2-Column Layout",
+  "release_name": "Private Tailscale Disable Timeout Fix",
   "download_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh",
   "changelog_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/CHANGELOG.md",
   "minimum_version": "2.40.0",
   "breaking_changes": false,
-  "release_notes": "Reorganized system status table with 2-column layout per section. Network shows Machine/Hostname in left columns, Connection/Internet in right. Location shows Lat/Long in left, Altitude/Timezone in right. Removed UUID section entirely for cleaner presentation and better space efficiency."
+  "release_notes": "Fixed Private Tailscale disable timeout error. Increased graceful stop timeout from 10s to 30s, added fallback force kill if timeout occurs, preventing 500 errors when Tailscale takes longer to shut down."
 }

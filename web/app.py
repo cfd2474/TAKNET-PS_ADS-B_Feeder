@@ -2437,14 +2437,25 @@ def api_private_tailscale_enable():
 def api_private_tailscale_disable():
     """Disable Private Tailscale"""
     try:
-        # Stop and remove container
-        subprocess.run(
-            ['docker', 'compose', 'stop', 'tailscale-private'],
-            cwd='/opt/adsb/config',
-            capture_output=True,
-            timeout=10
-        )
+        # Stop container (increase timeout - Tailscale can take time to shut down gracefully)
+        try:
+            subprocess.run(
+                ['docker', 'compose', 'stop', 'tailscale-private'],
+                cwd='/opt/adsb/config',
+                capture_output=True,
+                timeout=30
+            )
+        except subprocess.TimeoutExpired:
+            # If graceful stop times out, force kill it
+            print("⚠ Tailscale stop timed out, forcing removal...")
+            subprocess.run(
+                ['docker', 'compose', 'kill', 'tailscale-private'],
+                cwd='/opt/adsb/config',
+                capture_output=True,
+                timeout=10
+            )
         
+        # Remove container
         subprocess.run(
             ['docker', 'compose', 'rm', '-f', 'tailscale-private'],
             cwd='/opt/adsb/config',
