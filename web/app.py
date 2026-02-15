@@ -2346,7 +2346,7 @@ def api_private_tailscale_enable():
     try:
         data = request.json
         auth_key = data.get('auth_key')
-        hostname = data.get('hostname', '').strip()
+        hostname = (data.get('hostname') or '').strip()
         
         if not auth_key:
             return jsonify({'success': False, 'message': 'Auth key is required'}), 400
