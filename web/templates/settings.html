@@ -2048,12 +2048,12 @@
 
     <!-- System Update Progress Modal -->
     <div id="updateProgressModal" class="modal" style="display: none;">
-        <div class="modal-content" style="max-width: 700px; width: 90%; max-height: 90vh; display: flex; flex-direction: column;">
-            <h2 style="margin-bottom: 10px; flex-shrink: 0;">🔄 System Update in Progress</h2>
-            <p style="color: #6b7280; margin-bottom: 20px; flex-shrink: 0;">Please wait while TAKNET-PS updates. Do not close this window or navigate away.</p>
+        <div class="modal-content" style="max-width: 700px; width: 90%; min-height: 500px; max-height: 85vh; display: flex; flex-direction: column; gap: 15px;">
+            <h2 style="margin: 0; flex-shrink: 0;">🔄 System Update in Progress</h2>
+            <p style="color: #6b7280; margin: 0; flex-shrink: 0;">Please wait while TAKNET-PS updates. Do not close this window or navigate away.</p>
             
             <!-- Update Status -->
-            <div style="padding: 15px; background: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 6px; margin-bottom: 20px; flex-shrink: 0;">
+            <div style="padding: 15px; background: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 6px; flex-shrink: 0;">
                 <div style="display: flex; align-items: center; gap: 10px;">
                     <div id="updateSpinner" style="width: 20px; height: 20px; border: 3px solid #f59e0b; border-top-color: transparent; border-radius: 50%; animation: spin 1s linear infinite;"></div>
                     <strong id="updateStatusText" style="color: #92400e;">Initializing update...</strong>
@@ -2061,8 +2061,8 @@
             </div>
             
             <!-- Live Update Log -->
-            <div style="margin-bottom: 20px; flex: 1; min-height: 0; display: flex; flex-direction: column;">
-                <label style="font-weight: 600; display: block; margin-bottom: 8px; color: #374151; flex-shrink: 0;">Update Log:</label>
+            <div style="flex: 1; min-height: 250px; display: flex; flex-direction: column; gap: 8px;">
+                <label style="font-weight: 600; margin: 0; color: #374151; flex-shrink: 0;">Update Log:</label>
                 <div id="updateModalLog" style="
                     background: #1a1a1a;
                     color: #e5e7eb;
@@ -2075,7 +2075,6 @@
                     white-space: pre-wrap;
                     word-wrap: break-word;
                     flex: 1;
-                    min-height: 200px;
                 ">Starting update process...
 </div>
             </div>
