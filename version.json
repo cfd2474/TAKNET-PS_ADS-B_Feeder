@@ -1,10 +1,10 @@
 {
-  "version": "2.53.12",
+  "version": "2.53.13",
   "release_date": "2026-02-14",
-  "release_name": "Restart Progress Completion Fix",
+  "release_name": "Progress Response Structure Fix",
   "download_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh",
   "changelog_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/CHANGELOG.md",
   "minimum_version": "2.40.0",
   "breaking_changes": false,
-  "release_notes": "Fixed ultrafeeder restart modal hanging. Progress monitor set status to descriptive messages but never 'complete'. JavaScript was checking status==='complete' which never happened. Now sets status='complete' when progress reaches 100%."
+  "release_notes": "CRITICAL FIX: Progress endpoint now returns success field. JavaScript was checking if (data.success) but backend never set it. Modal polling received data but if check failed, so updates never displayed. Added success: true and message field to all progress updates."
 }

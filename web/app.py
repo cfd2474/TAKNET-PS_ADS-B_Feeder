@@ -55,11 +55,13 @@ def update_progress(service, progress, total=100, status='', details=''):
     global service_progress
     with progress_lock:
         service_progress = {
+            'success': True,
             'service': service,
             'progress': progress,
             'total': total,
             'status': status,
-            'details': details
+            'details': details,
+            'message': f'{status}\n{details}' if details else status
         }
 
 def reset_progress():
