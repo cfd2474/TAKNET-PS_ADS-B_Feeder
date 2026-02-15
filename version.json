@@ -1,10 +1,10 @@
 {
-  "version": "2.53.13",
+  "version": "2.53.14",
   "release_date": "2026-02-14",
-  "release_name": "Progress Response Structure Fix",
+  "release_name": "Update Modal UI Fix",
   "download_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh",
   "changelog_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/CHANGELOG.md",
   "minimum_version": "2.40.0",
   "breaking_changes": false,
-  "release_notes": "CRITICAL FIX: Progress endpoint now returns success field. JavaScript was checking if (data.success) but backend never set it. Modal polling received data but if check failed, so updates never displayed. Added success: true and message field to all progress updates."
+  "release_notes": "Fixed update progress modal UI overflow. Modal now stays properly sized with max-height constraint, log area scrolls independently, and warning box stays contained within modal boundaries. Uses flexbox layout for proper content distribution."
 }
