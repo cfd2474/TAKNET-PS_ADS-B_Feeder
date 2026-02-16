@@ -1,10 +1,10 @@
 {
-  "version": "2.55.7",
+  "version": "2.55.8",
   "release_date": "2026-02-15",
-  "release_name": "Tailscale Status: Clean Install vs Connection Failure",
+  "release_name": "Power Monitoring: Voltage & Throttling Detection",
   "download_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh",
   "changelog_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/CHANGELOG.md",
   "minimum_version": "2.40.0",
   "breaking_changes": false,
-  "release_notes": "Improved Tailscale status display. Clean install now shows 'Enable Tailscale' button with no status indicator. Connection failures show yellow warning with 'Connection Failed' and 'Retry Connection' button. Connected state shows green checkmark. Clearer UX distinguishing never-configured vs failed-connection states."
+  "release_notes": "Added voltage/throttling detection for Raspberry Pi. Red banner appears for current power issues, yellow banner for past issues (clears after 1 hour of stable power). Monitors undervoltage and CPU throttling that can degrade SDR performance. Recommends minimum 2.5A power supply."
 }

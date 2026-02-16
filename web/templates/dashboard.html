@@ -80,6 +80,21 @@
                 </div>
             </div>
 
+            <!-- Power Warning Banner -->
+            <div id="power-warning-banner" style="display: none; padding: 15px 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <span style="font-size: 1.5em;" id="power-warning-icon">⚠️</span>
+                    <div style="flex: 1;">
+                        <p id="power-warning-title" style="margin: 0 0 5px 0; font-weight: 600; font-size: 1.05em;">
+                            <!-- Title populated by JavaScript -->
+                        </p>
+                        <p id="power-warning-message" style="margin: 0; font-size: 0.9em;">
+                            <!-- Message populated by JavaScript -->
+                        </p>
+                    </div>
+                </div>
+            </div>
+
             <!-- System Status (Compact Dashboard Table) -->
             <div class="card" style="margin-bottom: 20px;">
                 <h3 style="margin-bottom: 15px; font-size: 1.3em; color: #1f2937; border-bottom: 2px solid #e5e7eb; padding-bottom: 10px;">📊 System Status</h3>
@@ -539,12 +554,56 @@
             }, 60000);
         }
         
+        // Power status check
+        async function checkPowerStatus() {
+            try {
+                const response = await fetch('/api/power-status');
+                const data = await response.json();
+                
+                const banner = document.getElementById('power-warning-banner');
+                const icon = document.getElementById('power-warning-icon');
+                const title = document.getElementById('power-warning-title');
+                const message = document.getElementById('power-warning-message');
+                
+                if (data.current_issue) {
+                    // Red banner for current issues
+                    banner.style.display = 'block';
+                    banner.style.background = '#fee2e2';
+                    banner.style.borderLeft = '4px solid #dc2626';
+                    icon.textContent = '⚠️';
+                    title.style.color = '#991b1b';
+                    title.textContent = 'Under-voltage / CPU Throttling Detected';
+                    message.style.color = '#7f1d1d';
+                    message.textContent = 'SDR performance possibly degraded. Use proper power supply (minimum 2.5A).';
+                } else if (data.past_issue) {
+                    // Yellow banner for past issues
+                    banner.style.display = 'block';
+                    banner.style.background = '#fef3c7';
+                    banner.style.borderLeft = '4px solid #f59e0b';
+                    icon.textContent = 'ℹ️';
+                    title.style.color = '#92400e';
+                    title.textContent = 'Previous Under-voltage/Throttling Detected';
+                    message.style.color = '#78350f';
+                    message.textContent = 'Check power supply is providing minimum 2.5A.';
+                } else {
+                    // Hide banner when no issues
+                    banner.style.display = 'none';
+                }
+            } catch (error) {
+                console.error('Error checking power status:', error);
+            }
+        }
+        
         // Start auto-refresh when page loads
         window.addEventListener('DOMContentLoaded', () => {
             lastUpdateTime = new Date();
             updateLastUpdateTime();
             updateServiceStates(); // Initial update
+            checkPowerStatus(); // Check power status on load
             startAutoRefresh();
+            
+            // Check power status every 30 seconds
+            setInterval(checkPowerStatus, 30000);
         });
         
         // Clear interval when leaving page

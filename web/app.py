@@ -209,6 +209,96 @@ def container_exists(container_name):
     except:
         return False
 
+# Power status tracking
+POWER_STATUS_FILE = '/opt/adsb/data/power_status.json'
+POWER_ISSUE_CLEAR_TIME = 3600  # 1 hour - time to keep showing warning after last issue
+
+def get_power_status():
+    """
+    Check voltage/throttling status on Raspberry Pi
+    Returns dict with current and historical status
+    """
+    status = {
+        'current_issue': False,
+        'past_issue': False,
+        'undervoltage_now': False,
+        'throttled_now': False,
+        'undervoltage_past': False,
+        'throttled_past': False,
+        'message': '',
+        'last_issue_time': 0
+    }
+    
+    try:
+        # Check if running on Raspberry Pi
+        result = subprocess.run(
+            ['vcgencmd', 'get_throttled'],
+            capture_output=True, text=True, timeout=2
+        )
+        
+        if result.returncode == 0:
+            # Parse output: throttled=0x50000
+            output = result.stdout.strip()
+            if 'throttled=' in output:
+                hex_value = output.split('=')[1].strip()
+                throttled_value = int(hex_value, 16)
+                
+                # Bit 0: Under-voltage detected
+                # Bit 1: Arm frequency capped
+                # Bit 2: Currently throttled
+                # Bit 16: Under-voltage has occurred
+                # Bit 17: Arm frequency capping has occurred
+                # Bit 18: Throttling has occurred
+                
+                # Check current issues (bits 0-2)
+                status['undervoltage_now'] = bool(throttled_value & 0x1)
+                status['throttled_now'] = bool(throttled_value & 0x4)
+                status['current_issue'] = status['undervoltage_now'] or status['throttled_now']
+                
+                # Check past issues (bits 16-18)
+                status['undervoltage_past'] = bool(throttled_value & 0x10000)
+                status['throttled_past'] = bool(throttled_value & 0x40000)
+                
+                # Load stored status to track when last issue occurred
+                if os.path.exists(POWER_STATUS_FILE):
+                    with open(POWER_STATUS_FILE, 'r') as f:
+                        stored = json.load(f)
+                        status['last_issue_time'] = stored.get('last_issue_time', 0)
+                
+                # Update last issue time if current issue
+                if status['current_issue']:
+                    status['last_issue_time'] = int(time.time())
+                    # Save to file
+                    os.makedirs(os.path.dirname(POWER_STATUS_FILE), exist_ok=True)
+                    with open(POWER_STATUS_FILE, 'w') as f:
+                        json.dump({'last_issue_time': status['last_issue_time']}, f)
+                
+                # Determine if we should show past issue warning
+                if not status['current_issue'] and (status['undervoltage_past'] or status['throttled_past']):
+                    # Show warning if within clear time
+                    time_since_issue = int(time.time()) - status['last_issue_time']
+                    if time_since_issue < POWER_ISSUE_CLEAR_TIME and status['last_issue_time'] > 0:
+                        status['past_issue'] = True
+                
+                # Build message
+                if status['current_issue']:
+                    issues = []
+                    if status['undervoltage_now']:
+                        issues.append('under-voltage')
+                    if status['throttled_now']:
+                        issues.append('CPU throttling')
+                    status['message'] = f"⚠️ {' and '.join(issues).title()} detected"
+                elif status['past_issue']:
+                    status['message'] = 'ℹ️ Previous power issues detected'
+                
+    except FileNotFoundError:
+        # vcgencmd not available (not a Raspberry Pi)
+        pass
+    except Exception as e:
+        print(f"Error checking power status: {e}")
+    
+    return status
+
 # Cache for service states to prevent flickering
 service_state_cache = {}
 service_state_cache_time = {}
@@ -2145,6 +2235,20 @@ def save_config():
         return jsonify({'success': True, 'message': 'Configuration saved'})
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/api/power-status', methods=['GET'])
+def api_power_status():
+    """Get current power/throttling status"""
+    try:
+        status = get_power_status()
+        return jsonify(status)
+    except Exception as e:
+        return jsonify({
+            'current_issue': False,
+            'past_issue': False,
+            'message': '',
+            'error': str(e)
+        })
 
 @app.route('/api/tailscale/install', methods=['POST'])
 def api_install_tailscale():
