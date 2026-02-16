@@ -1,10 +1,10 @@
 {
-  "version": "2.53.22",
+  "version": "2.53.23",
   "release_date": "2026-02-14",
-  "release_name": "Private Tailscale NoneType Fix",
+  "release_name": "Improved RTL-SDR Serial Detection",
   "download_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh",
   "changelog_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/CHANGELOG.md",
   "minimum_version": "2.40.0",
   "breaking_changes": false,
-  "release_notes": "Fixed NoneType error when enabling Private Tailscale with empty hostname field. Changed hostname handling from data.get('hostname', '').strip() to (data.get('hostname') or '').strip() to properly handle None values."
+  "release_notes": "Fixed RTL-SDR serial number detection. Changed from rtl_eeprom (requires device open) to parsing rtl_test output (doesn't open device). Now properly detects serial numbers like '978' and '1090' and auto-suggests correct frequency usage. Works even when devices are in use."
 }

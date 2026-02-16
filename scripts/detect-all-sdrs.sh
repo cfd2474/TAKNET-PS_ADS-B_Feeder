@@ -27,17 +27,29 @@ echo "Scanning for SDR devices..." >&2
 RTL_COUNT=0
 if command -v rtl_test &> /dev/null; then
     echo "Checking for RTL-SDR devices..." >&2
-    DETECTION=$(rtl_test 2>&1 || true)
-    RTL_COUNT=$(echo "$DETECTION" | grep "^Found" | awk '{print $2}' || echo "0")
+    
+    # Capture rtl_test output (it lists devices without opening them)
+    DETECTION=$(timeout 3 rtl_test 2>&1 || true)
+    RTL_COUNT=$(echo "$DETECTION" | grep -c "^[[:space:]]*[0-9]:" || echo "0")
     
     if [ "$RTL_COUNT" != "0" ]; then
         echo "Found $RTL_COUNT RTL-SDR device(s)" >&2
         
-        for i in $(seq 0 $((RTL_COUNT-1))); do
-            # Get serial number
-            SERIAL=$(rtl_eeprom -d $i 2>&1 | grep "Serial number" | awk '{print $NF}' || echo "")
+        # Parse each device line from rtl_test output
+        # Format: "  0:  Realtek, RTL2832U, SN: 978"
+        while IFS= read -r line; do
+            # Extract device index
+            INDEX=$(echo "$line" | awk -F':' '{print $1}' | tr -d ' ')
             
-            # If no serial or empty, set to N/A
+            # Extract serial number (after "SN: ")
+            SERIAL=$(echo "$line" | grep -oP 'SN:\s*\K[^\s]+' || echo "")
+            
+            # If no serial found, try alternate parsing
+            if [ -z "$SERIAL" ]; then
+                SERIAL=$(echo "$line" | awk -F'SN:' '{print $2}' | awk '{print $1}' | tr -d ' ')
+            fi
+            
+            # If still no serial or generic, set to N/A
             if [ -z "$SERIAL" ] || [ "$SERIAL" = "00000000" ] || [[ "$SERIAL" == rtlsdr_* ]]; then
                 SERIAL="N/A"
             fi
@@ -48,18 +60,19 @@ if command -v rtl_test &> /dev/null; then
                 USE="1090"
             elif [[ "$SERIAL" == *"978"* ]]; then
                 USE="978"
-            elif [ $i -eq 0 ]; then
+            elif [ "$INDEX" = "0" ]; then
                 USE="1090"  # First RTL-SDR defaults to 1090
             fi
             
-            ALL_DEVICES+=("RTL-SDR #$i")
+            ALL_DEVICES+=("RTL-SDR #$INDEX")
             DEVICE_TYPES+=("rtlsdr")
             DEVICE_SERIALS+=("$SERIAL")
             SUGGESTED_USE+=("$USE")
-            DEVICE_PATHS+=("$i")
+            DEVICE_PATHS+=("$INDEX")
             
-            echo "  - RTL-SDR device $i: $SERIAL (suggested: $USE)" >&2
-        done
+            echo "  - RTL-SDR device $INDEX: SN=$SERIAL (suggested: $USE)" >&2
+            
+        done < <(echo "$DETECTION" | grep "^[[:space:]]*[0-9]:")
     fi
 else
     echo "rtl_test not found, skipping RTL-SDR detection" >&2
