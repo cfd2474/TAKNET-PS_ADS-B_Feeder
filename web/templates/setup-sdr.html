@@ -315,7 +315,13 @@
                 const data = await response.json();
                 
                 if (data.count && data.count > 0 && data.devices && data.devices.length > 0) {
-                    devices = data.devices;
+                    // Map suggested_use to useFor for auto-assignment
+                    devices = data.devices.map(device => ({
+                        ...device,
+                        useFor: device.suggested_use !== 'disabled' ? device.suggested_use : null,
+                        gain: device.suggested_gain || 'autogain',
+                        biastee: false
+                    }));
                     
                     // Store detection metadata
                     window.soapyAvailable = data.soapy_available || false;

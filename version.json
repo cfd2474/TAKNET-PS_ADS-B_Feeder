@@ -1,10 +1,10 @@
 {
-  "version": "2.54.0",
+  "version": "2.54.1",
   "release_date": "2026-02-15",
-  "release_name": "Phase A: Universal SDR Detection with SoapySDR",
+  "release_name": "Fix Auto-Assignment in SoapySDR Detection",
   "download_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh",
   "changelog_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/CHANGELOG.md",
   "minimum_version": "2.40.0",
   "breaking_changes": false,
-  "release_notes": "Phase A: Enhanced SDR detection with SoapySDR support. Detects ALL SDR types (RTL-SDR, Airspy, HackRF, LimeSDR, etc.) with graceful fallback to rtl_test. Displays driver type and device labels in wizard. Configuration still uses native drivers (no behavior change). Foundation for future SoapySDR runtime support."
+  "release_notes": "Fixed wizard auto-assignment not applying detected 1090/978 suggestions. Wizard now correctly maps suggested_use to useFor so first device defaults to 1090 MHz and devices with 978/1090 in serial are auto-assigned appropriately."
 }
