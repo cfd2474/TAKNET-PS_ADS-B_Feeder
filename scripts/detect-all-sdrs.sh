@@ -50,6 +50,7 @@ if command -v SoapySDRUtil &> /dev/null; then
         CURRENT_DRIVER=""
         CURRENT_SERIAL=""
         CURRENT_LABEL=""
+        CURRENT_INDEX=0
         
         while IFS= read -r line; do
             # New device starts with "Found device"
@@ -73,8 +74,8 @@ if command -v SoapySDRUtil &> /dev/null; then
                         USE="1090"
                     elif [[ "$CURRENT_SERIAL" == *"978"* ]]; then
                         USE="978"
-                    elif [ "$DEVICE_COUNT" -eq 0 ]; then
-                        USE="1090"  # First device defaults to 1090
+                    elif [ "$CURRENT_INDEX" -eq 0 ]; then
+                        USE="1090"  # First device (index 0) defaults to 1090
                     fi
                     
                     # Build SoapySDR device string
@@ -95,6 +96,9 @@ if command -v SoapySDRUtil &> /dev/null; then
                     
                     echo "  - ${CURRENT_DRIVER} device $DEVICE_COUNT: Serial=$CURRENT_SERIAL (suggested: $USE)" >&2
                 fi
+                
+                # Capture device index from "Found device N"
+                CURRENT_INDEX="${BASH_REMATCH[1]}"
                 
                 # Reset for new device
                 DEVICE_COUNT=$((DEVICE_COUNT + 1))
@@ -139,8 +143,8 @@ if command -v SoapySDRUtil &> /dev/null; then
                 USE="1090"
             elif [[ "$CURRENT_SERIAL" == *"978"* ]]; then
                 USE="978"
-            elif [ "$DEVICE_COUNT" -eq 0 ]; then
-                USE="1090"
+            elif [ "$CURRENT_INDEX" -eq 0 ]; then
+                USE="1090"  # First device (index 0) defaults to 1090
             fi
             
             if [ -n "$CURRENT_SERIAL" ] && [ "$CURRENT_SERIAL" != "0" ]; then

@@ -315,13 +315,23 @@
                 const data = await response.json();
                 
                 if (data.count && data.count > 0 && data.devices && data.devices.length > 0) {
+                    console.log('Raw detection data:', data);
+                    console.log('Raw devices:', data.devices);
+                    
                     // Map suggested_use to useFor for auto-assignment
-                    devices = data.devices.map(device => ({
-                        ...device,
-                        useFor: device.suggested_use !== 'disabled' ? device.suggested_use : null,
-                        gain: device.suggested_gain || 'autogain',
-                        biastee: false
-                    }));
+                    devices = data.devices.map(device => {
+                        console.log(`Device ${device.index}: suggested_use="${device.suggested_use}"`);
+                        const mapped = {
+                            ...device,
+                            useFor: device.suggested_use !== 'disabled' ? device.suggested_use : null,
+                            gain: device.suggested_gain || 'autogain',
+                            biastee: false
+                        };
+                        console.log(`Mapped to: useFor="${mapped.useFor}"`);
+                        return mapped;
+                    });
+                    
+                    console.log('Final devices array:', devices);
                     
                     // Store detection metadata
                     window.soapyAvailable = data.soapy_available || false;
