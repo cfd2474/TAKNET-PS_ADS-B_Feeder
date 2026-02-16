@@ -1,10 +1,10 @@
 {
-  "version": "2.55.6",
+  "version": "2.55.7",
   "release_date": "2026-02-15",
-  "release_name": "Settings Page: Driver-Specific Gain Handling",
+  "release_name": "Tailscale Status: Clean Install vs Connection Failure",
   "download_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh",
   "changelog_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/CHANGELOG.md",
   "minimum_version": "2.40.0",
   "breaking_changes": false,
-  "release_notes": "Added driver-specific gain handling to Settings page SDR configuration. Now shows appropriate gain options (RTL-SDR: autogain + 0-49.6dB, Airspy: 0-21, HackRF: 0-48) matching the wizard behavior."
+  "release_notes": "Improved Tailscale status display. Clean install now shows 'Enable Tailscale' button with no status indicator. Connection failures show yellow warning with 'Connection Failed' and 'Retry Connection' button. Connected state shows green checkmark. Clearer UX distinguishing never-configured vs failed-connection states."
 }

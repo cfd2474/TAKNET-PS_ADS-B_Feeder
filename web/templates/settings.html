@@ -837,31 +837,32 @@
             }
             
             if (enabled && connected) {
-                // Enabled and connected - hide status indicator, hide auth key field
-                if (statusIndicator) statusIndicator.style.display = 'none';
+                // Enabled and connected - show green status
+                if (statusIndicator) {
+                    statusIndicator.style.display = 'flex';
+                    statusIcon.textContent = '✓';
+                    statusText.textContent = 'Connected';
+                    statusIcon.parentElement.style.background = '#d1fae5';
+                    statusIcon.parentElement.style.border = '1px solid #10b981';
+                }
                 toggleBtn.className = 'btn';
                 toggleText.textContent = '🔴 Disable Tailscale';
                 tailscaleEnabled = true;
             } else if (enabled && !connected) {
-                // Enabled but not connected - show auth key field so user can retry
+                // Enabled but not connected - actual connection failure
                 if (statusIndicator) statusIndicator.style.display = 'flex';
                 statusIcon.textContent = '⚠️';
-                statusText.textContent = 'Not Connected';
+                statusText.textContent = 'Connection Failed';
                 statusIcon.parentElement.style.background = '#fef3c7';
                 statusIcon.parentElement.style.border = '1px solid #f59e0b';
                 toggleBtn.className = 'btn btn-primary';
                 toggleText.textContent = '🔄 Retry Connection';
                 tailscaleEnabled = false; // Show auth key field for retry
             } else {
-                // Disabled
-                if (statusIndicator) statusIndicator.style.display = 'flex';
-                statusIcon.textContent = '⭕';
-                statusText.textContent = 'Not Connected';
-                statusText.innerHTML = 'Not Connected<br><span style="font-size: 0.9em; color: #6b7280;">Enter auth key below to connect</span>';
-                statusIcon.parentElement.style.background = '#f3f4f6';
-                statusIcon.parentElement.style.border = '1px solid #d1d5db';
+                // Disabled - never been set up, clean state
+                if (statusIndicator) statusIndicator.style.display = 'none'; // Hide status indicator
                 toggleBtn.className = 'btn btn-primary';
-                toggleText.textContent = '🟢 Enable & Connect';
+                toggleText.textContent = '🟢 Enable Tailscale';
                 tailscaleEnabled = false;
             }
             
@@ -3313,9 +3314,9 @@
                 if (hostname) document.getElementById('private-ts-dns').textContent = hostname;
                 
             } else if (enabled && !connected) {
-                // Enabled but not connected
+                // Enabled but not connected - actual failure
                 statusIcon.textContent = '⚠️';
-                statusText.textContent = 'Not Connected';
+                statusText.textContent = 'Connection Failed';
                 statusIndicator.style.background = '#fef3c7';
                 statusIndicator.style.border = '1px solid #f59e0b';
                 toggleBtn.className = 'btn btn-primary';
