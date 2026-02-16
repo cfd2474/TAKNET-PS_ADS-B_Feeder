@@ -1,10 +1,10 @@
 {
-  "version": "2.55.3",
+  "version": "2.55.4",
   "release_date": "2026-02-15",
-  "release_name": "Wizard Cleanup - Remove Old SDR Config",
+  "release_name": "Critical Fixes: Install Script Version + Wizard JavaScript",
   "download_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh",
   "changelog_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/CHANGELOG.md",
   "minimum_version": "2.40.0",
   "breaking_changes": false,
-  "release_notes": "Removed old SDR configuration from /setup route. Wizard now flows: /setup/sdr (Phase A/B SDR config) → /setup (location only). Clean install starts at /setup/sdr. Cleaner UX, no duplicate SDR config steps."
+  "release_notes": "Fixed install script version header (was still v2.50.0). Removed leftover JavaScript code from setup.html that was breaking wizard display. Wizard now works correctly."
 }
