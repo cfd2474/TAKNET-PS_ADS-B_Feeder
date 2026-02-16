@@ -1566,24 +1566,78 @@
             
             useForSelect.value = device.useFor || '';
             
-            // Gain control
-            const gainSelect = document.getElementById('sdrModalGain');
-            const ftdiNotice = document.getElementById('sdrModalFtdiNotice');
-            
-            if (device.type === 'ftdi') {
-                gainSelect.value = 'autogain';
-                gainSelect.disabled = true;
-                ftdiNotice.style.display = 'block';  // Show FTDI notice
-            } else {
-                gainSelect.value = device.gain || 'autogain';
-                gainSelect.disabled = false;
-                ftdiNotice.style.display = 'none';  // Hide FTDI notice
-            }
+            // Load driver-specific gain options
+            loadGainOptionsForSettings(device.driver || 'rtlsdr', device.gain || 'autogain', device.type);
             
             // Bias tee
             document.getElementById('sdrModalBiasTee').checked = device.biastee || false;
             
             document.getElementById('sdrConfigModal').style.display = 'flex';
+        }
+        
+        async function loadGainOptionsForSettings(driver, currentGain, deviceType) {
+            const gainSelect = document.getElementById('sdrModalGain');
+            const gainHelp = document.getElementById('sdrModalGainHelp');
+            const ftdiNotice = document.getElementById('sdrModalFtdiNotice');
+            
+            // Handle FTDI special case
+            if (deviceType === 'ftdi') {
+                gainSelect.innerHTML = '<option value="autogain">Auto Gain (Hardware Managed)</option>';
+                gainSelect.value = 'autogain';
+                gainSelect.disabled = true;
+                ftdiNotice.style.display = 'block';
+                gainHelp.textContent = 'FTDI devices manage gain automatically';
+                return;
+            }
+            
+            // Enable for non-FTDI
+            gainSelect.disabled = false;
+            ftdiNotice.style.display = 'none';
+            
+            try {
+                const response = await fetch(`/api/sdrs/gain-options/${driver}`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Clear existing options
+                    gainSelect.innerHTML = '';
+                    
+                    // Add all valid options
+                    data.options.forEach(option => {
+                        const opt = document.createElement('option');
+                        opt.value = option;
+                        opt.textContent = option;
+                        
+                        // Highlight recommended option
+                        if (option === data.recommended) {
+                            opt.textContent += ' (recommended)';
+                        }
+                        
+                        gainSelect.appendChild(opt);
+                    });
+                    
+                    // Set current value or default
+                    if (data.options.includes(currentGain)) {
+                        gainSelect.value = currentGain;
+                    } else {
+                        gainSelect.value = data.default;
+                    }
+                    
+                    // Update description
+                    gainHelp.textContent = data.description;
+                } else {
+                    // Fallback to generic options
+                    gainSelect.innerHTML = '<option value="autogain">Auto Gain (Recommended)</option>';
+                    gainSelect.value = currentGain || 'autogain';
+                    gainHelp.textContent = 'Select gain level or use auto gain (recommended)';
+                }
+            } catch (error) {
+                console.error('Error loading gain options:', error);
+                // Fallback
+                gainSelect.innerHTML = '<option value="autogain">Auto Gain (Recommended)</option>';
+                gainSelect.value = currentGain || 'autogain';
+                gainHelp.textContent = 'Select gain level or use auto gain (recommended)';
+            }
         }
         
         function closeSDRConfigModal() {
@@ -1595,7 +1649,7 @@
             if (currentSDRIndex === null) return;
             
             const useFor = document.getElementById('sdrModalUseFor').value;
-            const gain = document.getElementById('sdrModalGain').value.trim();
+            const gain = document.getElementById('sdrModalGain').value;
             const biastee = document.getElementById('sdrModalBiasTee').checked;
             
             // Validate
@@ -1604,13 +1658,10 @@
                 return;
             }
             
-            // Gain validation simplified - dropdown only allows valid values
-            const finalGain = gain === 'auto' ? 'autogain' : gain;
-            
             // Update local device
             sdrDevices[currentSDRIndex].use = useFor;
             sdrDevices[currentSDRIndex].useFor = useFor;
-            sdrDevices[currentSDRIndex].gain = finalGain;
+            sdrDevices[currentSDRIndex].gain = gain;
             sdrDevices[currentSDRIndex].biastee = biastee;
             
             // Build configuration in format expected by /api/sdrs/configure
@@ -1619,8 +1670,10 @@
                 serial: device.serial,
                 use: device.use || device.useFor || 'disabled',
                 gain: device.gain || 'autogain',
+                biastee: device.biastee || false,
                 type: device.type || 'rtlsdr',
-                device_path: device.device_path || device.index.toString()
+                device_path: device.device_path || device.index.toString(),
+                driver: device.driver || 'rtlsdr'
             }));
             
             // Save to backend using correct endpoint
@@ -1773,13 +1826,8 @@
             
             <div class="form-group">
                 <label>Gain</label>
-                <select id="sdrModalGain">
+                <select id="sdrModalGain" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px;">
                     <option value="autogain">Auto Gain (Recommended)</option>
-                    <option value="20">20 dB (Low)</option>
-                    <option value="27">27 dB (Medium-Low)</option>
-                    <option value="34">34 dB (Medium)</option>
-                    <option value="41">41 dB (Medium-High)</option>
-                    <option value="48">48 dB (High)</option>
                 </select>
                 <p id="sdrModalGainHelp" style="margin: 5px 0 0 0; color: #6b7280; font-size: 0.85em;">
                     Select gain level or use auto gain (recommended)
