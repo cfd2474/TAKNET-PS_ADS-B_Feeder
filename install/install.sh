@@ -165,6 +165,10 @@ echo "Installing Python dependencies..."
 apt-get update -qq
 apt-get install -y python3-flask python3-pip python3-yaml wget curl rtl-sdr vnstat nginx avahi-daemon avahi-utils libnss-mdns hostapd dnsmasq iptables wireless-tools rfkill
 
+# Phase B: Install SoapySDR for universal SDR support
+echo "Installing SoapySDR tools (Phase B universal SDR detection)..."
+apt-get install -y soapysdr-tools soapysdr-module-rtlsdr
+
 echo "✓ All packages installed"
 
 # Configure MLAT stability safeguards
@@ -378,6 +382,10 @@ chmod +x /opt/adsb/scripts/config_builder.py
 echo "  - detect-all-sdrs.sh..."
 wget -q $REPO/scripts/detect-all-sdrs.sh -O /opt/adsb/scripts/detect-all-sdrs.sh
 chmod +x /opt/adsb/scripts/detect-all-sdrs.sh
+
+echo "  - migrate-phase-b.py..."
+wget -q $REPO/scripts/migrate-phase-b.py -O /opt/adsb/scripts/migrate-phase-b.py
+chmod +x /opt/adsb/scripts/migrate-phase-b.py
 
 echo "  - updater.sh..."
 wget -q $REPO/scripts/updater.sh -O /opt/adsb/scripts/updater.sh
@@ -1158,6 +1166,13 @@ RestartSec=10
 [Install]
 WantedBy=multi-user.target
 WEBSVC
+
+# Phase B: Run automatic migration (silent, idempotent)
+if [ -f /opt/adsb/config/.env ] && [ -f /opt/adsb/scripts/migrate-phase-b.py ]; then
+    echo "Running Phase B migration (adding SoapySDR variables)..."
+    python3 /opt/adsb/scripts/migrate-phase-b.py 2>/dev/null || true
+    echo "✓ Configuration migrated to Phase B format"
+fi
 
 # Enable services
 systemctl daemon-reload

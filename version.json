@@ -1,10 +1,10 @@
 {
-  "version": "2.55.0",
+  "version": "2.55.1",
   "release_date": "2026-02-15",
-  "release_name": "Phase B: SoapySDR Runtime Support",
+  "release_name": "Phase B: Complete Automated Installation",
   "download_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh",
   "changelog_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/CHANGELOG.md",
   "minimum_version": "2.40.0",
   "breaking_changes": false,
-  "release_notes": "Phase B: Adds SoapySDR runtime support with smart driver selection. RTL-SDR uses native driver for best performance, Airspy/HackRF use SoapySDR. Includes migration script for existing configs. USE_SOAPYSDR flag controls behavior (auto/true/false). 100% backward compatible."
+  "release_notes": "Complete automated Phase B installation. SoapySDR tools install automatically, Phase B migration runs automatically, no user action required. Maintains Phase A auto-detect and auto-assign. Zero manual steps - just run installer."
 }
