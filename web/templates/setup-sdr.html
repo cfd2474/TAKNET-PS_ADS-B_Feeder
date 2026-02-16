@@ -70,6 +70,42 @@
             color: #9ca3af;
         }
         
+        /* Driver Type Badges */
+        .driver-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.7em;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .driver-rtlsdr {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+        
+        .driver-airspy {
+            background: #fce7f3;
+            color: #9f1239;
+        }
+        
+        .driver-hackrf {
+            background: #dcfce7;
+            color: #166534;
+        }
+        
+        .driver-ftdi {
+            background: #fef3c7;
+            color: #92400e;
+        }
+        
+        .driver-soapy {
+            background: #e0e7ff;
+            color: #4338ca;
+        }
+        
         .config-modal {
             display: none;
             position: fixed;
@@ -275,11 +311,16 @@
             noDevices.style.display = 'none';
             
             try {
-                const response = await fetch('/api/sdr/detect');
+                const response = await fetch('/api/sdrs/detect');
                 const data = await response.json();
                 
-                if (data.success && data.devices && data.devices.length > 0) {
+                if (data.count && data.count > 0 && data.devices && data.devices.length > 0) {
                     devices = data.devices;
+                    
+                    // Store detection metadata
+                    window.soapyAvailable = data.soapy_available || false;
+                    window.detectionMethod = data.detection_method || 'unknown';
+                    
                     displayDevices();
                     detectionBox.style.display = 'none';
                     devicesContainer.style.display = 'block';
@@ -298,6 +339,40 @@
             const tbody = document.getElementById('sdrTableBody');
             tbody.innerHTML = '';
             
+            // Add SoapySDR info banner if available
+            const container = document.getElementById('devicesContainer');
+            let existingBanner = container.querySelector('.soapy-info-banner');
+            if (existingBanner) {
+                existingBanner.remove();
+            }
+            
+            if (window.soapyAvailable) {
+                const banner = document.createElement('div');
+                banner.className = 'soapy-info-banner';
+                banner.style.cssText = `
+                    padding: 12px 15px;
+                    background: #f0f9ff;
+                    border-left: 4px solid #3b82f6;
+                    border-radius: 6px;
+                    margin-bottom: 15px;
+                    font-size: 0.9em;
+                `;
+                banner.innerHTML = `
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <span style="font-size: 1.2em;">✨</span>
+                        <div>
+                            <strong style="color: #1e40af;">SoapySDR Universal Detection Enabled</strong>
+                            <div style="color: #6b7280; margin-top: 2px;">
+                                Supports RTL-SDR, Airspy, HackRF, and more. Detection method: ${window.detectionMethod}
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                const table = container.querySelector('.sdr-table');
+                container.insertBefore(banner, table);
+            }
+            
             devices.forEach((device, index) => {
                 const row = document.createElement('tr');
                 row.onclick = () => openConfigModal(index);
@@ -306,8 +381,17 @@
                     row.classList.add('configured');
                 }
                 
+                // Determine driver badge color
+                const driverBadge = device.driver ? `<span class="driver-badge driver-${device.driver}">${device.driver.toUpperCase()}</span>` : '';
+                
                 row.innerHTML = `
-                    <td><strong>${device.type.toUpperCase()}</strong></td>
+                    <td>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <strong>${device.type.toUpperCase()}</strong>
+                            ${driverBadge}
+                        </div>
+                        ${device.label ? `<div style="font-size: 0.85em; color: #6b7280; margin-top: 2px;">${device.label}</div>` : ''}
+                    </td>
                     <td>${device.serial}</td>
                     <td>
                         ${device.useFor ? 
@@ -327,8 +411,10 @@
             currentDeviceIndex = index;
             const device = devices[index];
             
+            // Enhanced modal title with driver info
+            const driverInfo = device.driver ? ` (${device.driver.toUpperCase()})` : '';
             document.getElementById('modalDeviceInfo').textContent = 
-                `${device.type.toUpperCase()} - Serial: ${device.serial}`;
+                `${device.type.toUpperCase()}${driverInfo} - Serial: ${device.serial}`;
             
             document.getElementById('modalUseFor').value = device.useFor || '';
             document.getElementById('modalGain').value = device.gain || 'autogain';
