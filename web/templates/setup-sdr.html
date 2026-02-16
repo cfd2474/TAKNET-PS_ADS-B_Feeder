@@ -522,21 +522,33 @@
         }
         
         async function applySDRSettings() {
-            // Check if at least one device is configured
-            const configured = devices.filter(d => d.useFor);
+            // Check if at least one device is configured for 1090
+            const has1090 = devices.some(d => d.useFor === '1090');
             
-            if (configured.length === 0) {
-                alert('Please configure at least one SDR device before continuing');
+            if (!has1090) {
+                alert('Please configure at least one SDR device for 1090 MHz');
                 return;
             }
             
             showStatus('Applying SDR settings...', 'info');
             
             try {
+                // Map devices to API format (useFor → use)
+                const sdrsToSend = devices.map(device => ({
+                    index: device.index,
+                    serial: device.serial,
+                    use: device.useFor || '',  // Map useFor to use
+                    gain: device.gain || 'autogain',
+                    biastee: device.biastee || false,
+                    type: device.type || 'rtlsdr',
+                    device_path: device.device_path || device.index.toString(),
+                    driver: device.driver || 'rtlsdr'
+                }));
+                
                 const response = await fetch('/api/sdrs/configure', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ sdrs: devices })
+                    body: JSON.stringify({ sdrs: sdrsToSend })
                 });
                 
                 const result = await response.json();

@@ -1,10 +1,10 @@
 {
-  "version": "2.55.4",
+  "version": "2.55.5",
   "release_date": "2026-02-15",
-  "release_name": "Critical Fixes: Install Script Version + Wizard JavaScript",
+  "release_name": "Critical Fixes: Root Redirect + Auto-Assignment",
   "download_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh",
   "changelog_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/CHANGELOG.md",
   "minimum_version": "2.40.0",
   "breaking_changes": false,
-  "release_notes": "Fixed install script version header (was still v2.50.0). Removed leftover JavaScript code from setup.html that was breaking wizard display. Wizard now works correctly."
+  "release_notes": "Fixed root route to properly detect unconfigured SDR (checks SDR_1090_SERIAL). Fixed auto-assignment by mapping useFor to use when sending to API. Clean install now goes to /setup/sdr first, auto-detected SDRs work correctly."
 }

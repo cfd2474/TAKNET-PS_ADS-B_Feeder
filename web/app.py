@@ -973,17 +973,11 @@ def index():
     """Main page - check if configured"""
     env = read_env()
     
-    # ALWAYS check SDR first (even on fresh install)
-    # If no SDR device configured, go to SDR wizard
+    # Check if SDR is configured by looking for serial number
+    # env-template has empty SDR_1090_SERIAL, wizard sets it
     sdr_configured = False
-    if env.get('READSB_DEVICE'):
+    if env.get('SDR_1090_SERIAL') and env.get('SDR_1090_SERIAL') != '':
         sdr_configured = True
-    else:
-        # Check if any SDR_X entries exist
-        for key in env.keys():
-            if key.startswith('SDR_'):
-                sdr_configured = True
-                break
     
     if not sdr_configured:
         return redirect(url_for('setup_sdr'))
