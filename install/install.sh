@@ -1,5 +1,5 @@
 #!/bin/bash
-# TAKNET-PS-ADSB-Feeder One-Line Installer v2.55.8
+# TAKNET-PS-ADSB-Feeder One-Line Installer v2.55.9
 # curl -fsSL https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh | sudo bash
 
 set -e
@@ -42,7 +42,7 @@ fi
 if [ "$UPDATE_MODE" != true ]; then
     echo ""
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    echo "  TAKNET-PS-ADSB-Feeder Installer v2.55.8"
+    echo "  TAKNET-PS-ADSB-Feeder Installer v2.55.9"
     echo "  Ultrafeeder + TAKNET-PS + Web UI"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo ""
@@ -390,6 +390,10 @@ chmod +x /opt/adsb/scripts/migrate-phase-b.py
 echo "  - updater.sh..."
 wget -q $REPO/scripts/updater.sh -O /opt/adsb/scripts/updater.sh
 chmod +x /opt/adsb/scripts/updater.sh
+
+echo "  - update-ssh-all-tailscale.sh..."
+wget -q $REPO/scripts/update-ssh-all-tailscale.sh -O /opt/adsb/scripts/update-ssh-all-tailscale.sh
+chmod +x /opt/adsb/scripts/update-ssh-all-tailscale.sh
 
 # Download version.json for update checking
 echo "  - version.json..."

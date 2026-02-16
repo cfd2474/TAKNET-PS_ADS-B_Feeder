@@ -67,8 +67,9 @@ else
     echo "   ⚠️  Match block missing - ADDING"
     cat >> /etc/ssh/sshd_config << SSHEOF
 
-# TAKNET-PS Remote User - Tailscale Only Access
-Match User remote Address $TAILSCALE_SUBNET
+# TAKNET-PS Remote User - All Tailscale Networks
+# Allows SSH from Primary AND Private Tailscale
+Match User remote Address 100.64.0.0/10
     PasswordAuthentication yes
     PubkeyAuthentication yes
 SSHEOF

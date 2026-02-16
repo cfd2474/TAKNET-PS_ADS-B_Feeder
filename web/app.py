@@ -2549,10 +2549,10 @@ def api_private_tailscale_enable():
                 except:
                     pass
         
-        # Configure SSH for dual Tailscale access
-        print("[Private Tailscale] Configuring SSH for dual Tailscale access...")
+        # Configure SSH for all Tailscale networks
+        print("[Private Tailscale] Configuring SSH for all Tailscale networks...")
         ssh_result = subprocess.run(
-            ['/opt/adsb/configure-ssh-dual-tailscale.sh'],
+            ['/opt/adsb/scripts/update-ssh-all-tailscale.sh'],
             capture_output=True,
             text=True,
             timeout=10
@@ -2562,7 +2562,7 @@ def api_private_tailscale_enable():
             print("[Private Tailscale] ✓ SSH configured for both Tailscale networks")
         else:
             print(f"[Private Tailscale] ⚠ SSH configuration warning: {ssh_result.stderr}")
-            # Don't fail - container is running, SSH config is optional
+            # Don't fail - container is running, SSH config is non-critical
         
         return jsonify({
             'success': True,

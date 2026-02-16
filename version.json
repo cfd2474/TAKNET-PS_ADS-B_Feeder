@@ -1,10 +1,10 @@
 {
-  "version": "2.55.8",
-  "release_date": "2026-02-15",
-  "release_name": "Power Monitoring: Voltage & Throttling Detection",
+  "version": "2.55.9",
+  "release_date": "2026-02-16",
+  "release_name": "Fix: Private Tailscale SSH Access",
   "download_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh",
   "changelog_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/CHANGELOG.md",
   "minimum_version": "2.40.0",
   "breaking_changes": false,
-  "release_notes": "Added voltage/throttling detection for Raspberry Pi. Red banner appears for current power issues, yellow banner for past issues (clears after 1 hour of stable power). Monitors undervoltage and CPU throttling that can degrade SDR performance. Recommends minimum 2.5A power supply."
+  "release_notes": "Fixed SSH access over Private Tailscale. SSH now allows connections from ALL Tailscale networks (100.64.0.0/10) instead of only Primary Tailscale subnet. Private Tailscale enable automatically updates SSH configuration."
 }
