@@ -10,6 +10,55 @@ import sys
 import socket
 from pathlib import Path
 
+# Phase B: Valid gain values per driver type
+VALID_GAINS = {
+    'rtlsdr': [
+        'autogain', '0.0', '0.9', '1.4', '2.7', '3.7', '7.7', '8.7',
+        '12.5', '14.4', '15.7', '16.6', '19.7', '20.7', '22.9',
+        '25.4', '28.0', '29.7', '32.8', '33.8', '36.4', '37.2',
+        '38.6', '40.2', '42.1', '43.4', '43.9', '44.5', '48.0', '49.6'
+    ],
+    'airspy': ['0', '3', '6', '9', '12', '15', '18', '21'],
+    'hackrf': ['0', '8', '16', '24', '32', '40', '48'],
+    'ftdi': ['autogain']  # N/A for FTDI
+}
+
+# Recommended gain defaults per driver
+RECOMMENDED_GAINS = {
+    'rtlsdr': 'autogain',
+    'airspy': '21',      # Maximum sensitivity
+    'hackrf': '40',      # High gain
+    'ftdi': 'autogain'
+}
+
+def validate_gain(driver, gain):
+    """Validate gain value for specific driver"""
+    if driver not in VALID_GAINS:
+        print(f"[WARNING] Unknown driver '{driver}', accepting gain '{gain}'")
+        return gain
+    
+    valid = VALID_GAINS[driver]
+    
+    # Check if gain is valid
+    if gain in valid:
+        return gain
+    
+    # For numeric gains, try to match closest valid value
+    try:
+        gain_float = float(gain)
+        valid_floats = [float(g) for g in valid if g != 'autogain']
+        if valid_floats:
+            closest = min(valid_floats, key=lambda x: abs(x - gain_float))
+            print(f"[WARNING] Gain {gain} not valid for {driver}, using closest: {closest}")
+            return str(closest)
+    except ValueError:
+        pass
+    
+    # Fall back to recommended default
+    default = RECOMMENDED_GAINS.get(driver, 'autogain')
+    print(f"[WARNING] Invalid gain '{gain}' for {driver}, using default: {default}")
+    return default
+
 def read_env(env_file):
     """Read .env file and return as dict"""
     env_vars = {}
@@ -433,8 +482,12 @@ def build_sdr_configuration(env_vars):
     print(f"  Driver: {sdr_driver}")
     print(f"  Serial: {sdr_serial}")
     print(f"  Device: {sdr_device}")
-    print(f"  Gain: {sdr_gain}")
+    print(f"  Gain (raw): {sdr_gain}")
     print(f"  USE_SOAPYSDR: {use_soapy}")
+    
+    # Validate and adjust gain for driver type
+    sdr_gain = validate_gain(sdr_driver, sdr_gain)
+    print(f"  Gain (validated): {sdr_gain}")
     
     # Determine device type to use
     device_type = None

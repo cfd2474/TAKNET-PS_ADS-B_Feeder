@@ -260,14 +260,11 @@
             
             <div class="form-group">
                 <label>Gain</label>
-                <input 
-                    type="text" 
-                    id="modalGain" 
-                    placeholder="autogain" 
-                    value="autogain"
-                >
-                <p style="margin: 5px 0 0 0; color: #6b7280; font-size: 0.85em;">
-                    Enter a value between 0 and 50, or 'autogain' (recommended)
+                <select id="modalGain" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px;">
+                    <option value="autogain">autogain</option>
+                </select>
+                <p id="gainDescription" style="margin: 5px 0 0 0; color: #6b7280; font-size: 0.85em;">
+                    Recommended gain setting for this device
                 </p>
             </div>
             
@@ -423,7 +420,7 @@
             });
         }
         
-        function openConfigModal(index) {
+        async function openConfigModal(index) {
             currentDeviceIndex = index;
             const device = devices[index];
             
@@ -433,10 +430,60 @@
                 `${device.type.toUpperCase()}${driverInfo} - Serial: ${device.serial}`;
             
             document.getElementById('modalUseFor').value = device.useFor || '';
-            document.getElementById('modalGain').value = device.gain || 'autogain';
             document.getElementById('modalBiasTee').checked = device.biastee || false;
             
+            // Load driver-specific gain options
+            await loadGainOptions(device.driver || 'rtlsdr', device.gain || 'autogain');
+            
             document.getElementById('configModal').style.display = 'flex';
+        }
+        
+        async function loadGainOptions(driver, currentGain) {
+            const gainSelect = document.getElementById('modalGain');
+            const gainDesc = document.getElementById('gainDescription');
+            
+            try {
+                const response = await fetch(`/api/sdrs/gain-options/${driver}`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Clear existing options
+                    gainSelect.innerHTML = '';
+                    
+                    // Add all valid options
+                    data.options.forEach(option => {
+                        const opt = document.createElement('option');
+                        opt.value = option;
+                        opt.textContent = option;
+                        
+                        // Highlight recommended option
+                        if (option === data.recommended) {
+                            opt.textContent += ' (recommended)';
+                        }
+                        
+                        gainSelect.appendChild(opt);
+                    });
+                    
+                    // Set current value or default
+                    if (data.options.includes(currentGain)) {
+                        gainSelect.value = currentGain;
+                    } else {
+                        gainSelect.value = data.default;
+                    }
+                    
+                    // Update description
+                    gainDesc.textContent = data.description;
+                } else {
+                    // Fallback to generic options
+                    gainSelect.innerHTML = '<option value="autogain">autogain</option>';
+                    gainSelect.value = currentGain || 'autogain';
+                }
+            } catch (error) {
+                console.error('Error loading gain options:', error);
+                // Fallback
+                gainSelect.innerHTML = '<option value="autogain">autogain</option>';
+                gainSelect.value = currentGain || 'autogain';
+            }
         }
         
         function closeConfigModal() {
@@ -448,7 +495,7 @@
             if (currentDeviceIndex === null) return;
             
             const useFor = document.getElementById('modalUseFor').value;
-            const gain = document.getElementById('modalGain').value.trim();
+            const gain = document.getElementById('modalGain').value;
             const biastee = document.getElementById('modalBiasTee').checked;
             
             // Validate

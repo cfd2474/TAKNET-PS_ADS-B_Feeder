@@ -2624,6 +2624,84 @@ def api_detect_sdrs():
             'error': str(e)
         })
 
+@app.route('/api/sdrs/gain-options/<driver>', methods=['GET'])
+def api_gain_options(driver):
+    """Get valid gain options for a specific driver type"""
+    # Driver-specific gain options
+    gain_options = {
+        'rtlsdr': {
+            'options': [
+                'autogain', '0.0', '0.9', '1.4', '2.7', '3.7', '7.7', '8.7',
+                '12.5', '14.4', '15.7', '16.6', '19.7', '20.7', '22.9',
+                '25.4', '28.0', '29.7', '32.8', '33.8', '36.4', '37.2',
+                '38.6', '40.2', '42.1', '43.4', '43.9', '44.5', '48.0', '49.6'
+            ],
+            'default': 'autogain',
+            'recommended': 'autogain',
+            'description': 'RTL-SDR supports autogain or manual values 0.0-49.6 dB'
+        },
+        'airspy': {
+            'options': ['0', '3', '6', '9', '12', '15', '18', '21'],
+            'default': '21',
+            'recommended': '21',
+            'description': 'Airspy gain in steps of 3 dB (0-21). Recommended: 21 for maximum sensitivity'
+        },
+        'hackrf': {
+            'options': ['0', '8', '16', '24', '32', '40', '48'],
+            'default': '40',
+            'recommended': '40',
+            'description': 'HackRF gain in steps of 8 dB (0-48). Recommended: 40 for high gain'
+        },
+        'ftdi': {
+            'options': ['autogain'],
+            'default': 'autogain',
+            'recommended': 'autogain',
+            'description': 'FTDI UATRadio does not support gain control'
+        }
+    }
+    
+    driver_lower = driver.lower()
+    if driver_lower in gain_options:
+        return jsonify({
+            'success': True,
+            'driver': driver_lower,
+            **gain_options[driver_lower]
+        })
+    else:
+        # Unknown driver, return generic options
+        return jsonify({
+            'success': True,
+            'driver': driver_lower,
+            'options': ['autogain', '0', '10', '20', '30', '40', '50'],
+            'default': 'autogain',
+            'recommended': 'autogain',
+            'description': f'Generic gain options for {driver}'
+        })
+
+def validate_gain_for_driver(driver, gain):
+    """Validate gain value for specific driver - used in API"""
+    valid_gains = {
+        'rtlsdr': ['autogain', '0.0', '0.9', '1.4', '2.7', '3.7', '7.7', '8.7',
+                   '12.5', '14.4', '15.7', '16.6', '19.7', '20.7', '22.9',
+                   '25.4', '28.0', '29.7', '32.8', '33.8', '36.4', '37.2',
+                   '38.6', '40.2', '42.1', '43.4', '43.9', '44.5', '48.0', '49.6'],
+        'airspy': ['0', '3', '6', '9', '12', '15', '18', '21'],
+        'hackrf': ['0', '8', '16', '24', '32', '40', '48'],
+        'ftdi': ['autogain']
+    }
+    
+    defaults = {
+        'rtlsdr': 'autogain',
+        'airspy': '21',
+        'hackrf': '40',
+        'ftdi': 'autogain'
+    }
+    
+    if driver in valid_gains and gain in valid_gains[driver]:
+        return gain
+    
+    return defaults.get(driver, 'autogain')
+
 @app.route('/api/sdrs/configure', methods=['POST'])
 def api_configure_sdrs():
     """Configure multiple SDRs based on user selections"""
@@ -2652,6 +2730,9 @@ def api_configure_sdrs():
             device_path = sdr.get('device_path', str(index))
             driver = sdr.get('driver', 'rtlsdr')  # Phase B
             serial = sdr.get('serial', '')  # Phase B
+            
+            # Phase B: Validate gain for driver type
+            gain = validate_gain_for_driver(driver, gain)
             
             if use == '1090':
                 if sdr_1090 is not None:
