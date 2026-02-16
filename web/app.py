@@ -2637,6 +2637,65 @@ def api_private_tailscale_disable():
         traceback.print_exc()
         return jsonify({'success': False, 'message': str(e)}), 500
 
+@app.route('/api/private-tailscale/restart', methods=['POST'])
+def api_private_tailscale_restart():
+    """Restart Private Tailscale container"""
+    try:
+        print("[Private Tailscale] Restarting container...")
+        
+        # Restart the container
+        result = subprocess.run(
+            ['docker', 'restart', 'tailscale-private'],
+            capture_output=True,
+            text=True,
+            timeout=30
+        )
+        
+        if result.returncode != 0:
+            print(f"[Private Tailscale] Restart failed: {result.stderr}")
+            return jsonify({
+                'success': False,
+                'message': f'Failed to restart container: {result.stderr}'
+            }), 500
+        
+        print("[Private Tailscale] Container restarted successfully")
+        
+        # Wait a moment for container to come back up
+        time.sleep(2)
+        
+        # Check if it's running
+        check_result = subprocess.run(
+            ['docker', 'ps', '--filter', 'name=tailscale-private', '--format', '{{.Status}}'],
+            capture_output=True,
+            text=True,
+            timeout=5
+        )
+        
+        if check_result.returncode == 0 and 'Up' in check_result.stdout:
+            print("[Private Tailscale] Container is running after restart")
+            return jsonify({
+                'success': True,
+                'message': 'Private Tailscale restarted successfully'
+            })
+        else:
+            print(f"[Private Tailscale] Container may not be running: {check_result.stdout}")
+            return jsonify({
+                'success': False,
+                'message': 'Container restarted but may not be running properly'
+            }), 500
+            
+    except subprocess.TimeoutExpired:
+        print("[Private Tailscale] Restart timed out")
+        return jsonify({
+            'success': False,
+            'message': 'Restart operation timed out'
+        }), 500
+    except Exception as e:
+        print(f"[Private Tailscale] Error restarting: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'message': str(e)}), 500
+
 @app.route('/api/private-tailscale/logs', methods=['GET'])
 def api_private_tailscale_logs():
     """Get Private Tailscale container logs"""

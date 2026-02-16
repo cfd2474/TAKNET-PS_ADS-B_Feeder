@@ -402,6 +402,16 @@
                         </p>
                     </div>
                 </div>
+                
+                <!-- Restart Private Tailscale Button -->
+                <div id="private-ts-restart-section" style="display: none; margin-top: 15px; padding-top: 15px; border-top: 1px solid #e5e7eb;">
+                    <button class="btn btn-secondary" onclick="restartPrivateTailscale()" style="width: 100%;">
+                        🔄 Restart Private Tailscale
+                    </button>
+                    <small style="display: block; margin-top: 8px; color: #6b7280; text-align: center;">
+                        Restarts only the Private Tailscale container (does not affect Primary Tailscale)
+                    </small>
+                </div>
             </div>
 
             <!-- WiFi Configuration Section -->
@@ -3296,6 +3306,7 @@
             const toggleText = document.getElementById('private-ts-toggle-text');
             const disabledSection = document.getElementById('private-ts-disabled-section');
             const connectedSection = document.getElementById('private-ts-connected-section');
+            const restartSection = document.getElementById('private-ts-restart-section');
             const statusIndicator = document.getElementById('private-ts-status-indicator');
             
             if (enabled && connected) {
@@ -3308,6 +3319,7 @@
                 toggleText.textContent = '🔴 Disable';
                 disabledSection.style.display = 'none';
                 connectedSection.style.display = 'block';
+                restartSection.style.display = 'block';  // Show restart button when connected
                 
                 // Update connection info
                 if (ip) document.getElementById('private-ts-ip').textContent = ip;
@@ -3323,6 +3335,7 @@
                 toggleText.textContent = '🔄 Retry';
                 disabledSection.style.display = 'block';
                 connectedSection.style.display = 'none';
+                restartSection.style.display = 'none';  // Hide restart button when failed
                 
             } else {
                 // Disabled
@@ -3334,6 +3347,7 @@
                 toggleText.textContent = '🟢 Enable';
                 disabledSection.style.display = 'block';
                 connectedSection.style.display = 'none';
+                restartSection.style.display = 'none';  // Hide restart button when disabled
             }
         }
         
@@ -3534,6 +3548,38 @@
             const modal = document.getElementById('privateTailscaleProgressModal');
             modal.style.display = 'none';
             document.body.classList.remove('modal-open');
+        }
+        
+        async function restartPrivateTailscale() {
+            if (!confirm('Restart Private Tailscale container? You will temporarily lose remote access via this network.')) {
+                return;
+            }
+            
+            try {
+                showStatus('Restarting Private Tailscale...', 'info');
+                
+                const response = await fetch('/api/private-tailscale/restart', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showStatus('Private Tailscale restarted successfully', 'success');
+                    // Wait 3 seconds then reload to show updated status
+                    setTimeout(() => {
+                        location.reload();
+                    }, 3000);
+                } else {
+                    showStatus('Failed to restart: ' + data.message, 'error');
+                }
+            } catch (error) {
+                console.error('Error restarting Private Tailscale:', error);
+                showStatus('Error restarting Private Tailscale: ' + error.message, 'error');
+            }
         }
     
     </script>
