@@ -44,47 +44,10 @@
         </div>
 
         <div class="wizard">
-            <!-- Step 1: SDR Detection & Configuration -->
-            <div class="step active" id="step-sdr">
-                <h2>Step 1: SDR Configuration</h2>
-                <p>Configure your SDR receiver(s)</p>
-                
-                <div class="info-note" style="margin-bottom: 20px;">
-                    <p>📡 TAKNET-PS will automatically detect connected SDR devices.</p>
-                    <p>Supports RTL-SDR dongles and FTDI-based Stratux UATRadio.</p>
-                </div>
-                
-                <div style="margin-bottom: 20px;">
-                    <button type="button" onclick="detectSDRsInWizard()" class="btn btn-primary" id="detectSDRsBtn">
-                        🔍 Detect SDR Devices
-                    </button>
-                </div>
-                
-                <div id="sdr-detection-result" style="display: none; margin-bottom: 20px;">
-                    <div id="sdr-count-display" style="padding: 15px; background: #f0fdf4; border-left: 4px solid #22c55e; border-radius: 6px; margin-bottom: 15px;">
-                        <!-- Populated by JavaScript -->
-                    </div>
-                    
-                    <div id="sdr-config-list">
-                        <!-- Populated by JavaScript with SDR configuration cards -->
-                    </div>
-                </div>
-                
-                <div id="sdr-error-message" style="display: none; padding: 15px; background: #fee2e2; border-left: 4px solid #dc2626; border-radius: 6px; margin-bottom: 15px;">
-                    <strong>❌ No SDRs Detected</strong>
-                    <p id="sdr-error-text">Please connect at least one RTL-SDR dongle and try again.</p>
-                </div>
-                
-                <!-- Navigation Button -->
-                <div id="sdr-next-button" style="display: none; margin-top: 30px; padding-top: 20px; border-top: 2px solid #e5e7eb;">
-                    <button type="button" class="btn btn-success" onclick="saveSDRConfigAndContinue()">Save Configuration & Continue →</button>
-                </div>
-            </div>
-
-            <!-- Step 2: Location -->
-            <div class="step" id="step1">
-                <h2>Step 2: Location</h2>
-                <p>Enter your receiver location</p>
+            <!-- Location Configuration -->
+            <div class="step active" id="step-location">
+                <h2>Configure Your Feeder Location</h2>
+                <p>Enter your receiver location and identification details</p>
                 
                 <div class="info-note" style="margin-bottom: 20px;">
                     <p>📍 Need help finding your coordinates and elevation? 
@@ -234,9 +197,6 @@
 
     <script src="/static/js/setup.js"></script>
     <script>
-        // Global variable to store detected SDRs
-        let detectedSDRs = [];
-        
         // Set timezone dropdown to current value
         document.addEventListener('DOMContentLoaded', function() {
             // Initialize offline mode detection
@@ -247,16 +207,97 @@
             if (currentTz) {
                 tzSelect.value = currentTz;
             }
-            
-            // Auto-detect SDRs on page load
-            detectSDRsInWizard();
         });
         
         // =============================================================
-        // SDR Detection Functions
+        // Location Configuration Submit
         // =============================================================
         
-        async function detectSDRsInWizard() {
+        async function submitSetup(event) {
+            event.preventDefault();
+            
+            // Get form values
+            const lat = document.getElementById('lat').value.trim();
+            const lon = document.getElementById('lon').value.trim();
+            const alt = document.getElementById('alt').value.trim();
+            const tz = document.getElementById('tz').value;
+            const siteName = document.getElementById('site_name').value.trim();
+            
+            // Validate required fields
+            if (!lat || !lon || !alt || !tz) {
+                showStatus('Please fill in all required location fields', 'error');
+                return;
+            }
+            
+            if (!siteName) {
+                showStatus('Please enter a feeder name', 'error');
+                return;
+            }
+            
+            // Validate formats
+            const latPattern = /^-?\d+\.\d+$/;
+            const lonPattern = /^-?\d+\.\d+$/;
+            const altPattern = /^\d+$/;
+            
+            if (!latPattern.test(lat)) {
+                showStatus('Latitude must be in decimal format (e.g., 33.55390)', 'error');
+                return;
+            }
+            
+            if (!lonPattern.test(lon)) {
+                showStatus('Longitude must be in decimal format (e.g., -117.21390)', 'error');
+                return;
+            }
+            
+            if (!altPattern.test(alt)) {
+                showStatus('Altitude must be a whole number (e.g., 304)', 'error');
+                return;
+            }
+            
+            // Show loading
+            showStatus('Saving configuration...', 'info');
+            
+            try {
+                // Save location configuration
+                const response = await fetch('/api/setup', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        lat: lat,
+                        lon: lon,
+                        alt: alt,
+                        tz: tz,
+                        site_name: siteName
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (!result.success) {
+                    throw new Error(result.message || 'Failed to save configuration');
+                }
+                
+                showStatus('✓ Configuration saved!', 'success');
+                
+                // Redirect to loading page
+                setTimeout(() => {
+                    window.location.href = '/loading';
+                }, 1000);
+                
+            } catch (error) {
+                showStatus('Error: ' + error.message, 'error');
+            }
+        }
+        
+        function showStatus(message, type) {
+            const statusDiv = document.getElementById('status');
+            statusDiv.textContent = message;
+            statusDiv.className = 'status-' + type;
+            statusDiv.style.display = 'block';
+        }
+    </script>
+
+            
             const btn = document.getElementById('detectSDRsBtn');
             const resultDiv = document.getElementById('sdr-detection-result');
             const errorDiv = document.getElementById('sdr-error-message');

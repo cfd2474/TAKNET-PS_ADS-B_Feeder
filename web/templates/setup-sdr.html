@@ -533,10 +533,10 @@
             showStatus('Applying SDR settings...', 'info');
             
             try {
-                const response = await fetch('/api/sdr/configure', {
+                const response = await fetch('/api/sdrs/configure', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ devices: devices })
+                    body: JSON.stringify({ sdrs: devices })
                 });
                 
                 const result = await response.json();
