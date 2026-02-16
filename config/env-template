@@ -17,7 +17,12 @@ MLAT_SITE_NAME=TAKNET-PS-ADSB-Feeder
 # READSB_DEVICE=
 # READSB_GAIN=autogain
 
-# SDR Device Details (Auto-configured)
+# ============================================
+# SDR 1090 MHz Configuration (Phase B Enhanced)
+# ============================================
+# Driver type: rtlsdr, airspy, hackrf, soapy
+SDR_1090_DRIVER=rtlsdr
+SDR_1090_SERIAL=
 SDR_1090_DEVICE=0
 SDR_1090_TYPE=rtlsdr
 SDR_1090_PATH=0
@@ -34,10 +39,21 @@ DUMP978_DEVICE=1
 DUMP978_GAIN=autogain
 
 # SDR 978 MHz Device Details (Auto-configured)
+SDR_978_DRIVER=rtlsdr
+SDR_978_SERIAL=
 SDR_978_DEVICE=
 SDR_978_TYPE=rtlsdr
 SDR_978_PATH=1
 SDR_978_GAIN=autogain
+
+# ============================================
+# SoapySDR Runtime Mode (Phase B)
+# ============================================
+# Controls whether to use SoapySDR for device access
+# auto   = Use native driver for RTL-SDR, SoapySDR for others
+# true   = Force SoapySDR for all devices
+# false  = Force native drivers only
+USE_SOAPYSDR=auto
 
 # ============================================
 # Tailscale VPN (Optional but Recommended)

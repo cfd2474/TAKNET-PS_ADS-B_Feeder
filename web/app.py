@@ -2648,8 +2648,10 @@ def api_configure_sdrs():
             index = sdr.get('index')
             use = sdr.get('use')
             gain = sdr.get('gain', 'autogain')
-            device_type = sdr.get('type', 'rtlsdr')  # NEW: device type
-            device_path = sdr.get('device_path', str(index))  # NEW: device path
+            device_type = sdr.get('type', 'rtlsdr')
+            device_path = sdr.get('device_path', str(index))
+            driver = sdr.get('driver', 'rtlsdr')  # Phase B
+            serial = sdr.get('serial', '')  # Phase B
             
             if use == '1090':
                 if sdr_1090 is not None:
@@ -2661,10 +2663,13 @@ def api_configure_sdrs():
                 env['READSB_DEVICE'] = str(index)
                 env['READSB_GAIN'] = gain
                 env['SDR_1090_DEVICE'] = str(index)
-                env['SDR_1090_TYPE'] = device_type  # NEW
-                env['SDR_1090_PATH'] = device_path  # NEW
+                env['SDR_1090_TYPE'] = device_type
+                env['SDR_1090_PATH'] = device_path
                 env['SDR_1090_GAIN'] = gain
-                print(f"✓ SDR {index} ({device_type}) configured for 1090 MHz (gain: {gain})")
+                # Phase B: Add driver and serial
+                env['SDR_1090_DRIVER'] = driver
+                env['SDR_1090_SERIAL'] = serial
+                print(f"✓ SDR {index} ({driver}) configured for 1090 MHz (gain: {gain}, serial: {serial})")
                 
             elif use == '978':
                 if sdr_978 is not None:
@@ -2677,10 +2682,13 @@ def api_configure_sdrs():
                 env['DUMP978_DEVICE'] = str(index)
                 env['DUMP978_GAIN'] = gain
                 env['SDR_978_DEVICE'] = str(index)
-                env['SDR_978_TYPE'] = device_type  # NEW
-                env['SDR_978_PATH'] = device_path  # NEW
+                env['SDR_978_TYPE'] = device_type
+                env['SDR_978_PATH'] = device_path
                 env['SDR_978_GAIN'] = gain
-                print(f"✓ SDR {index} ({device_type}) configured for 978 MHz (gain: {gain})")
+                # Phase B: Add driver and serial
+                env['SDR_978_DRIVER'] = driver
+                env['SDR_978_SERIAL'] = serial
+                print(f"✓ SDR {index} ({driver}) configured for 978 MHz (gain: {gain}, serial: {serial})")
         
         # Validate we have at least 1090 MHz
         if sdr_1090 is None:

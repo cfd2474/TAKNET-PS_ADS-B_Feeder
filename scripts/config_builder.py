@@ -409,6 +409,102 @@ def build_private_tailscale_service(env_vars):
     
     return service
 
+def build_sdr_configuration(env_vars):
+    """
+    Phase B: Smart SDR configuration builder
+    Returns environment variables for readsb based on driver type
+    """
+    # Get SDR configuration
+    sdr_driver = env_vars.get('SDR_1090_DRIVER', 'rtlsdr')
+    sdr_serial = env_vars.get('SDR_1090_SERIAL', '')
+    sdr_device = env_vars.get('SDR_1090_DEVICE', '0')
+    sdr_gain = env_vars.get('SDR_1090_GAIN', 'autogain')
+    use_soapy = env_vars.get('USE_SOAPYSDR', 'auto')
+    
+    # Legacy fallback for systems without new variables
+    if not sdr_driver:
+        sdr_driver = env_vars.get('SDR_1090_TYPE', 'rtlsdr')
+    if not sdr_device:
+        sdr_device = env_vars.get('READSB_DEVICE', '0')
+    if not sdr_gain:
+        sdr_gain = env_vars.get('READSB_GAIN', 'autogain')
+    
+    print(f"[Phase B] SDR Configuration:")
+    print(f"  Driver: {sdr_driver}")
+    print(f"  Serial: {sdr_serial}")
+    print(f"  Device: {sdr_device}")
+    print(f"  Gain: {sdr_gain}")
+    print(f"  USE_SOAPYSDR: {use_soapy}")
+    
+    # Determine device type to use
+    device_type = None
+    config = {}
+    
+    # Decision logic
+    if use_soapy == 'false':
+        # Force native drivers
+        print(f"[Phase B] Forced native driver mode")
+        device_type = 'native'
+        
+    elif use_soapy == 'true':
+        # Force SoapySDR
+        print(f"[Phase B] Forced SoapySDR mode")
+        device_type = 'soapysdr'
+        
+    else:  # auto mode
+        # Use native for RTL-SDR, SoapySDR for others
+        if sdr_driver == 'rtlsdr':
+            print(f"[Phase B] Auto mode: Using native rtlsdr driver")
+            device_type = 'native'
+        else:
+            print(f"[Phase B] Auto mode: Using SoapySDR for {sdr_driver}")
+            device_type = 'soapysdr'
+    
+    # Build configuration based on decision
+    if device_type == 'native':
+        if sdr_driver == 'rtlsdr':
+            config['environment'] = [
+                'READSB_DEVICE_TYPE=rtlsdr',
+                f'READSB_RTLSDR_DEVICE={sdr_device}',
+                f'READSB_GAIN={sdr_gain}'
+            ]
+            print(f"[Phase B] Native RTL-SDR config: device={sdr_device}, gain={sdr_gain}")
+            
+        elif sdr_driver == 'airspy':
+            # Airspy native mode (requires serial)
+            if sdr_serial:
+                config['environment'] = [
+                    'READSB_DEVICE_TYPE=airspy',
+                    f'READSB_AIRSPY_DEVICE={sdr_serial}',
+                    f'READSB_GAIN={sdr_gain}'
+                ]
+                print(f"[Phase B] Native Airspy config: serial={sdr_serial}, gain={sdr_gain}")
+            else:
+                # Fall back to SoapySDR if no serial
+                print(f"[Phase B] Warning: Airspy serial missing, falling back to SoapySDR")
+                device_type = 'soapysdr'
+        
+        else:
+            # Unknown driver, fall back to SoapySDR
+            print(f"[Phase B] Warning: Unknown driver {sdr_driver}, falling back to SoapySDR")
+            device_type = 'soapysdr'
+    
+    if device_type == 'soapysdr':
+        # Build SoapySDR device string
+        if sdr_serial and sdr_serial != '':
+            soapy_device = f'driver={sdr_driver},serial={sdr_serial}'
+        else:
+            soapy_device = f'driver={sdr_driver},index={sdr_device}'
+        
+        config['environment'] = [
+            'READSB_DEVICE_TYPE=soapysdr',
+            f'READSB_SOAPY_DEVICE={soapy_device}',
+            f'READSB_GAIN={sdr_gain}'
+        ]
+        print(f"[Phase B] SoapySDR config: {soapy_device}, gain={sdr_gain}")
+    
+    return config
+
 def build_docker_compose(env_vars):
     """Build docker-compose.yml with conditional FR24 service"""
     # Get all env vars needed for ultrafeeder (write actual values, not ${VARIABLE})
@@ -417,10 +513,11 @@ def build_docker_compose(env_vars):
     feeder_long = env_vars.get('FEEDER_LONG', '')
     feeder_alt_m = env_vars.get('FEEDER_ALT_M', '')
     feeder_uuid = env_vars.get('FEEDER_UUID', '')
-    readsb_device = env_vars.get('READSB_DEVICE', '0')
-    readsb_gain = env_vars.get('READSB_GAIN', 'autogain')
     mlat_site_name = env_vars.get('MLAT_SITE_NAME', 'feeder')
     ultrafeeder_config = env_vars.get('ULTRAFEEDER_CONFIG', '')
+    
+    # Phase B: Smart SDR configuration
+    sdr_config = build_sdr_configuration(env_vars)
     
     compose = {
         'networks': {
@@ -440,9 +537,8 @@ def build_docker_compose(env_vars):
                     f'LONG={feeder_long}',
                     f'ALT={feeder_alt_m}m',
                     f'UUID={feeder_uuid}',
-                    'READSB_DEVICE_TYPE=rtlsdr',
-                    f'READSB_RTLSDR_DEVICE={readsb_device}',
-                    f'READSB_GAIN={readsb_gain}',
+                    # Phase B: Dynamic SDR configuration from build_sdr_configuration()
+                    *sdr_config['environment'],
                     'READSB_RX_LOCATION_ACCURACY=2',
                     'READSB_STATS_RANGE=true',
                     f'MLAT_USER={mlat_site_name}',

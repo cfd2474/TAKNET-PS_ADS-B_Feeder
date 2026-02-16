@@ -1,10 +1,10 @@
 {
-  "version": "2.54.3",
+  "version": "2.55.0",
   "release_date": "2026-02-15",
-  "release_name": "Fix First Device Auto-Assignment Logic",
+  "release_name": "Phase B: SoapySDR Runtime Support",
   "download_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh",
   "changelog_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/CHANGELOG.md",
   "minimum_version": "2.40.0",
   "breaking_changes": false,
-  "release_notes": "Fixed critical bug in SoapySDR detection where DEVICE_COUNT was used instead of device index for auto-assignment check. First device (index 0) now correctly defaults to 1090 MHz. Added debug logging to wizard for troubleshooting."
+  "release_notes": "Phase B: Adds SoapySDR runtime support with smart driver selection. RTL-SDR uses native driver for best performance, Airspy/HackRF use SoapySDR. Includes migration script for existing configs. USE_SOAPYSDR flag controls behavior (auto/true/false). 100% backward compatible."
 }
