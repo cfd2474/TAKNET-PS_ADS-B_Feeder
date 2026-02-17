@@ -1,5 +1,5 @@
 #!/bin/bash
-# TAKNET-PS-ADSB-Feeder One-Line Installer v2.57.6
+# TAKNET-PS-ADSB-Feeder One-Line Installer v2.57.7
 # curl -fsSL https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh | sudo bash
 
 set -e
@@ -42,7 +42,7 @@ fi
 if [ "$UPDATE_MODE" != true ]; then
     echo ""
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    echo "  TAKNET-PS-ADSB-Feeder Installer v2.57.6"
+    echo "  TAKNET-PS-ADSB-Feeder Installer v2.57.7"
     echo "  Ultrafeeder + TAKNET-PS + Web UI"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo ""
@@ -385,6 +385,10 @@ chmod +x /opt/adsb/scripts/fix-private-tailscale-device.sh
 echo "  - emergency-ssh-fix.sh..."
 wget -q $REPO/scripts/emergency-ssh-fix.sh -O /opt/adsb/scripts/emergency-ssh-fix.sh
 chmod +x /opt/adsb/scripts/emergency-ssh-fix.sh
+
+echo "  - fix-dns.sh..."
+wget -q $REPO/scripts/fix-dns.sh -O /opt/adsb/scripts/fix-dns.sh
+chmod +x /opt/adsb/scripts/fix-dns.sh
 
 # Generate initial docker-compose.yml from .env configuration
 echo "  - Generating docker-compose.yml..."
