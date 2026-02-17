@@ -2394,7 +2394,7 @@ def api_private_tailscale_status():
         
         # Container is running - get Tailscale status
         status_result = subprocess.run(
-            ['docker', 'exec', 'tailscale-private', 'tailscale', 'status', '--json'],
+            ['docker', 'exec', 'tailscale-private', 'tailscale', '--socket=/var/run/tailscale-private/tailscaled.sock', 'status', '--json'],
             capture_output=True,
             text=True,
             timeout=5
@@ -2535,7 +2535,7 @@ def api_private_tailscale_enable():
         for i in range(20):
             time.sleep(0.5)
             check_result = subprocess.run(
-                ['docker', 'exec', 'tailscale-private', 'tailscale', 'status', '--json'],
+                ['docker', 'exec', 'tailscale-private', 'tailscale', '--socket=/var/run/tailscale-private/tailscaled.sock', 'status', '--json'],
                 capture_output=True,
                 text=True,
                 timeout=5
