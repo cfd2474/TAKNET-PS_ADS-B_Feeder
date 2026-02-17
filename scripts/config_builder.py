@@ -421,12 +421,12 @@ def build_private_tailscale_service(env_vars):
     else:
         print(f"[INFO] Building Private Tailscale with key: {auth_key[:20]}...")
     
-    # Build command with unique socket path to avoid conflict with Primary Tailscale
+    # Build command with unique socket path and TUN device to avoid conflict with Primary Tailscale
     cmd = (
         'mkdir -p /var/run/tailscale-private && '
         'echo "Auth key length: $${#TS_AUTHKEY}" && '
         'echo "TS_AUTHKEY starts with: $${TS_AUTHKEY:0:20}" && '
-        'tailscaled --state=/var/lib/tailscale/tailscaled.state --socket=/var/run/tailscale-private/tailscaled.sock & '
+        'tailscaled --state=/var/lib/tailscale/tailscaled.state --socket=/var/run/tailscale-private/tailscaled.sock --tun=ts-private & '
         'sleep 5 && '
         'tailscale --socket=/var/run/tailscale-private/tailscaled.sock up '
         '--authkey="$$TS_AUTHKEY" '

@@ -1,10 +1,10 @@
 {
-  "version": "2.57.0",
-  "release_date": "2026-02-16",
-  "release_name": "Critical Fix: Private Tailscale Socket Conflict",
+  "version": "2.57.1",
+  "release_date": "2026-02-17",
+  "release_name": "Critical Fix: Private Tailscale TUN Device Conflict",
   "download_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh",
   "changelog_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/CHANGELOG.md",
   "minimum_version": "2.40.0",
   "breaking_changes": false,
-  "release_notes": "Fixed critical bug where Private Tailscale used same socket as Primary Tailscale causing connection failures. Private Tailscale now uses unique socket path (/var/run/tailscale-private/tailscaled.sock) and proper host networking. SSH over Private Tailscale will now work correctly."
+  "release_notes": "Fixed TUN device conflict. Private Tailscale now uses unique TUN device name 'ts-private' instead of 'tailscale0'. Both Primary and Private Tailscale can now run simultaneously without device conflicts."
 }
