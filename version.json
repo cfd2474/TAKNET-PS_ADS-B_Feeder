@@ -1,10 +1,10 @@
 {
-  "version": "2.56.0",
+  "version": "2.56.1",
   "release_date": "2026-02-16",
-  "release_name": "Private Tailscale Restart Button",
+  "release_name": "SSH Diagnostic Tool for Private Tailscale",
   "download_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh",
   "changelog_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/CHANGELOG.md",
   "minimum_version": "2.40.0",
   "breaking_changes": false,
-  "release_notes": "Added dedicated restart button for Private Tailscale in Settings. Restarts only the Private Tailscale container without affecting Primary Tailscale or other services. Button appears when Private Tailscale is connected."
+  "release_notes": "Added comprehensive SSH diagnostic tool for troubleshooting Private Tailscale connection issues. Script checks Tailscale IPs, SSH configuration, firewall rules, Match blocks, DenyUsers, and provides specific fixes for common problems."
 }
