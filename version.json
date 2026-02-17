@@ -1,10 +1,10 @@
 {
-  "version": "2.56.1",
+  "version": "2.57.0",
   "release_date": "2026-02-16",
-  "release_name": "SSH Diagnostic Tool for Private Tailscale",
+  "release_name": "Critical Fix: Private Tailscale Socket Conflict",
   "download_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh",
   "changelog_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/CHANGELOG.md",
   "minimum_version": "2.40.0",
   "breaking_changes": false,
-  "release_notes": "Added comprehensive SSH diagnostic tool for troubleshooting Private Tailscale connection issues. Script checks Tailscale IPs, SSH configuration, firewall rules, Match blocks, DenyUsers, and provides specific fixes for common problems."
+  "release_notes": "Fixed critical bug where Private Tailscale used same socket as Primary Tailscale causing connection failures. Private Tailscale now uses unique socket path (/var/run/tailscale-private/tailscaled.sock) and proper host networking. SSH over Private Tailscale will now work correctly."
 }
