@@ -2499,24 +2499,46 @@ def api_private_tailscale_enable():
         
         # Stop and remove old container to force recreation with new env vars
         print("[Private Tailscale] Stopping old container if exists...")
+        
+        # First, try graceful stop with profile
         stop_result = subprocess.run(
-            ['docker', 'compose', 'down', 'tailscale-private'],
+            ['docker', 'compose', '--profile', 'private-tailscale', 'stop', 'tailscale-private'],
+            cwd='/opt/adsb/config',
+            capture_output=True,
+            text=True,
+            timeout=15
+        )
+        print(f"[Private Tailscale] Container stop result: {stop_result.returncode}")
+        
+        # Force remove container
+        subprocess.run(
+            ['docker', 'compose', '--profile', 'private-tailscale', 'rm', '-f', 'tailscale-private'],
             cwd='/opt/adsb/config',
             capture_output=True,
             text=True,
             timeout=10
         )
-        print(f"[Private Tailscale] Container stop: {stop_result.returncode}")
+        print("[Private Tailscale] Old container removed")
+        
+        # Small delay to ensure cleanup
+        time.sleep(2)
         
         # Start Private Tailscale container with profile
         print("[Private Tailscale] Starting container with docker compose...")
-        result = subprocess.run(
-            ['docker', 'compose', '--profile', 'private-tailscale', 'up', '-d', 'tailscale-private'],
-            cwd='/opt/adsb/config',
-            capture_output=True,
-            text=True,
-            timeout=30
-        )
+        try:
+            result = subprocess.run(
+                ['docker', 'compose', '--profile', 'private-tailscale', 'up', '-d', 'tailscale-private'],
+                cwd='/opt/adsb/config',
+                capture_output=True,
+                text=True,
+                timeout=60  # Increased timeout for slow starts
+            )
+        except subprocess.TimeoutExpired:
+            print("[Private Tailscale] Container start timed out after 60 seconds")
+            return jsonify({
+                'success': False,
+                'message': 'Container start timed out. Check docker logs tailscale-private for details.'
+            }), 500
         
         print(f"[Private Tailscale] Docker compose stdout: {result.stdout}")
         if result.stderr:
