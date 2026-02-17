@@ -1,5 +1,5 @@
 #!/bin/bash
-# TAKNET-PS-ADSB-Feeder One-Line Installer v2.57.5
+# TAKNET-PS-ADSB-Feeder One-Line Installer v2.57.6
 # curl -fsSL https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh | sudo bash
 
 set -e
@@ -42,7 +42,7 @@ fi
 if [ "$UPDATE_MODE" != true ]; then
     echo ""
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    echo "  TAKNET-PS-ADSB-Feeder Installer v2.57.5"
+    echo "  TAKNET-PS-ADSB-Feeder Installer v2.57.6"
     echo "  Ultrafeeder + TAKNET-PS + Web UI"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo ""
@@ -347,27 +347,6 @@ echo "Downloading configuration files..."
 REPO="https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main"
 
 # Config files
-echo "  - docker-compose.yml..."
-if ! wget --timeout=30 $REPO/config/docker-compose.yml -O /opt/adsb/config/docker-compose.yml 2>&1 | grep -q "saved"; then
-    echo "    ✗ FAILED to download docker-compose.yml"
-    echo "    URL: $REPO/config/docker-compose.yml"
-    exit 1
-fi
-
-# CRITICAL: Verify docker-compose.yml has adsbhub service
-if ! grep -q "adsbhub:" /opt/adsb/config/docker-compose.yml; then
-    echo "    ✗ ERROR: Downloaded docker-compose.yml is missing adsbhub service!"
-    echo "    This means your GitHub repo has the old version."
-    echo ""
-    echo "    Solutions:"
-    echo "    1. Make sure you pushed v2.43.0 to GitHub"
-    echo "    2. Wait 5 minutes for GitHub cache to clear"
-    echo "    3. Try the install again"
-    echo ""
-    exit 1
-fi
-echo "    ✓ docker-compose.yml downloaded with adsbhub service"
-
 echo "  - env-template..."
 if [ "$UPDATE_MODE" = true ] && [ -f /opt/adsb/config/.env ]; then
     echo "    (Preserving existing configuration)"
@@ -406,6 +385,19 @@ chmod +x /opt/adsb/scripts/fix-private-tailscale-device.sh
 echo "  - emergency-ssh-fix.sh..."
 wget -q $REPO/scripts/emergency-ssh-fix.sh -O /opt/adsb/scripts/emergency-ssh-fix.sh
 chmod +x /opt/adsb/scripts/emergency-ssh-fix.sh
+
+# Generate initial docker-compose.yml from .env configuration
+echo "  - Generating docker-compose.yml..."
+if [ -f /opt/adsb/config/.env ]; then
+    python3 /opt/adsb/scripts/config_builder.py > /dev/null 2>&1
+    if [ -f /opt/adsb/config/docker-compose.yml ]; then
+        echo "    ✓ docker-compose.yml generated successfully"
+    else
+        echo "    ⚠️  docker-compose.yml generation failed (will be created on first service start)"
+    fi
+else
+    echo "    ⏭️  .env not found yet (will generate during setup wizard)"
+fi
 
 # Download version.json for update checking
 echo "  - version.json..."
