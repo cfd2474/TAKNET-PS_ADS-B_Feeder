@@ -114,6 +114,14 @@ run_update() {
 restart_services() {
     echo "🔄 Restarting services..."
     
+    # Rebuild docker-compose.yml with new config_builder.py
+    echo "   • Rebuilding docker-compose configuration..."
+    if python3 /opt/adsb/scripts/config_builder.py 2>/dev/null; then
+        echo "   ✓ Docker-compose configuration rebuilt"
+    else
+        echo "   ⚠ Failed to rebuild docker-compose configuration"
+    fi
+    
     # Restart ultrafeeder (rebuilds config with new code)
     if systemctl restart ultrafeeder 2>/dev/null; then
         echo "   ✓ Ultrafeeder restarted"
@@ -126,6 +134,40 @@ restart_services() {
         echo "   ✓ Web interface restarted"
     else
         echo "   ⚠ Failed to restart web interface"
+    fi
+    
+    # Check if Private Tailscale container is running
+    if docker ps --format '{{.Names}}' 2>/dev/null | grep -q "^tailscale-private$"; then
+        echo "   • Restarting Private Tailscale with new configuration..."
+        
+        # Stop and remove old container
+        cd /opt/adsb/config
+        docker compose stop tailscale-private 2>/dev/null || true
+        docker compose rm -f tailscale-private 2>/dev/null || true
+        
+        # Start with new configuration
+        if docker compose --profile private-tailscale up -d tailscale-private 2>/dev/null; then
+            echo "   ✓ Private Tailscale restarted"
+            
+            # Wait for container to stabilize
+            sleep 5
+            
+            # Check if it's running properly
+            if docker ps --format '{{.Names}}' 2>/dev/null | grep -q "^tailscale-private$"; then
+                # Check logs for errors
+                if docker logs tailscale-private 2>&1 | tail -5 | grep -q "device or resource busy"; then
+                    echo "   ⚠ Private Tailscale may have device conflict - check logs"
+                else
+                    echo "   ✓ Private Tailscale running correctly"
+                fi
+            else
+                echo "   ⚠ Private Tailscale container failed to start"
+            fi
+        else
+            echo "   ⚠ Failed to restart Private Tailscale"
+        fi
+    else
+        echo "   • Private Tailscale not running (skipped)"
     fi
     
     echo ""

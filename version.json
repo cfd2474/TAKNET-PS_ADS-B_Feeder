@@ -1,10 +1,10 @@
 {
-  "version": "2.57.1",
+  "version": "2.57.2",
   "release_date": "2026-02-17",
-  "release_name": "Critical Fix: Private Tailscale TUN Device Conflict",
+  "release_name": "Auto-Update: Private Tailscale Container Restart",
   "download_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh",
   "changelog_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/CHANGELOG.md",
   "minimum_version": "2.40.0",
   "breaking_changes": false,
-  "release_notes": "Fixed TUN device conflict. Private Tailscale now uses unique TUN device name 'ts-private' instead of 'tailscale0'. Both Primary and Private Tailscale can now run simultaneously without device conflicts."
+  "release_notes": "Auto-updater now automatically rebuilds docker-compose.yml and restarts Private Tailscale container with fixed configuration. No manual intervention needed. Fixes socket and TUN device conflicts automatically on update."
 }
