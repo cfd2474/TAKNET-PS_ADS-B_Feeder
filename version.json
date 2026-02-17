@@ -1,10 +1,10 @@
 {
-  "version": "2.57.7",
+  "version": "2.57.8",
   "release_date": "2026-02-17",
-  "release_name": "DNS Fix Script",
+  "release_name": "Fix: Tailscale DNS Override",
   "download_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh",
   "changelog_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/CHANGELOG.md",
   "minimum_version": "2.40.0",
   "breaking_changes": false,
-  "release_notes": "Added DNS fix script for update check failures. Configures Google DNS servers when DNS resolution fails."
+  "release_notes": "Fixes Tailscale MagicDNS blocking public DNS resolution. Auto-update now disables Tailscale DNS override and configures NetworkManager with Google DNS. Update check will work after updating."
 }

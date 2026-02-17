@@ -170,6 +170,19 @@ restart_services() {
         echo "   • Private Tailscale not running (skipped)"
     fi
     
+    # Fix Tailscale DNS override
+    echo "   • Fixing Tailscale DNS override..."
+    if [ -f /opt/adsb/scripts/fix-tailscale-dns.sh ]; then
+        /opt/adsb/scripts/fix-tailscale-dns.sh > /dev/null 2>&1
+        if grep -q "100.100.100.100" /etc/resolv.conf; then
+            echo "   ⚠ Tailscale DNS still overriding (may need manual fix)"
+        else
+            echo "   ✓ Tailscale DNS override disabled"
+        fi
+    else
+        echo "   ⏭️  DNS fix script not found (will be in next update)"
+    fi
+    
     echo ""
 }
 

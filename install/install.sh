@@ -1,5 +1,5 @@
 #!/bin/bash
-# TAKNET-PS-ADSB-Feeder One-Line Installer v2.57.7
+# TAKNET-PS-ADSB-Feeder One-Line Installer v2.57.8
 # curl -fsSL https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh | sudo bash
 
 set -e
@@ -42,7 +42,7 @@ fi
 if [ "$UPDATE_MODE" != true ]; then
     echo ""
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    echo "  TAKNET-PS-ADSB-Feeder Installer v2.57.7"
+    echo "  TAKNET-PS-ADSB-Feeder Installer v2.57.8"
     echo "  Ultrafeeder + TAKNET-PS + Web UI"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo ""
@@ -389,6 +389,10 @@ chmod +x /opt/adsb/scripts/emergency-ssh-fix.sh
 echo "  - fix-dns.sh..."
 wget -q $REPO/scripts/fix-dns.sh -O /opt/adsb/scripts/fix-dns.sh
 chmod +x /opt/adsb/scripts/fix-dns.sh
+
+echo "  - fix-tailscale-dns.sh..."
+wget -q $REPO/scripts/fix-tailscale-dns.sh -O /opt/adsb/scripts/fix-tailscale-dns.sh
+chmod +x /opt/adsb/scripts/fix-tailscale-dns.sh
 
 # Generate initial docker-compose.yml from .env configuration
 echo "  - Generating docker-compose.yml..."
@@ -1209,6 +1213,16 @@ chmod +x /opt/adsb/configure-ssh-dual-tailscale.sh
 
 # Get IP address
 IP=$(hostname -I | awk '{print $1}')
+
+# Fix Tailscale DNS override if Tailscale is installed
+if command -v tailscale &> /dev/null && [ -f /opt/adsb/scripts/fix-tailscale-dns.sh ]; then
+    echo "Checking Tailscale DNS configuration..."
+    if grep -q "100.100.100.100" /etc/resolv.conf 2>/dev/null; then
+        echo "  Fixing Tailscale DNS override..."
+        /opt/adsb/scripts/fix-tailscale-dns.sh > /dev/null 2>&1
+        echo "  ✓ DNS configuration fixed"
+    fi
+fi
 
 # Done
 echo ""
