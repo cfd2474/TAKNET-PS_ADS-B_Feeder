@@ -1,5 +1,5 @@
 #!/bin/bash
-# TAKNET-PS-ADSB-Feeder One-Line Installer v2.57.4
+# TAKNET-PS-ADSB-Feeder One-Line Installer v2.57.5
 # curl -fsSL https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh | sudo bash
 
 set -e
@@ -42,7 +42,7 @@ fi
 if [ "$UPDATE_MODE" != true ]; then
     echo ""
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    echo "  TAKNET-PS-ADSB-Feeder Installer v2.57.4"
+    echo "  TAKNET-PS-ADSB-Feeder Installer v2.57.5"
     echo "  Ultrafeeder + TAKNET-PS + Web UI"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo ""
@@ -402,6 +402,10 @@ chmod +x /opt/adsb/scripts/diagnose-ssh-private-ts.sh
 echo "  - fix-private-tailscale-device.sh..."
 wget -q $REPO/scripts/fix-private-tailscale-device.sh -O /opt/adsb/scripts/fix-private-tailscale-device.sh
 chmod +x /opt/adsb/scripts/fix-private-tailscale-device.sh
+
+echo "  - emergency-ssh-fix.sh..."
+wget -q $REPO/scripts/emergency-ssh-fix.sh -O /opt/adsb/scripts/emergency-ssh-fix.sh
+chmod +x /opt/adsb/scripts/emergency-ssh-fix.sh
 
 # Download version.json for update checking
 echo "  - version.json..."

@@ -1,10 +1,10 @@
 {
-  "version": "2.57.4",
+  "version": "2.57.5",
   "release_date": "2026-02-17",
-  "release_name": "Fix: Container Start Timeout",
+  "release_name": "Emergency SSH Fix Script",
   "download_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh",
   "changelog_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/CHANGELOG.md",
   "minimum_version": "2.40.0",
   "breaking_changes": false,
-  "release_notes": "Fixed container start timeout. Increased timeout to 60 seconds, improved container cleanup before start, added TUN device conflict fix script. Better error handling and messaging for slow container starts."
+  "release_notes": "Added emergency SSH fix script for when SSH times out on both Tailscale networks. Removes old SSH rules, fixes ListenAddress restrictions, adds correct Match block, and restarts SSH service."
 }
