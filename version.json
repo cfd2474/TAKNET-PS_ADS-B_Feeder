@@ -1,10 +1,10 @@
 {
-  "version": "2.57.8",
-  "release_date": "2026-02-17",
-  "release_name": "Fix: Tailscale DNS Override",
+  "version": "2.58.0",
+  "release_date": "2026-02-20",
+  "release_name": "NetBird Architecture Migration - Phase 1",
   "download_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh",
   "changelog_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/CHANGELOG.md",
   "minimum_version": "2.40.0",
-  "breaking_changes": false,
-  "release_notes": "Fixes Tailscale MagicDNS blocking public DNS resolution. Auto-update now disables Tailscale DNS override and configures NetworkManager with Google DNS. Update check will work after updating."
+  "breaking_changes": true,
+  "release_notes": "Phase 1: Remove Private Tailscale. Removes dual-Tailscale architecture in preparation for NetBird VPN integration."
 }

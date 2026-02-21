@@ -1,6 +1,6 @@
 #!/bin/bash
 # Emergency SSH Fix for Tailscale Access
-# Use when SSH times out on both Primary and Private Tailscale
+# Use when SSH times out on Tailscale
 
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo "  Emergency SSH Fix for Tailscale"
@@ -45,7 +45,7 @@ echo "5. Adding correct SSH configuration..."
 cat >> /etc/ssh/sshd_config << 'SSHEOF'
 
 # TAKNET-PS Remote User - All Tailscale Networks
-# Allows SSH from Primary AND Private Tailscale (entire CGNAT range)
+# Allows SSH from Tailscale and NetBird (entire CGNAT range) (entire CGNAT range)
 Match User remote Address 100.64.0.0/10
     PasswordAuthentication yes
     PubkeyAuthentication yes
@@ -98,14 +98,6 @@ if [ -n "$PRIMARY_IP" ]; then
 else
     echo "⚠️  Primary Tailscale not connected"
 fi
-
-# Private Tailscale
-PRIVATE_IP=$(docker exec tailscale-private tailscale --socket=/var/run/tailscale-private/tailscaled.sock ip -4 2>/dev/null)
-if [ -n "$PRIVATE_IP" ]; then
-    echo "✓ Private Tailscale IP: $PRIVATE_IP"
-else
-    echo "⚠️  Private Tailscale not connected"
-fi
 echo ""
 
 echo "10. Testing SSH ports from localhost..."
@@ -119,21 +111,10 @@ if [ -n "$PRIMARY_IP" ]; then
         echo "❌ SSH port 22 is CLOSED on Primary Tailscale"
     fi
 fi
-
-# Test Private Tailscale
-if [ -n "$PRIVATE_IP" ]; then
-    echo "Testing Private Tailscale ($PRIVATE_IP)..."
-    timeout 2 bash -c "echo | nc -w 1 $PRIVATE_IP 22" 2>/dev/null
-    if [ $? -eq 0 ]; then
-        echo "✓ SSH port 22 is OPEN on Private Tailscale"
-    else
-        echo "❌ SSH port 22 is CLOSED on Private Tailscale"
-    fi
-fi
 echo ""
 
 echo "11. Checking Tailscale interfaces..."
-ip addr show | grep -E "tailscale|ts-private" -A 2
+ip addr show | grep -E "tailscale0" -A 2
 echo ""
 
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"

@@ -325,7 +325,7 @@ SUDOEOF
         # Test and restart SSH
         if sshd -t 2>/dev/null; then
             systemctl restart sshd 2>/dev/null || true
-            echo "✓ User 'remote' created (SSH access BLOCKED until Tailscale configured)"
+            echo "✓ User 'remote' created (SSH access BLOCKED until VPN configured)"
         else
             # If test fails, restore backup
             cp /etc/ssh/sshd_config.backup-install /etc/ssh/sshd_config
@@ -370,18 +370,6 @@ echo "  - updater.sh..."
 wget -q $REPO/scripts/updater.sh -O /opt/adsb/scripts/updater.sh
 chmod +x /opt/adsb/scripts/updater.sh
 
-echo "  - update-ssh-all-tailscale.sh..."
-wget -q $REPO/scripts/update-ssh-all-tailscale.sh -O /opt/adsb/scripts/update-ssh-all-tailscale.sh
-chmod +x /opt/adsb/scripts/update-ssh-all-tailscale.sh
-
-echo "  - diagnose-ssh-private-ts.sh..."
-wget -q $REPO/scripts/diagnose-ssh-private-ts.sh -O /opt/adsb/scripts/diagnose-ssh-private-ts.sh
-chmod +x /opt/adsb/scripts/diagnose-ssh-private-ts.sh
-
-echo "  - fix-private-tailscale-device.sh..."
-wget -q $REPO/scripts/fix-private-tailscale-device.sh -O /opt/adsb/scripts/fix-private-tailscale-device.sh
-chmod +x /opt/adsb/scripts/fix-private-tailscale-device.sh
-
 echo "  - emergency-ssh-fix.sh..."
 wget -q $REPO/scripts/emergency-ssh-fix.sh -O /opt/adsb/scripts/emergency-ssh-fix.sh
 chmod +x /opt/adsb/scripts/emergency-ssh-fix.sh
@@ -389,10 +377,6 @@ chmod +x /opt/adsb/scripts/emergency-ssh-fix.sh
 echo "  - fix-dns.sh..."
 wget -q $REPO/scripts/fix-dns.sh -O /opt/adsb/scripts/fix-dns.sh
 chmod +x /opt/adsb/scripts/fix-dns.sh
-
-echo "  - fix-tailscale-dns.sh..."
-wget -q $REPO/scripts/fix-tailscale-dns.sh -O /opt/adsb/scripts/fix-tailscale-dns.sh
-chmod +x /opt/adsb/scripts/fix-tailscale-dns.sh
 
 # Generate initial docker-compose.yml from .env configuration
 echo "  - Generating docker-compose.yml..."
@@ -1203,26 +1187,8 @@ if [ "$SUDO_USER" ]; then
     chown -R $SUDO_USER:$SUDO_USER /opt/adsb
 fi
 
-# Download SSH Tailscale configuration scripts
-echo "Downloading SSH configuration scripts..."
-wget -q $REPO/configure-ssh-tailscale.sh -O /opt/adsb/configure-ssh-tailscale.sh
-chmod +x /opt/adsb/configure-ssh-tailscale.sh
-
-wget -q $REPO/configure-ssh-dual-tailscale.sh -O /opt/adsb/configure-ssh-dual-tailscale.sh
-chmod +x /opt/adsb/configure-ssh-dual-tailscale.sh
-
 # Get IP address
 IP=$(hostname -I | awk '{print $1}')
-
-# Fix Tailscale DNS override if Tailscale is installed
-if command -v tailscale &> /dev/null && [ -f /opt/adsb/scripts/fix-tailscale-dns.sh ]; then
-    echo "Checking Tailscale DNS configuration..."
-    if grep -q "100.100.100.100" /etc/resolv.conf 2>/dev/null; then
-        echo "  Fixing Tailscale DNS override..."
-        /opt/adsb/scripts/fix-tailscale-dns.sh > /dev/null 2>&1
-        echo "  ✓ DNS configuration fixed"
-    fi
-fi
 
 # Done
 echo ""
@@ -1266,12 +1232,11 @@ else
     echo "   • User: remote"
     echo "   • Password: adsb"
     echo "   • Limited sudo privileges for ADSB commands"
-    echo "   • SSH access BLOCKED until Tailscale configured (secure by default)"
+    echo "   • SSH access BLOCKED until VPN configured (secure by default)"
     echo ""
     echo "🔒 SSH Security (automatic):"
     echo "   • 'remote' user currently BLOCKED from all SSH access"
-    echo "   • Will auto-configure for Tailscale-only when you enable Tailscale"
-    echo "   • Or manually run: cd /opt/adsb && sudo ./configure-ssh-tailscale.sh"
+    echo "   • Will auto-configure when Tailscale is enabled via the dashboard"
     echo ""
     echo "📊 Network Monitoring:"
     echo "   • vnstat configured (30-day retention)"

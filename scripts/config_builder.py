@@ -404,63 +404,6 @@ def build_dump978_service(env_vars):
     
     return service
 
-def build_private_tailscale_service(env_vars):
-    """
-    Build private Tailscale service for agency-specific networks
-    This is a containerized Tailscale instance separate from the native TAKNET-PS connection
-    """
-    # Get hostname from env or use default
-    hostname = env_vars.get('PRIVATE_TAILSCALE_HOSTNAME', 'taknet-ps-private')
-    
-    # Get auth key directly from env_vars
-    auth_key = env_vars.get('PRIVATE_TAILSCALE_KEY', '')
-    
-    # If no auth key, return service without it (will fail but show error)
-    if not auth_key:
-        print("[WARNING] No PRIVATE_TAILSCALE_KEY found in env_vars!")
-    else:
-        print(f"[INFO] Building Private Tailscale with key: {auth_key[:20]}...")
-    
-    # Build command with unique socket path and TUN device to avoid conflict with Primary Tailscale
-    cmd = (
-        'mkdir -p /var/run/tailscale-private && '
-        'echo "Auth key length: $${#TS_AUTHKEY}" && '
-        'echo "TS_AUTHKEY starts with: $${TS_AUTHKEY:0:20}" && '
-        'tailscaled --state=/var/lib/tailscale/tailscaled.state --socket=/var/run/tailscale-private/tailscaled.sock --tun=ts-private & '
-        'sleep 5 && '
-        'tailscale --socket=/var/run/tailscale-private/tailscaled.sock up '
-        '--authkey="$$TS_AUTHKEY" '
-        f'--hostname="{hostname}" '
-        '--accept-routes=false && '
-        'wait'
-    )
-    
-    service = {
-        'image': 'tailscale/tailscale:latest',
-        'container_name': 'tailscale-private',
-        'hostname': hostname,
-        'restart': 'unless-stopped',
-        'network_mode': 'host',  # Use host network to avoid conflicts
-        'privileged': True,
-        'cap_add': ['NET_ADMIN', 'SYS_MODULE'],
-        'environment': [
-            f'TS_AUTHKEY={auth_key}',
-            'TS_STATE_DIR=/var/lib/tailscale',
-            'TS_SOCKET=/var/run/tailscale-private/tailscaled.sock',  # Unique socket
-            'TS_USERSPACE=false',
-            f'TS_HOSTNAME={hostname}',
-            'TS_ACCEPT_DNS=false'
-        ],
-        'command': ['sh', '-c', cmd],
-        'volumes': [
-            '/var/lib/tailscale-private:/var/lib/tailscale',
-            '/dev/net/tun:/dev/net/tun'
-        ],
-        'profiles': ['private-tailscale']
-    }
-    
-    return service
-
 def build_sdr_configuration(env_vars):
     """
     Phase B: Smart SDR configuration builder
@@ -696,11 +639,6 @@ def build_docker_compose(env_vars):
     dump978_service = build_dump978_service(env_vars)
     if dump978_service:
         compose['services']['dump978'] = dump978_service
-    
-    # Always include private Tailscale service (uses profile for enabling)
-    private_tailscale_service = build_private_tailscale_service(env_vars)
-    if private_tailscale_service:
-        compose['services']['tailscale-private'] = private_tailscale_service
     
     return compose
 
