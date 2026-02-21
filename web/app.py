@@ -2364,22 +2364,72 @@ def api_netbird_status():
         if not shutil.which('netbird'):
             return jsonify({'installed': False, 'connected': False, 'message': 'NetBird not installed'})
 
+        env = read_env()
+        enabled = env.get('NETBIRD_ENABLED', 'false').lower() == 'true'
+
+        # --- Try JSON output first ---
         result = subprocess.run(
             ['netbird', 'status', '--json'],
             capture_output=True, text=True, timeout=5
         )
 
-        if result.returncode != 0:
-            return jsonify({'installed': True, 'connected': False, 'message': 'NetBird not running'})
+        connected = False
+        nb_ip = None
 
-        import json as json_lib
-        status = json_lib.loads(result.stdout)
-        mgmt = status.get('managementState', {})
-        connected = mgmt.get('connected', False)
-        nb_ip = status.get('netbirdIp', None)
+        if result.returncode == 0 and result.stdout.strip():
+            try:
+                import json as json_lib
+                status = json_lib.loads(result.stdout)
 
-        env = read_env()
-        enabled = env.get('NETBIRD_ENABLED', 'false').lower() == 'true'
+                # Try known field variations across NetBird versions
+                # v0.27+: top-level managementState / localPeerState
+                mgmt = status.get('managementState', status.get('management', {}))
+                if isinstance(mgmt, dict):
+                    connected = mgmt.get('connected', False)
+                elif isinstance(mgmt, str):
+                    connected = mgmt.lower() == 'connected'
+
+                # IP: netbirdIp or localPeerState.ip or fqdn
+                nb_ip = (status.get('netbirdIp') or
+                         status.get('localPeerState', {}).get('ip') or
+                         status.get('ip'))
+
+                # Strip CIDR suffix if present
+                if nb_ip and '/' in nb_ip:
+                    nb_ip = nb_ip.split('/')[0]
+
+            except Exception:
+                pass  # Fall through to plain-text parse
+
+        # --- Plain-text fallback ---
+        if not connected:
+            plain = subprocess.run(
+                ['netbird', 'status'],
+                capture_output=True, text=True, timeout=5
+            )
+            if plain.returncode == 0:
+                output = plain.stdout
+                connected = 'Management: Connected' in output
+                if connected and not nb_ip:
+                    for line in output.splitlines():
+                        if 'NetBird IP:' in line:
+                            nb_ip = line.split('NetBird IP:')[-1].strip().split('/')[0]
+                            break
+
+        # --- Interface fallback ---
+        if not connected:
+            iface = subprocess.run(
+                ['ip', 'addr', 'show', 'wt0'],
+                capture_output=True, text=True, timeout=3
+            )
+            if iface.returncode == 0 and 'inet ' in iface.stdout:
+                connected = True
+                if not nb_ip:
+                    for line in iface.stdout.splitlines():
+                        line = line.strip()
+                        if line.startswith('inet '):
+                            nb_ip = line.split()[1].split('/')[0]
+                            break
 
         return jsonify({
             'installed': True,

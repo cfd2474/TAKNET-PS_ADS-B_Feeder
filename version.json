@@ -1,10 +1,10 @@
 {
-  "version": "2.59.2",
+  "version": "2.59.3",
   "release_date": "2026-02-20",
-  "release_name": "NetBird progress modal + README update",
+  "release_name": "NetBird status detection fix",
   "download_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh",
   "changelog_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/CHANGELOG.md",
   "minimum_version": "2.40.0",
   "breaking_changes": false,
-  "release_notes": "NetBird Connect button now opens a progress modal. Success auto-dismisses after 2s. Failure shows error and waits for user to dismiss."
+  "release_notes": "Fix NetBird status always showing Not Connected. Status check now tries JSON parsing, plain-text fallback, then wt0 interface check."
 }

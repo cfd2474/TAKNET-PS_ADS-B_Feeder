@@ -164,25 +164,60 @@ def check_netbird_running():
             print("⚠ NetBird: Not installed")
             return (False, None)
 
+        connected = False
+        nb_ip = None
+
+        # Try JSON first
         result = subprocess.run(['netbird', 'status', '--json'],
                               capture_output=True, text=True, timeout=5)
-        if result.returncode != 0:
-            print("⚠ NetBird: Not running")
-            return (False, None)
+        if result.returncode == 0 and result.stdout.strip():
+            try:
+                import json
+                status = json.loads(result.stdout)
+                mgmt = status.get('managementState', status.get('management', {}))
+                if isinstance(mgmt, dict):
+                    connected = mgmt.get('connected', False)
+                elif isinstance(mgmt, str):
+                    connected = mgmt.lower() == 'connected'
+                nb_ip = (status.get('netbirdIp') or
+                         status.get('localPeerState', {}).get('ip') or
+                         status.get('ip'))
+                if nb_ip and '/' in nb_ip:
+                    nb_ip = nb_ip.split('/')[0]
+            except Exception:
+                pass
 
-        import json
-        status = json.loads(result.stdout)
+        # Plain-text fallback
+        if not connected:
+            plain = subprocess.run(['netbird', 'status'],
+                                 capture_output=True, text=True, timeout=5)
+            if plain.returncode == 0:
+                output = plain.stdout
+                connected = 'Management: Connected' in output
+                if connected and not nb_ip:
+                    for line in output.splitlines():
+                        if 'NetBird IP:' in line:
+                            nb_ip = line.split('NetBird IP:')[-1].strip().split('/')[0]
+                            break
 
-        # NetBird status JSON: managementState, signalState, peers, netbirdIp
-        mgmt = status.get('managementState', {})
-        connected = mgmt.get('connected', False)
-        nb_ip = status.get('netbirdIp', None)
+        # Interface fallback
+        if not connected:
+            iface = subprocess.run(['ip', 'addr', 'show', 'wt0'],
+                                 capture_output=True, text=True, timeout=3)
+            if iface.returncode == 0 and 'inet ' in iface.stdout:
+                connected = True
+                if not nb_ip:
+                    for line in iface.stdout.splitlines():
+                        line = line.strip()
+                        if line.startswith('inet '):
+                            nb_ip = line.split()[1].split('/')[0]
+                            break
 
-        if connected and nb_ip:
-            print(f"✓ NetBird: Connected ({nb_ip})")
+        if connected:
+            print(f"✓ NetBird: Connected ({nb_ip or 'IP unknown'})")
             return (True, nb_ip)
 
-        print(f"⚠ NetBird: Not connected (managementState={mgmt})")
+        print("⚠ NetBird: Not connected")
         return (False, None)
 
     except subprocess.TimeoutExpired:
