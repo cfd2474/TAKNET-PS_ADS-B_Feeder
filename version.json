@@ -1,10 +1,10 @@
 {
-  "version": "2.58.0",
+  "version": "2.58.1",
   "release_date": "2026-02-20",
-  "release_name": "NetBird Architecture Migration - Phase 1",
+  "release_name": "UI cleanup",
   "download_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh",
   "changelog_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/CHANGELOG.md",
   "minimum_version": "2.40.0",
-  "breaking_changes": true,
-  "release_notes": "Phase 1: Remove Private Tailscale. Removes dual-Tailscale architecture in preparation for NetBird VPN integration."
+  "breaking_changes": false,
+  "release_notes": "Remove TAKNET-PS-specific Tailscale labeling and stale private key warning from settings UI."
 }
