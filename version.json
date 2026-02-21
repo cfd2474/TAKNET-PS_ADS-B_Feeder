@@ -1,7 +1,7 @@
 {
-  "version": "2.59.1",
+  "version": "2.59.2",
   "release_date": "2026-02-20",
-  "release_name": "NetBird progress modal",
+  "release_name": "NetBird progress modal + README update",
   "download_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh",
   "changelog_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/CHANGELOG.md",
   "minimum_version": "2.40.0",

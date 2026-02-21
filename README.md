@@ -3,7 +3,7 @@
 **Tactical Awareness Kit Network - Public Safety**  
 **For Enhanced Tracking**
 
-**Current Version: 2.57.8**
+**Current Version: 2.59.2**
 
 A comprehensive ADS-B aircraft tracking solution designed for distributed deployment with centralized aggregation. Built for public safety, emergency services, and aviation tracking networks.
 
@@ -19,7 +19,7 @@ TAKNET-PS is an independently developed project focused on delivering free, low-
 - **📡 Multiple Aggregators** - Feed to TAKNET-PS Server, FlightAware, FlightRadar24, ADSBHub, and more
 - **📊 Real-Time Statistics** - Built-in graphs1090 for performance monitoring
 - **🗺️ Local Map** - tar1090 web map on port 8080
-- **🔒 Secure VPN** - Tailscale integration for secure connections
+- **🔒 Secure VPN** - NetBird (primary aggregator connection) + Tailscale (remote management)
 - **📶 WiFi Hotspot** - Captive portal for easy initial configuration
 - **🔄 Auto-Updates** - One-click updates from web interface
 
@@ -182,35 +182,36 @@ Each aggregator can be:
 
 ---
 
-## 🔒 Tailscale VPN Integration
+## 🔒 VPN Integration
 
-### Features
+TAKNET-PS uses two VPN layers with distinct roles:
 
-- Secure encrypted connection to TAKNET-PS Server
-- Automatic failback to public internet
-- Simple one-button setup
-- No port forwarding required
-- DNS-friendly hostname generation
+| VPN | Role | Purpose |
+|-----|------|---------|
+| **NetBird** | Primary | Encrypted aggregator connection |
+| **Tailscale** | Reserve | Remote management / owner SSH access |
 
-### Obtaining an Auth Key
+### NetBird Setup
 
-**IMPORTANT:** You must use an approved TAKNET-PS auth key to communicate securely with the aggregator service.
+NetBird is the primary VPN used to connect feeders to the TAKNET-PS aggregator. Contact your TAKNET-PS administrator for a management URL and setup key.
 
-**Contact for Auth Key:**
-- Email: **Michael.Leckliter@yahoo.com**
-- Subject: "TAKNET-PS Auth Key Request"
-- Include: Your name, location, and intended use
+**Setup Process:**
 
-Standard Tailscale auth keys will NOT work with the TAKNET-PS aggregation network. Only approved keys provided by the network administrator will establish secure connectivity.
+1. Navigate to **Settings** → **NetBird VPN**
+2. Enter the Management URL and Setup Key provided by your administrator
+3. Click **Connect**
+4. Wait for connection (5–15 seconds)
+5. Verify the status shows Connected with an assigned IP
 
-### Setup Process
+If NetBird is unavailable, the feeder automatically falls back to the public aggregator endpoint.
 
-1. Obtain approved Tailscale auth key (contact above)
-2. Navigate to **Settings** → **Tailscale VPN**
-3. Enter auth key
-4. Click **Enable & Connect**
-5. Wait for connection (5-10 seconds)
-6. Verify connection shows IP and hostname
+### Tailscale Setup
+
+Tailscale is used for reserve/owner SSH access and is not required for aggregator connectivity.
+
+1. Navigate to **Settings** → **Tailscale VPN**
+2. Enter your Tailscale auth key
+3. Click **Connect**
 
 ### Hostname Sanitization
 
@@ -514,19 +515,18 @@ TAKNET-PS is an independently developed, free service providing low-latency ADS-
 
 ## 📝 Version Information
 
-**Current Version:** 2.57.8  
-**Release Date:** February 17, 2026  
+**Current Version:** 2.59.2  
+**Release Date:** February 20, 2026  
 **Minimum Version:** 2.40.0
 
-### Recent Improvements (v2.57.x)
+### Recent Improvements (v2.58.x – v2.59.x)
 
-- **Private Tailscale Fixed** - Socket and TUN device conflicts resolved
-- **Auto-Update Enhanced** - Automatically rebuilds and restarts Private Tailscale container
-- **SSH Diagnostic Tool** - Comprehensive troubleshooting for Private Tailscale SSH issues
-- **Private Tailscale Restart Button** - Dedicated restart button in Settings
-- **Socket Timeout Fixed** - Private Tailscale enable now works without timeout
-- Unique socket path: `/var/run/tailscale-private/tailscaled.sock`
-- Unique TUN device: `ts-private` interface
+- **NetBird Integration** - NetBird added as primary VPN for aggregator connection
+- **VPN Priority Logic** - Aggregator connection now uses NetBird → Tailscale → public fallback
+- **NetBird UI** - Full connect/disconnect flow with progress modal in Settings
+- **Private Tailscale Removed** - Dual-Tailscale architecture replaced by NetBird + Tailscale reserve
+- **Settings UI Cleanup** - Removed stale labels, warnings, and contact references
+- **Tailscale UI Simplified** - Merged disabled/not-connected states into single Connect button
 
 ---
 
