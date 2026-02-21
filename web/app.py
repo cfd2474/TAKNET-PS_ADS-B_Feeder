@@ -74,7 +74,7 @@ CONFIG_BUILDER = "/opt/adsb/scripts/config_builder.py"
 
 # TAKNET-PS Server hardcoded connection details - NEVER allow user to change these
 TAK_PROTECTED_SETTINGS = {
-    'TAKNET_PS_SERVER_HOST_PRIMARY': 'secure.tak-solutions.com',
+    'TAKNET_PS_SERVER_HOST_VPN': 'vpn.tak-solutions.com',
     'TAKNET_PS_SERVER_HOST_FALLBACK': 'adsb.tak-solutions.com',
     'TAKNET_PS_SERVER_PORT': '30004',
     'TAKNET_PS_CONNECTION_MODE': 'auto'
@@ -2210,8 +2210,8 @@ def save_config():
         
         # PROTECT TAK CONNECTION SETTINGS
         # User can only change TAKNET_PS_ENABLED (on/off), nothing else
-        tak_protected_keys = ['TAKNET_PS_SERVER_HOST', 'TAKNET_PS_SERVER_HOST_PRIMARY', 
-                              'TAKNET_PS_SERVER_HOST_FALLBACK', 'TAKNET_PS_SERVER_PORT', 
+        tak_protected_keys = ['TAKNET_PS_SERVER_HOST', 'TAKNET_PS_SERVER_HOST_VPN',
+                              'TAKNET_PS_SERVER_HOST_FALLBACK', 'TAKNET_PS_SERVER_PORT',
                               'TAKNET_PS_CONNECTION_MODE']
         
         # Remove any protected TAK settings from user input
@@ -3168,42 +3168,53 @@ def api_taknet_ps_connection():
     """Get TAKNET-PS connection information"""
     try:
         env = read_env()
-        
-        # Get Tailscale status
-        tailscale_running = False
-        tailscale_ip = None
+
+        # Check NetBird status
+        netbird_connected = False
+        netbird_ip = None
         try:
-            result = subprocess.run(['tailscale', 'status', '--json'],
+            # Plain-text check (most reliable)
+            result = subprocess.run(['netbird', 'status'],
                                   capture_output=True, text=True, timeout=5)
             if result.returncode == 0:
-                status_data = json.loads(result.stdout)
-                if status_data.get('BackendState') == 'Running':
-                    tailscale_running = True
-                    self_info = status_data.get('Self', {})
-                    tailscale_ips = self_info.get('TailscaleIPs', [])
-                    if tailscale_ips:
-                        tailscale_ip = tailscale_ips[0]
+                output = result.stdout
+                netbird_connected = 'Management: Connected' in output
+                if netbird_connected:
+                    for line in output.splitlines():
+                        if 'NetBird IP:' in line:
+                            netbird_ip = line.split('NetBird IP:')[-1].strip().split('/')[0]
+                            break
+            # Interface fallback
+            if not netbird_connected:
+                iface = subprocess.run(['ip', 'addr', 'show', 'wt0'],
+                                     capture_output=True, text=True, timeout=3)
+                if iface.returncode == 0 and 'inet ' in iface.stdout:
+                    netbird_connected = True
+                    for line in iface.stdout.splitlines():
+                        line = line.strip()
+                        if line.startswith('inet '):
+                            netbird_ip = line.split()[1].split('/')[0]
+                            break
         except Exception as e:
-            print(f"⚠ Tailscale status check failed: {e}")
-            pass
-        
+            print(f"⚠ NetBird status check failed: {e}")
+
         # Determine connection method
-        connection_method = 'public_ip'
-        connection_host = env.get('TAKNET_PS_SERVER_HOST_FALLBACK', 'adsb.tak-solutions.com')
-        
-        if tailscale_running:
-            connection_method = 'tailscale'
-            connection_host = env.get('TAKNET_PS_SERVER_HOST_PRIMARY', 'secure.tak-solutions.com')
-        
+        if netbird_connected:
+            connection_method = 'netbird'
+            connection_host = env.get('TAKNET_PS_SERVER_HOST_VPN', 'vpn.tak-solutions.com')
+        else:
+            connection_method = 'public_ip'
+            connection_host = env.get('TAKNET_PS_SERVER_HOST_FALLBACK', 'adsb.tak-solutions.com')
+
         return jsonify({
             'success': True,
             'connection_method': connection_method,
             'connection_host': connection_host,
-            'tailscale_running': tailscale_running,
-            'tailscale_ip': tailscale_ip,
+            'netbird_running': netbird_connected,
+            'netbird_ip': netbird_ip,
             'mode': env.get('TAKNET_PS_CONNECTION_MODE', 'auto')
         })
-        
+
     except Exception as e:
         print(f"❌ Error in api_taknet_ps_connection: {e}")
         import traceback
@@ -3216,15 +3227,13 @@ def api_taknet_ps_stats():
     try:
         env = read_env()
         
-        # Get aggregator host based on Tailscale status
+        # Get aggregator host based on NetBird status
         connection_host = env.get('TAKNET_PS_SERVER_HOST_FALLBACK', 'adsb.tak-solutions.com')
         try:
-            ts_result = subprocess.run(['tailscale', 'status', '--json'],
+            nb_result = subprocess.run(['netbird', 'status'],
                                      capture_output=True, text=True, timeout=5)
-            if ts_result.returncode == 0:
-                status_data = json.loads(ts_result.stdout)
-                if status_data.get('BackendState') == 'Running':
-                    connection_host = env.get('TAKNET_PS_SERVER_HOST_PRIMARY', 'secure.tak-solutions.com')
+            if nb_result.returncode == 0 and 'Management: Connected' in nb_result.stdout:
+                connection_host = env.get('TAKNET_PS_SERVER_HOST_VPN', 'vpn.tak-solutions.com')
         except:
             pass
         

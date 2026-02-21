@@ -98,7 +98,7 @@ def ensure_taknet_config(env_vars, env_file):
     """
     required_config = {
         'TAKNET_PS_ENABLED': 'true',
-        'TAKNET_PS_SERVER_HOST_PRIMARY': 'secure.tak-solutions.com',
+        'TAKNET_PS_SERVER_HOST_VPN': 'vpn.tak-solutions.com',
         'TAKNET_PS_SERVER_HOST_FALLBACK': 'adsb.tak-solutions.com',
         'TAKNET_PS_SERVER_PORT': '30004',
         'TAKNET_PS_CONNECTION_MODE': 'auto',
@@ -114,17 +114,23 @@ def ensure_taknet_config(env_vars, env_file):
             print(f"⚠ Missing {key}, auto-configuring: {default_value}")
             env_vars[key] = default_value
             was_repaired = True
+
+    # Migrate old PRIMARY key → VPN key
+    if 'TAKNET_PS_SERVER_HOST_PRIMARY' in env_vars and 'TAKNET_PS_SERVER_HOST_VPN' not in env_vars:
+        env_vars['TAKNET_PS_SERVER_HOST_VPN'] = 'vpn.tak-solutions.com'
+        del env_vars['TAKNET_PS_SERVER_HOST_PRIMARY']
+        was_repaired = True
     
-    # Second pass: migrate old IP values to FQDNs
+    # Second pass: migrate old IP/domain values to current FQDNs
     ip_migrations = {
-        '100.117.34.88': 'secure.tak-solutions.com',
+        '100.117.34.88': 'vpn.tak-solutions.com',
         '104.225.219.254': 'adsb.tak-solutions.com',
-        # Legacy domain migrations
-        'tailscale.leckliter.net': 'secure.tak-solutions.com',
-        'adsb.leckliter.net': 'adsb.tak-solutions.com'
+        'tailscale.leckliter.net': 'vpn.tak-solutions.com',
+        'adsb.leckliter.net': 'adsb.tak-solutions.com',
+        'secure.tak-solutions.com': 'vpn.tak-solutions.com',
     }
     
-    for key in ['TAKNET_PS_SERVER_HOST_PRIMARY', 'TAKNET_PS_SERVER_HOST_FALLBACK']:
+    for key in ['TAKNET_PS_SERVER_HOST_VPN', 'TAKNET_PS_SERVER_HOST_FALLBACK']:
         if key in env_vars:
             old_value = env_vars[key]
             if old_value in ip_migrations:
@@ -273,43 +279,34 @@ def check_tailscale_running():
 def select_taknet_host(env_vars):
     """
     Select TAKNET-PS Server host based on VPN status.
-    Priority: NetBird → Tailscale → public fallback
+    NetBird active → vpn.tak-solutions.com
+    No VPN        → adsb.tak-solutions.com
     Returns: (selected_host, connection_type)
     """
     mode = env_vars.get('TAKNET_PS_CONNECTION_MODE', 'auto').lower()
-    primary = env_vars.get('TAKNET_PS_SERVER_HOST_PRIMARY', '').strip()
-    fallback = env_vars.get('TAKNET_PS_SERVER_HOST_FALLBACK', '').strip()
+    vpn_host = env_vars.get('TAKNET_PS_SERVER_HOST_VPN', 'vpn.tak-solutions.com').strip()
+    fallback  = env_vars.get('TAKNET_PS_SERVER_HOST_FALLBACK', 'adsb.tak-solutions.com').strip()
 
-    # Force modes (for debugging/override)
-    if mode == 'primary' and primary:
-        print(f"ℹ TAKNET-PS: Forced to primary: {primary}")
-        return (primary, 'primary-forced')
+    if mode == 'vpn' and vpn_host:
+        print(f"ℹ TAKNET-PS: Forced to VPN host: {vpn_host}")
+        return (vpn_host, 'vpn-forced')
 
     if mode == 'fallback' and fallback:
         print(f"ℹ TAKNET-PS: Forced to fallback: {fallback}")
         return (fallback, 'fallback-forced')
 
-    # Auto mode - check NetBird first, then Tailscale
+    # Auto mode - NetBird check only
     if mode == 'auto':
         netbird_running, _ = check_netbird_running()
         if netbird_running:
-            print(f"✓ TAKNET-PS: NetBird active, using primary: {primary}")
-            return (primary, 'netbird-active')
+            print(f"✓ TAKNET-PS: NetBird active, using VPN host: {vpn_host}")
+            return (vpn_host, 'netbird-active')
 
-        tailscale_running, _ = check_tailscale_running()
-        if tailscale_running:
-            print(f"✓ TAKNET-PS: Tailscale active, using primary: {primary}")
-            return (primary, 'tailscale-active')
-
-        print(f"⚠ TAKNET-PS: No VPN active, using fallback: {fallback}")
+        print(f"⚠ TAKNET-PS: NetBird inactive, using fallback: {fallback}")
         return (fallback, 'vpn-inactive')
 
-    if mode == 'monitor' and primary:
-        print(f"ℹ TAKNET-PS: Monitor mode, using primary: {primary}")
-        return (primary, 'monitor-mode')
-
-    if primary:
-        return (primary, 'primary-fallback')
+    if vpn_host:
+        return (vpn_host, 'vpn-fallback')
     elif fallback:
         return (fallback, 'fallback-only')
 

@@ -77,7 +77,7 @@ NETBIRD_SETUP_KEY=
 # Automatically configured with Tailscale detection and failover
 # ============================================
 TAKNET_PS_ENABLED=true
-TAKNET_PS_SERVER_HOST_PRIMARY=secure.tak-solutions.com
+TAKNET_PS_SERVER_HOST_VPN=vpn.tak-solutions.com
 TAKNET_PS_SERVER_HOST_FALLBACK=adsb.tak-solutions.com
 TAKNET_PS_SERVER_PORT=30004
 TAKNET_PS_CONNECTION_MODE=auto
@@ -87,13 +87,11 @@ TAKNET_PS_MLAT_ENABLED=true
 TAKNET_PS_MLAT_PORT=30105
 
 # Connection mode options:
-# - auto: Automatically detect NetBird/Tailscale and select appropriate FQDN (default)
-#   * NetBird running    → secure.tak-solutions.com (VPN path)
-#   * Tailscale running  → secure.tak-solutions.com (VPN path, fallback)
-#   * Neither active     → adsb.tak-solutions.com  (public internet)
-# - primary: Force primary (secure.tak-solutions.com)
+# - auto: Automatically detect NetBird and select appropriate host (default)
+#   * NetBird running    → vpn.tak-solutions.com  (VPN path)
+#   * NetBird inactive   → adsb.tak-solutions.com (public internet)
+# - vpn: Force VPN host (vpn.tak-solutions.com)
 # - fallback: Force fallback (adsb.tak-solutions.com)
-# - monitor: Enable active monitoring and failover (Phase 2)
 
 # ============================================
 # Optional Public Aggregators
