@@ -318,10 +318,6 @@
                         </small>
                     </div>
                     
-                    <div class="info-note" style="margin-top: 15px;">
-                        <p><strong>Need a Tailscale auth key?</strong></p>
-                        <p>Contact: <a href="mailto:michael.leckliter@yahoo.com" style="color: #667eea;">Michael Leckliter</a></p>
-                    </div>
                 </div>
             </div>
 
@@ -769,21 +765,11 @@
                 toggleBtn.className = 'btn';
                 toggleText.textContent = '🔴 Disable Tailscale';
                 tailscaleEnabled = true;
-            } else if (enabled && !connected) {
-                // Enabled but not connected - actual connection failure
-                if (statusIndicator) statusIndicator.style.display = 'flex';
-                statusIcon.textContent = '⚠️';
-                statusText.textContent = 'Connection Failed';
-                statusIcon.parentElement.style.background = '#fef3c7';
-                statusIcon.parentElement.style.border = '1px solid #f59e0b';
-                toggleBtn.className = 'btn btn-primary';
-                toggleText.textContent = '🔄 Retry Connection';
-                tailscaleEnabled = false; // Show auth key field for retry
             } else {
-                // Disabled - never been set up, clean state
-                if (statusIndicator) statusIndicator.style.display = 'none'; // Hide status indicator
+                // Disabled or not connected - single clean state
+                if (statusIndicator) statusIndicator.style.display = 'none';
                 toggleBtn.className = 'btn btn-primary';
-                toggleText.textContent = '🟢 Enable Tailscale';
+                toggleText.textContent = 'Connect';
                 tailscaleEnabled = false;
             }
             
@@ -839,7 +825,7 @@
                     
                     // Update button
                     toggleBtn.className = 'btn btn-primary';
-                    toggleText.textContent = '🟢 Enable & Connect';
+                    toggleText.textContent = 'Connect';
                     
                     // Show disabled section (with auth key input)
                     disabledSection.style.display = 'block';
