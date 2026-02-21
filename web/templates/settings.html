@@ -615,6 +615,37 @@
         </div>
     </div>
 
+    <!-- NetBird Connection Progress Modal -->
+    <div id="netbirdProgressModal" class="modal">
+        <div class="modal-content" style="max-width: 500px;">
+            <h2 class="modal-header">🔗 Connecting NetBird</h2>
+            <div class="modal-body">
+                <div style="display: flex; align-items: center; justify-content: center; padding: 30px 20px;">
+                    <div id="netbird-spinner" class="status-spinner" style="margin-right: 15px;"></div>
+                    <div>
+                        <div id="netbird-progress-text" style="font-weight: 500; color: #374151; font-size: 1.05em;">
+                            Enrolling NetBird peer...
+                        </div>
+                        <div id="netbird-progress-detail" style="margin-top: 8px; font-size: 0.9em; color: #6b7280;">
+                            This usually takes 5–15 seconds
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Result (hidden initially) -->
+                <div id="netbird-result" style="display: none; padding: 15px; border-radius: 8px; margin-top: 10px;">
+                    <div id="netbird-result-icon" style="font-size: 2em; text-align: center; margin-bottom: 10px;"></div>
+                    <div id="netbird-result-message" style="text-align: center; font-weight: 500;"></div>
+                </div>
+
+                <!-- Dismiss button (shown only on failure) -->
+                <div id="netbird-dismiss-btn" style="display: none; text-align: center; margin-top: 20px;">
+                    <button class="btn" onclick="document.getElementById('netbirdProgressModal').style.display='none'">Dismiss</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- WiFi Password Modal -->
     <div id="wifiPasswordModal" class="modal">
         <div class="modal-content">
@@ -3283,12 +3314,18 @@
             } else {
                 const mgmtUrl  = document.getElementById('netbird_management_url').value.trim();
                 const setupKey = document.getElementById('netbird_setup_key').value.trim();
-                if (!mgmtUrl)  { showStatus('Management URL is required', 'error'); return; }
-                if (!setupKey) { showStatus('Setup key is required', 'error'); return; }
+                if (!mgmtUrl)  { showStatus('Management URL is required', 'error'); document.getElementById('netbird_management_url').focus(); return; }
+                if (!setupKey) { showStatus('Setup key is required', 'error'); document.getElementById('netbird_setup_key').focus(); return; }
 
-                const btn = document.getElementById('netbird-toggle-btn');
-                btn.disabled = true;
-                document.getElementById('netbird-toggle-text').textContent = '⏳ Connecting...';
+                // Open modal
+                const modal = document.getElementById('netbirdProgressModal');
+                document.getElementById('netbird-spinner').style.display = 'block';
+                document.getElementById('netbird-progress-text').textContent = 'Enrolling NetBird peer...';
+                document.getElementById('netbird-progress-detail').textContent = 'This usually takes 5–15 seconds';
+                document.getElementById('netbird-result').style.display = 'none';
+                document.getElementById('netbird-dismiss-btn').style.display = 'none';
+                modal.style.display = 'block';
+
                 try {
                     const r = await fetch('/api/netbird/enable', {
                         method: 'POST',
@@ -3296,13 +3333,51 @@
                         body: JSON.stringify({ management_url: mgmtUrl, setup_key: setupKey })
                     });
                     const d = await r.json();
-                    showStatus(d.success ? 'NetBird connected successfully' : 'Failed: ' + d.message, d.success ? 'success' : 'error');
-                    await checkNetbirdStatus();
+
+                    document.getElementById('netbird-spinner').style.display = 'none';
+                    const resultDiv = document.getElementById('netbird-result');
+                    const iconEl    = document.getElementById('netbird-result-icon');
+                    const msgEl     = document.getElementById('netbird-result-message');
+                    resultDiv.style.display = 'block';
+
+                    if (d.success) {
+                        resultDiv.style.background = '#d1fae5';
+                        resultDiv.style.border     = '2px solid #10b981';
+                        iconEl.textContent         = '✓';
+                        iconEl.style.color         = '#10b981';
+                        msgEl.textContent          = 'NetBird connected successfully!';
+                        msgEl.style.color          = '#10b981';
+                        document.getElementById('netbird-progress-text').textContent = 'Complete!';
+                        document.getElementById('netbird-progress-detail').textContent = '';
+                        // Auto-dismiss after 2 seconds
+                        setTimeout(() => {
+                            modal.style.display = 'none';
+                            checkNetbirdStatus();
+                        }, 2000);
+                    } else {
+                        resultDiv.style.background = '#fee2e2';
+                        resultDiv.style.border     = '2px solid #ef4444';
+                        iconEl.textContent         = '✗';
+                        iconEl.style.color         = '#ef4444';
+                        msgEl.textContent          = d.message || 'Connection failed';
+                        msgEl.style.color          = '#ef4444';
+                        document.getElementById('netbird-progress-text').textContent = 'Failed';
+                        document.getElementById('netbird-progress-detail').textContent = '';
+                        document.getElementById('netbird-dismiss-btn').style.display = 'block';
+                    }
                 } catch(e) {
-                    showStatus('Error: ' + e.message, 'error');
-                } finally {
-                    btn.disabled = false;
-                    document.getElementById('netbird-toggle-text').textContent = 'Connect';
+                    document.getElementById('netbird-spinner').style.display = 'none';
+                    const resultDiv = document.getElementById('netbird-result');
+                    resultDiv.style.display    = 'block';
+                    resultDiv.style.background = '#fee2e2';
+                    resultDiv.style.border     = '2px solid #ef4444';
+                    document.getElementById('netbird-result-icon').textContent = '✗';
+                    document.getElementById('netbird-result-icon').style.color = '#ef4444';
+                    document.getElementById('netbird-result-message').textContent = 'Error: ' + e.message;
+                    document.getElementById('netbird-result-message').style.color = '#ef4444';
+                    document.getElementById('netbird-progress-text').textContent = 'Failed';
+                    document.getElementById('netbird-progress-detail').textContent = '';
+                    document.getElementById('netbird-dismiss-btn').style.display = 'block';
                 }
             }
         }

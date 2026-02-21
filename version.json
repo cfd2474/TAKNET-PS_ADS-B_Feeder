@@ -1,10 +1,10 @@
 {
-  "version": "2.59.0",
+  "version": "2.59.1",
   "release_date": "2026-02-20",
-  "release_name": "NetBird VPN Integration - Phase 2",
+  "release_name": "NetBird progress modal",
   "download_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh",
   "changelog_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/CHANGELOG.md",
   "minimum_version": "2.40.0",
   "breaking_changes": false,
-  "release_notes": "Add NetBird as primary VPN. Aggregator connection now uses NetBird > Tailscale > public fallback. NetBird configurable via settings UI. Tailscale remains for reserve/owner access."
+  "release_notes": "NetBird Connect button now opens a progress modal. Success auto-dismisses after 2s. Failure shows error and waits for user to dismiss."
 }
