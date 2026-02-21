@@ -7,6 +7,7 @@ Flask app with Tailscale hostname management
 from flask import Flask, render_template, request, jsonify, redirect, url_for
 import subprocess
 import os
+import shutil
 from pathlib import Path
 import json
 import threading
