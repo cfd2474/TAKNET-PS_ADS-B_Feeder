@@ -137,14 +137,54 @@ wait $PID_ADSBHUB && echo "  ✓ ADSBHub downloaded"
 
 echo "✓ All Docker images pre-downloaded (setup wizard will be fast!)"
 
-# Pre-install Tailscale (speeds up wizard significantly)
+# Install NetBird (primary VPN for aggregator connection)
+echo ""
+echo "Installing NetBird VPN..."
+if ! command -v netbird &> /dev/null; then
+    echo "  • Downloading from pkgs.netbird.io..."
+    curl -fsSL https://pkgs.netbird.io/install.sh | sh > /dev/null 2>&1
+
+    if command -v netbird &> /dev/null; then
+        echo "  ✓ NetBird installed successfully"
+    else
+        echo "  ⚠ NetBird installation may have failed"
+        echo "    (Can be configured manually via the dashboard)"
+    fi
+else
+    echo "  ✓ NetBird already installed"
+fi
+
+# If NetBird is installed and management URL + setup key are in env, enroll now
+if command -v netbird &> /dev/null && [ -f /opt/adsb/config/.env ]; then
+    NB_MGMT_URL=$(grep "^NETBIRD_MANAGEMENT_URL=" /opt/adsb/config/.env 2>/dev/null | cut -d'=' -f2-)
+    NB_SETUP_KEY=$(grep "^NETBIRD_SETUP_KEY=" /opt/adsb/config/.env 2>/dev/null | cut -d'=' -f2-)
+
+    if [ -n "$NB_MGMT_URL" ] && [ -n "$NB_SETUP_KEY" ]; then
+        echo "  • Enrolling NetBird peer..."
+        netbird up \
+            --setup-key "$NB_SETUP_KEY" \
+            --management-url "$NB_MGMT_URL" \
+            --disable-dns \
+            --hostname "$(grep "^MLAT_SITE_NAME=" /opt/adsb/config/.env 2>/dev/null | cut -d'=' -f2-)" \
+            > /dev/null 2>&1
+
+        if netbird status 2>/dev/null | grep -q "Management: Connected"; then
+            echo "  ✓ NetBird enrolled and connected"
+            # Update NETBIRD_ENABLED in .env
+            sed -i 's/^NETBIRD_ENABLED=.*/NETBIRD_ENABLED=true/' /opt/adsb/config/.env
+        else
+            echo "  ⚠ NetBird enrollment may need manual completion via dashboard"
+        fi
+    fi
+fi
+
+# Pre-install Tailscale (reserve/owner access)
 echo ""
 echo "Installing Tailscale VPN..."
 if ! command -v tailscale &> /dev/null; then
     echo "  • Downloading from tailscale.com..."
     curl -fsSL https://tailscale.com/install.sh | sh > /dev/null 2>&1
-    
-    # Verify installation
+
     if command -v tailscale &> /dev/null; then
         echo "  ✓ Tailscale installed successfully"
         echo "    (Wizard will skip download and go straight to configuration)"

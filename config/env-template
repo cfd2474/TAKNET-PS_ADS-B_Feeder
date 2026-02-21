@@ -63,6 +63,14 @@ TAILSCALE_ENABLED=false
 TAILSCALE_AUTH_KEY=
 
 # ============================================
+# NetBird VPN (Primary aggregator connection)
+# Self-hosted NetBird for feeder→aggregator tunnel
+# ============================================
+NETBIRD_ENABLED=false
+NETBIRD_MANAGEMENT_URL=
+NETBIRD_SETUP_KEY=
+
+# ============================================
 # TAKNET-PS Server (HARDCODED - Always Enabled)
 # Tactical Awareness Kit Network for Enhanced Tracking – Public Safety
 # Priority feed for all aircraft data
@@ -79,9 +87,10 @@ TAKNET_PS_MLAT_ENABLED=true
 TAKNET_PS_MLAT_PORT=30105
 
 # Connection mode options:
-# - auto: Automatically detect Tailscale and select appropriate FQDN (default)
-#   * Tailscale running  → secure.tak-solutions.com
-#   * Tailscale inactive → adsb.tak-solutions.com
+# - auto: Automatically detect NetBird/Tailscale and select appropriate FQDN (default)
+#   * NetBird running    → secure.tak-solutions.com (VPN path)
+#   * Tailscale running  → secure.tak-solutions.com (VPN path, fallback)
+#   * Neither active     → adsb.tak-solutions.com  (public internet)
 # - primary: Force primary (secure.tak-solutions.com)
 # - fallback: Force fallback (adsb.tak-solutions.com)
 # - monitor: Enable active monitoring and failover (Phase 2)

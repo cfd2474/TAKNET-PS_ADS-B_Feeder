@@ -2353,6 +2353,120 @@ def api_tailscale_disable():
         traceback.print_exc()
 
 # =============================================================
+# NetBird VPN API Endpoints
+# =============================================================
+
+@app.route('/api/netbird/status', methods=['GET'])
+def api_netbird_status():
+    """Get NetBird connection status"""
+    try:
+        if not shutil.which('netbird'):
+            return jsonify({'installed': False, 'connected': False, 'message': 'NetBird not installed'})
+
+        result = subprocess.run(
+            ['netbird', 'status', '--json'],
+            capture_output=True, text=True, timeout=5
+        )
+
+        if result.returncode != 0:
+            return jsonify({'installed': True, 'connected': False, 'message': 'NetBird not running'})
+
+        import json as json_lib
+        status = json_lib.loads(result.stdout)
+        mgmt = status.get('managementState', {})
+        connected = mgmt.get('connected', False)
+        nb_ip = status.get('netbirdIp', None)
+
+        env = read_env()
+        enabled = env.get('NETBIRD_ENABLED', 'false').lower() == 'true'
+
+        return jsonify({
+            'installed': True,
+            'connected': connected,
+            'enabled': enabled,
+            'ip': nb_ip,
+            'message': 'Connected' if connected else 'Not connected'
+        })
+
+    except subprocess.TimeoutExpired:
+        return jsonify({'installed': True, 'connected': False, 'message': 'Status check timed out'})
+    except Exception as e:
+        return jsonify({'installed': False, 'connected': False, 'message': str(e)})
+
+
+@app.route('/api/netbird/enable', methods=['POST'])
+def api_netbird_enable():
+    """Enroll and connect NetBird"""
+    try:
+        data = request.get_json() or {}
+        management_url = data.get('management_url', '').strip()
+        setup_key = data.get('setup_key', '').strip()
+
+        if not management_url:
+            return jsonify({'success': False, 'message': 'Management URL is required'})
+        if not setup_key:
+            return jsonify({'success': False, 'message': 'Setup key is required'})
+
+        if not shutil.which('netbird'):
+            return jsonify({'success': False, 'message': 'NetBird not installed'})
+
+        # Save to .env
+        env = read_env()
+        env['NETBIRD_MANAGEMENT_URL'] = management_url
+        env['NETBIRD_SETUP_KEY'] = setup_key
+        env['NETBIRD_ENABLED'] = 'true'
+        write_env(env)
+
+        # Build hostname from site name
+        site_name = env.get('MLAT_SITE_NAME', 'taknet-ps-feeder')
+
+        # Enroll
+        cmd = [
+            'netbird', 'up',
+            '--setup-key', setup_key,
+            '--management-url', management_url,
+            '--disable-dns',
+            '--hostname', site_name
+        ]
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+
+        if result.returncode == 0:
+            # Rebuild docker-compose with new VPN detection
+            subprocess.run(['python3', '/opt/adsb/scripts/config_builder.py'],
+                         capture_output=True, timeout=15)
+            return jsonify({'success': True, 'message': 'NetBird connected successfully'})
+        else:
+            env['NETBIRD_ENABLED'] = 'false'
+            write_env(env)
+            return jsonify({'success': False, 'message': f'NetBird enrollment failed: {result.stderr}'})
+
+    except subprocess.TimeoutExpired:
+        return jsonify({'success': False, 'message': 'Connection timed out (30s). Check management URL and setup key.'})
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)})
+
+
+@app.route('/api/netbird/disable', methods=['POST'])
+def api_netbird_disable():
+    """Disconnect and disable NetBird"""
+    try:
+        env = read_env()
+        env['NETBIRD_ENABLED'] = 'false'
+        write_env(env)
+
+        if shutil.which('netbird'):
+            subprocess.run(['netbird', 'down'], capture_output=True, timeout=10)
+
+        # Rebuild config to fall back to public IP or Tailscale
+        subprocess.run(['python3', '/opt/adsb/scripts/config_builder.py'],
+                     capture_output=True, timeout=15)
+
+        return jsonify({'success': True, 'message': 'NetBird disconnected'})
+
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)})
+
+# =============================================================
 # Multi-SDR Detection & Configuration API Endpoints
 # =============================================================
 

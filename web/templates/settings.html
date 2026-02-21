@@ -274,6 +274,66 @@
                 </div>
             </div>
 
+            <!-- NetBird VPN Section -->
+            <div class="card">
+                <h3>NetBird VPN</h3>
+                <div class="info-note" style="margin-bottom: 15px;">
+                    <p>ℹ️ Primary VPN for aggregator connection. Contact your TAKNET-PS administrator for a setup key.</p>
+                </div>
+
+                <!-- NetBird Status Display -->
+                <div id="netbird-status-display" style="margin-bottom: 15px;">
+                    <div class="loading-spinner" style="text-align: center; padding: 10px;">
+                        <span style="color: #666;">Checking NetBird status...</span>
+                    </div>
+                </div>
+
+                <!-- NetBird Enable/Disable -->
+                <div class="form-group" style="margin-bottom: 20px;">
+                    <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 10px;">
+                        <div style="flex: 1;">
+                            <strong style="display: block; margin-bottom: 5px;">NetBird Status</strong>
+                            <div id="netbird-status-indicator" style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: #f3f4f6; border-radius: 6px; font-size: 0.95em;">
+                                <span id="netbird-status-icon">⏳</span>
+                                <span id="netbird-status-text">Checking...</span>
+                            </div>
+                        </div>
+                        <div>
+                            <button class="btn btn-primary" id="netbird-toggle-btn" style="min-width: 150px;">
+                                <span id="netbird-toggle-text">⏳ Loading...</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Credentials (shown when disconnected) -->
+                <div id="netbird-disconnected-section" style="display: none; margin-top: 15px;">
+                    <div class="form-group">
+                        <label>Management URL <span style="color: #ef4444;">*</span></label>
+                        <input type="text" id="netbird_management_url" placeholder="https://netbird.example.com">
+                        <small style="color: #666; display: block; margin-top: 5px;">
+                            URL of your NetBird management server
+                        </small>
+                    </div>
+                    <div class="form-group">
+                        <label>Setup Key <span style="color: #ef4444;">*</span></label>
+                        <input type="text" id="netbird_setup_key" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx">
+                        <small style="color: #666; display: block; margin-top: 5px;">
+                            Setup key from your NetBird dashboard
+                        </small>
+                    </div>
+                </div>
+
+                <!-- Connected Info -->
+                <div id="netbird-connected-section" style="display: none; margin-top: 15px;">
+                    <div style="padding: 15px; background: #f0f9ff; border-left: 4px solid #3b82f6; border-radius: 6px;">
+                        <p style="margin: 0; color: #1e3a8a; font-size: 0.9em;">
+                            <strong>NetBird IP:</strong> <span id="netbird-ip">-</span>
+                        </p>
+                    </div>
+                </div>
+            </div>
+
             <div class="card">
                 <h3>Tailscale VPN</h3>
                 <div class="info-note" style="margin-bottom: 15px;">
@@ -3128,6 +3188,123 @@
                     }
                 }
             }, 2000); // Check every 2 seconds
+        }
+
+        // =============================================================
+        // NetBird VPN Functions
+        // =============================================================
+
+        let netbirdConnected = false;
+
+        document.addEventListener('DOMContentLoaded', function() {
+            checkNetbirdStatus();
+            setInterval(checkNetbirdStatus, 15000);
+            document.getElementById('netbird-toggle-btn').addEventListener('click', toggleNetbird);
+        });
+
+        async function checkNetbirdStatus() {
+            try {
+                const response = await fetch('/api/netbird/status');
+                const data = await response.json();
+                updateNetbirdUI(data);
+            } catch (error) {
+                console.error('NetBird status check failed:', error);
+                updateNetbirdUI({ installed: false, connected: false });
+            }
+        }
+
+        function updateNetbirdUI(data) {
+            const statusIcon   = document.getElementById('netbird-status-icon');
+            const statusText   = document.getElementById('netbird-status-text');
+            const indicator    = document.getElementById('netbird-status-indicator');
+            const toggleBtn    = document.getElementById('netbird-toggle-btn');
+            const toggleText   = document.getElementById('netbird-toggle-text');
+            const disconnected = document.getElementById('netbird-disconnected-section');
+            const connected    = document.getElementById('netbird-connected-section');
+            const display      = document.getElementById('netbird-status-display');
+
+            netbirdConnected = data.connected || false;
+
+            if (data.connected) {
+                indicator.style.background = '#d1fae5';
+                indicator.style.border     = '1px solid #10b981';
+                statusIcon.textContent     = '✓';
+                statusText.textContent     = 'Connected';
+                toggleBtn.className        = 'btn';
+                toggleText.textContent     = 'Disconnect';
+                disconnected.style.display = 'none';
+                connected.style.display    = 'block';
+                document.getElementById('netbird-ip').textContent = data.ip || '-';
+                display.innerHTML = `
+                    <div style="background:#e8f5e9;border-left:4px solid #4caf50;padding:15px;border-radius:8px;">
+                        <div style="display:flex;align-items:center;gap:10px;">
+                            <span style="font-size:1.5em;">✓</span>
+                            <div>
+                                <div style="font-weight:600;color:#2e7d32;">Connected</div>
+                                ${data.ip ? `<div style="font-size:0.9em;color:#666;margin-top:4px;">IP: ${data.ip}</div>` : ''}
+                            </div>
+                        </div>
+                    </div>`;
+            } else {
+                indicator.style.background = '#f3f4f6';
+                indicator.style.border     = '1px solid #d1d5db';
+                statusIcon.textContent     = '○';
+                statusText.textContent     = 'Not Connected';
+                toggleBtn.className        = 'btn btn-primary';
+                toggleText.textContent     = 'Connect';
+                disconnected.style.display = 'block';
+                connected.style.display    = 'none';
+                display.innerHTML = `
+                    <div style="background:#f3f4f6;border-left:4px solid #9ca3af;padding:15px;border-radius:8px;">
+                        <div style="display:flex;align-items:center;gap:10px;">
+                            <span style="font-size:1.5em;">○</span>
+                            <div style="font-weight:600;color:#4b5563;">Not Connected</div>
+                        </div>
+                    </div>`;
+            }
+        }
+
+        async function toggleNetbird() {
+            if (netbirdConnected) {
+                if (!confirm('Disconnect NetBird? The aggregator will fall back to public internet.')) return;
+                const btn = document.getElementById('netbird-toggle-btn');
+                btn.disabled = true;
+                document.getElementById('netbird-toggle-text').textContent = '⏳ Disconnecting...';
+                try {
+                    const r = await fetch('/api/netbird/disable', { method: 'POST', headers: {'Content-Type':'application/json'} });
+                    const d = await r.json();
+                    showStatus(d.success ? 'NetBird disconnected' : 'Failed: ' + d.message, d.success ? 'success' : 'error');
+                    await checkNetbirdStatus();
+                } catch(e) {
+                    showStatus('Error: ' + e.message, 'error');
+                } finally {
+                    btn.disabled = false;
+                }
+            } else {
+                const mgmtUrl  = document.getElementById('netbird_management_url').value.trim();
+                const setupKey = document.getElementById('netbird_setup_key').value.trim();
+                if (!mgmtUrl)  { showStatus('Management URL is required', 'error'); return; }
+                if (!setupKey) { showStatus('Setup key is required', 'error'); return; }
+
+                const btn = document.getElementById('netbird-toggle-btn');
+                btn.disabled = true;
+                document.getElementById('netbird-toggle-text').textContent = '⏳ Connecting...';
+                try {
+                    const r = await fetch('/api/netbird/enable', {
+                        method: 'POST',
+                        headers: {'Content-Type':'application/json'},
+                        body: JSON.stringify({ management_url: mgmtUrl, setup_key: setupKey })
+                    });
+                    const d = await r.json();
+                    showStatus(d.success ? 'NetBird connected successfully' : 'Failed: ' + d.message, d.success ? 'success' : 'error');
+                    await checkNetbirdStatus();
+                } catch(e) {
+                    showStatus('Error: ' + e.message, 'error');
+                } finally {
+                    btn.disabled = false;
+                    document.getElementById('netbird-toggle-text').textContent = 'Connect';
+                }
+            }
         }
     
     </script>

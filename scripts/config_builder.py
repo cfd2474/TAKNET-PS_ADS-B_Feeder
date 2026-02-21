@@ -151,117 +151,133 @@ def check_host_reachable(host, port, timeout=2):
     except:
         return False
 
+def check_netbird_running():
+    """
+    Check if NetBird is running and connected.
+    Returns: (is_running, netbird_ip)
+    """
+    import subprocess
+    try:
+        result = subprocess.run(['which', 'netbird'],
+                              capture_output=True, timeout=2)
+        if result.returncode != 0:
+            print("⚠ NetBird: Not installed")
+            return (False, None)
+
+        result = subprocess.run(['netbird', 'status', '--json'],
+                              capture_output=True, text=True, timeout=5)
+        if result.returncode != 0:
+            print("⚠ NetBird: Not running")
+            return (False, None)
+
+        import json
+        status = json.loads(result.stdout)
+
+        # NetBird status JSON: managementState, signalState, peers, netbirdIp
+        mgmt = status.get('managementState', {})
+        connected = mgmt.get('connected', False)
+        nb_ip = status.get('netbirdIp', None)
+
+        if connected and nb_ip:
+            print(f"✓ NetBird: Connected ({nb_ip})")
+            return (True, nb_ip)
+
+        print(f"⚠ NetBird: Not connected (managementState={mgmt})")
+        return (False, None)
+
+    except subprocess.TimeoutExpired:
+        print("⚠ NetBird: Check timed out")
+        return (False, None)
+    except Exception as e:
+        print(f"⚠ NetBird: Check failed: {e}")
+        return (False, None)
+
+
 def check_tailscale_running():
     """
-    Check if Tailscale is running and connected to TAKNET-PS tailnet
+    Check if Tailscale is running and connected to TAKNET-PS tailnet.
+    Used as secondary VPN fallback if NetBird is not active.
     Returns: (is_running, tailscale_ip)
     """
     import subprocess
     try:
-        # Check if tailscale command exists
-        result = subprocess.run(['which', 'tailscale'], 
-                              capture_output=True, 
-                              timeout=2)
+        result = subprocess.run(['which', 'tailscale'],
+                              capture_output=True, timeout=2)
         if result.returncode != 0:
-            print("⚠ Tailscale: Not installed")
             return (False, None)
-        
-        # Check tailscale status
-        result = subprocess.run(['tailscale', 'status', '--json'], 
-                              capture_output=True, 
-                              text=True, 
-                              timeout=5)
-        
+
+        result = subprocess.run(['tailscale', 'status', '--json'],
+                              capture_output=True, text=True, timeout=5)
         if result.returncode != 0:
-            print("⚠ Tailscale: Not running")
             return (False, None)
-        
-        # Parse JSON output
+
         import json
         status = json.loads(result.stdout)
-        
-        # Check if we're connected (BackendState should be "Running")
         backend_state = status.get('BackendState', '')
+
         if backend_state == 'Running':
-            # Get our Tailscale IP and DNS name
             self_info = status.get('Self', {})
             tailscale_ips = self_info.get('TailscaleIPs', [])
-            dns_name = self_info.get('DNSName', '').rstrip('.')  # Remove trailing dot
-            
+            dns_name = self_info.get('DNSName', '').rstrip('.')
+
             if tailscale_ips:
-                # CRITICAL: Verify we're on the TAKNET-PS tailnet
                 expected_suffix = 'tail4d77be.ts.net'
-                
                 if dns_name.endswith(expected_suffix):
-                    # Correct tailnet!
                     print(f"✓ Tailscale: Running on TAKNET-PS tailnet ({tailscale_ips[0]})")
-                    print(f"  DNS: {dns_name}")
                     return (True, tailscale_ips[0])
                 else:
-                    # Wrong tailnet - private or different network
-                    print(f"❌ Tailscale: Connected to WRONG tailnet!")
-                    print(f"   Current: {dns_name}")
-                    print(f"   Expected: *.{expected_suffix}")
-                    print(f"   This is NOT the TAKNET-PS network.")
-                    print(f"   Falling back to public IP connection.")
+                    print(f"⚠ Tailscale: Connected to different tailnet ({dns_name}) - skipping")
                     return (False, None)
-        
-        print(f"⚠ Tailscale: State={backend_state}")
+
         return (False, None)
-        
-    except subprocess.TimeoutExpired:
-        print("⚠ Tailscale: Check timed out")
+
+    except Exception:
         return (False, None)
-    except Exception as e:
-        print(f"⚠ Tailscale: Check failed: {e}")
-        return (False, None)
+
 
 def select_taknet_host(env_vars):
     """
-    Select TAKNET-PS Server host based on Tailscale status
-    NEW: Uses FQDNs instead of IPs
-    - Tailscale running: secure.tak-solutions.com
-    - Tailscale not running: adsb.tak-solutions.com
+    Select TAKNET-PS Server host based on VPN status.
+    Priority: NetBird → Tailscale → public fallback
     Returns: (selected_host, connection_type)
     """
     mode = env_vars.get('TAKNET_PS_CONNECTION_MODE', 'auto').lower()
     primary = env_vars.get('TAKNET_PS_SERVER_HOST_PRIMARY', '').strip()
     fallback = env_vars.get('TAKNET_PS_SERVER_HOST_FALLBACK', '').strip()
-    port = env_vars.get('TAKNET_PS_SERVER_PORT', '30004').strip()
-    
+
     # Force modes (for debugging/override)
     if mode == 'primary' and primary:
         print(f"ℹ TAKNET-PS: Forced to primary: {primary}")
         return (primary, 'primary-forced')
-    
+
     if mode == 'fallback' and fallback:
         print(f"ℹ TAKNET-PS: Forced to fallback: {fallback}")
         return (fallback, 'fallback-forced')
-    
-    # Auto mode - detect Tailscale and select appropriate FQDN
+
+    # Auto mode - check NetBird first, then Tailscale
     if mode == 'auto':
-        tailscale_running, tailscale_ip = check_tailscale_running()
-        
+        netbird_running, _ = check_netbird_running()
+        if netbird_running:
+            print(f"✓ TAKNET-PS: NetBird active, using primary: {primary}")
+            return (primary, 'netbird-active')
+
+        tailscale_running, _ = check_tailscale_running()
         if tailscale_running:
-            # Tailscale is running - use primary (secure.tak-solutions.com)
             print(f"✓ TAKNET-PS: Tailscale active, using primary: {primary}")
             return (primary, 'tailscale-active')
-        else:
-            # Tailscale is NOT running - use fallback (adsb.tak-solutions.com)
-            print(f"⚠ TAKNET-PS: Tailscale inactive, using fallback: {fallback}")
-            return (fallback, 'tailscale-inactive')
-    
-    # Monitor mode (Phase 2) - use primary, external monitor will handle failover
+
+        print(f"⚠ TAKNET-PS: No VPN active, using fallback: {fallback}")
+        return (fallback, 'vpn-inactive')
+
     if mode == 'monitor' and primary:
         print(f"ℹ TAKNET-PS: Monitor mode, using primary: {primary}")
         return (primary, 'monitor-mode')
-    
-    # Fallback to primary if nothing else works
+
     if primary:
         return (primary, 'primary-fallback')
     elif fallback:
         return (fallback, 'fallback-only')
-    
+
     return (None, 'disabled')
 
 def build_config(env_vars):

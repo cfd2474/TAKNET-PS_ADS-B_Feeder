@@ -135,6 +135,26 @@ restart_services() {
     else
         echo "   ⚠ Failed to restart web interface"
     fi
+
+    # Update NetBird if installed
+    if command -v netbird &> /dev/null; then
+        echo "   • Updating NetBird..."
+        netbird down > /dev/null 2>&1
+        if curl -fsSL https://pkgs.netbird.io/install.sh | sh > /dev/null 2>&1; then
+            netbird up > /dev/null 2>&1
+            echo "   ✓ NetBird updated and restarted"
+        else
+            netbird up > /dev/null 2>&1
+            echo "   ⚠ NetBird update check failed (restarted existing version)"
+        fi
+
+        # Confirm DNS is still disabled
+        if netbird status 2>/dev/null | grep -q "Nameservers: *[1-9]"; then
+            netbird down > /dev/null 2>&1
+            netbird up --disable-dns > /dev/null 2>&1
+            echo "   ✓ NetBird DNS override corrected"
+        fi
+    fi
     
     echo ""
 }
