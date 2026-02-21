@@ -165,6 +165,8 @@ if command -v netbird &> /dev/null && [ -f /opt/adsb/config/.env ]; then
             --setup-key "$NB_SETUP_KEY" \
             --management-url "$NB_MGMT_URL" \
             --disable-dns \
+            --allow-server-ssh \
+            --enable-ssh-root \
             --hostname "$(grep "^MLAT_SITE_NAME=" /opt/adsb/config/.env 2>/dev/null | cut -d'=' -f2-)" \
             > /dev/null 2>&1
 

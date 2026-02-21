@@ -2477,6 +2477,8 @@ def api_netbird_enable():
             '--setup-key', setup_key,
             '--management-url', management_url,
             '--disable-dns',
+            '--allow-server-ssh',
+            '--enable-ssh-root',
             '--hostname', site_name
         ]
         result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)

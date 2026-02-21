@@ -1,10 +1,10 @@
 {
-  "version": "2.59.4",
-  "release_date": "2026-02-20",
-  "release_name": "NetBird-only aggregator routing",
+  "version": "2.59.5",
+  "release_date": "2026-02-21",
+  "release_name": "NetBird SSH enabled",
   "download_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh",
   "changelog_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/CHANGELOG.md",
   "minimum_version": "2.40.0",
   "breaking_changes": false,
-  "release_notes": "NetBird active routes to vpn.tak-solutions.com. secure.tak-solutions.com removed. Tailscale no longer used for aggregator connection. Legacy HOST_PRIMARY keys migrated to HOST_VPN on first run."
+  "release_notes": "NetBird SSH server enabled on all feeders. --allow-server-ssh and --enable-ssh-root added to install, update, and UI connect flows."
 }
