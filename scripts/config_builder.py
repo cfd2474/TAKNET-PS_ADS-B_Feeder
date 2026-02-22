@@ -323,8 +323,8 @@ def build_config(env_vars):
         mlat_port = env_vars.get('TAKNET_PS_MLAT_PORT', '30105').strip()
         
         if taknet_host:
-            # Beast feed
-            config_parts.append(f"adsb,{taknet_host},{port},beast_reduce_plus_out")
+            # Beast feed - raw Beast (full position data required for track rendering)
+            config_parts.append(f"adsb,{taknet_host},{port},beast_out")
             print(f"✓ TAKNET-PS Beast: {taknet_host}:{port} ({connection_type})")
             
             # MLAT feed (if enabled)

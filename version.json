@@ -1,10 +1,10 @@
 {
-  "version": "2.59.5",
+  "version": "2.59.6",
   "release_date": "2026-02-21",
-  "release_name": "NetBird SSH enabled",
+  "release_name": "TAKNET-PS raw Beast output",
   "download_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh",
   "changelog_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/CHANGELOG.md",
   "minimum_version": "2.40.0",
   "breaking_changes": false,
-  "release_notes": "NetBird SSH server enabled on all feeders. --allow-server-ssh and --enable-ssh-root added to install, update, and UI connect flows."
+  "release_notes": "TAKNET-PS feed changed from beast_reduce_plus_out to beast_out. Raw Beast frames including full position data now sent to aggregator."
 }
