@@ -153,6 +153,34 @@
                             <td style="padding: 6px 12px; color: #6b7280;">Timezone</td>
                             <td style="padding: 6px 12px; font-weight: 500; color: #374151;">{{ config.get('FEEDER_TZ', 'UTC') }}</td>
                         </tr>
+
+                        <!-- SDR Devices Section -->
+                        <tr style="background: #f9fafb;">
+                            <td colspan="4" style="padding: 8px 12px; font-weight: 600; color: #374151; border-left: 3px solid #8b5cf6; border-top: 1px solid #e5e7eb;">
+                                📡 SDR Devices
+                            </td>
+                        </tr>
+                        <tr>
+                            <td colspan="4" style="padding: 6px 0;">
+                                <div id="sdr-status-container">
+                                    <table style="width: 100%; border-collapse: collapse; font-size: 0.85em;">
+                                        <thead>
+                                            <tr style="background: #f3f4f6;">
+                                                <th style="padding: 6px 12px; text-align: left; color: #6b7280; font-weight: 500;">#</th>
+                                                <th style="padding: 6px 12px; text-align: left; color: #6b7280; font-weight: 500;">Type</th>
+                                                <th style="padding: 6px 12px; text-align: left; color: #6b7280; font-weight: 500;">Serial</th>
+                                                <th style="padding: 6px 12px; text-align: left; color: #6b7280; font-weight: 500;">Use For</th>
+                                                <th style="padding: 6px 12px; text-align: left; color: #6b7280; font-weight: 500;">Gain</th>
+                                                <th style="padding: 6px 12px; text-align: left; color: #6b7280; font-weight: 500;">Bias Tee</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="sdr-table-body">
+                                            <tr><td colspan="6" style="padding: 8px 12px; color: #9ca3af; font-style: italic;">Detecting...</td></tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </td>
+                        </tr>
                     </tbody>
                 </table>
             </div>
@@ -591,12 +619,38 @@
             }
         }
         
+        async function loadSdrStatus() {
+            const tbody = document.getElementById('sdr-table-body');
+            if (!tbody) return;
+            try {
+                const response = await fetch('/api/sdr/status');
+                const data = await response.json();
+
+                if (data.success && data.devices.length > 0) {
+                    tbody.innerHTML = data.devices.map((d, i) => `
+                        <tr style="background: ${i % 2 === 0 ? '#fff' : '#fafafa'};">
+                            <td style="padding: 6px 12px; color: #374151; font-family: monospace;">${d.index}</td>
+                            <td style="padding: 6px 12px; color: #374151;">${d.type}</td>
+                            <td style="padding: 6px 12px; font-family: monospace; color: #374151;">${d.serial}</td>
+                            <td style="padding: 6px 12px; color: #374151;">${d.use_for}</td>
+                            <td style="padding: 6px 12px; color: #374151;">${d.gain}</td>
+                            <td style="padding: 6px 12px; color: ${d.biastee ? '#059669' : '#6b7280'};">${d.biastee ? 'On' : 'Off'}</td>
+                        </tr>`).join('');
+                } else {
+                    tbody.innerHTML = '<tr><td colspan="6" style="padding: 8px 12px; color: #9ca3af; font-style: italic;">No SDR devices detected</td></tr>';
+                }
+            } catch (e) {
+                tbody.innerHTML = '<tr><td colspan="6" style="padding: 8px 12px; color: #ef4444; font-style: italic;">Error detecting SDR devices</td></tr>';
+            }
+        }
+
         // Start auto-refresh when page loads
         window.addEventListener('DOMContentLoaded', () => {
             lastUpdateTime = new Date();
             updateLastUpdateTime();
             updateServiceStates(); // Initial update
             checkPowerStatus(); // Check power status on load
+            loadSdrStatus(); // Load SDR devices once on page load
             startAutoRefresh();
             
             // Check power status every 30 seconds

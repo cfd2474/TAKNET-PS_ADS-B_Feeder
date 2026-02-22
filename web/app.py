@@ -2105,57 +2105,145 @@ def feeds_account_required():
 # API Endpoints
 
 # SDR Configuration APIs
+@app.route('/api/sdr/status', methods=['GET'])
+def api_sdr_status():
+    """Get detected SDR devices with configured values for dashboard read-only view"""
+    import re
+    try:
+        env = read_env()
+        devices = []
+
+        # Try SoapySDR detection
+        try:
+            result = subprocess.run(
+                ['SoapySDRUtil', '--find'],
+                capture_output=True, text=True, timeout=8
+            )
+            output = result.stdout + result.stderr
+            devices_raw = re.split(r'Found device \d+', output)
+
+            idx = 0
+            for block in devices_raw:
+                if not block.strip():
+                    continue
+
+                def get_field(key):
+                    m = re.search(rf'{key}\s*=\s*(.+)', block, re.IGNORECASE)
+                    return m.group(1).strip() if m else ''
+
+                serial = get_field('serial')
+                driver = get_field('driver')
+                label  = get_field('label') or get_field('product') or driver
+
+                use_for = ''
+                gain = 'autogain'
+                biastee = False
+
+                if serial and env.get('SDR_1090_SERIAL', '').strip() == serial:
+                    use_for = '1090 MHz'
+                    gain = env.get('SDR_1090_GAIN', 'autogain')
+                    biastee = env.get('READSB_ENABLE_BIASTEE', '').upper() == 'ON'
+                elif serial and env.get('SDR_978_SERIAL', '').strip() == serial:
+                    use_for = '978 MHz (UAT)'
+                    gain = env.get('SDR_978_GAIN', '') or env.get('DUMP978_GAIN', 'autogain')
+                    biastee = False
+
+                devices.append({
+                    'index': idx,
+                    'type': label or driver or 'RTL-SDR',
+                    'serial': serial or 'Unknown',
+                    'use_for': use_for or 'Unassigned',
+                    'gain': gain,
+                    'biastee': biastee
+                })
+                idx += 1
+
+        except (FileNotFoundError, subprocess.TimeoutExpired):
+            pass
+
+        # If SoapySDR found nothing, fall back to env-only view
+        if not devices:
+            if env.get('SDR_1090_SERIAL'):
+                devices.append({
+                    'index': 0,
+                    'type': env.get('SDR_1090_TYPE', 'RTL-SDR'),
+                    'serial': env.get('SDR_1090_SERIAL', 'Unknown'),
+                    'use_for': '1090 MHz',
+                    'gain': env.get('SDR_1090_GAIN', 'autogain'),
+                    'biastee': env.get('READSB_ENABLE_BIASTEE', '').upper() == 'ON'
+                })
+            if env.get('SDR_978_SERIAL') and env.get('DUMP978_ENABLED', 'false').lower() == 'true':
+                devices.append({
+                    'index': 1,
+                    'type': env.get('SDR_978_TYPE', 'RTL-SDR'),
+                    'serial': env.get('SDR_978_SERIAL', 'Unknown'),
+                    'use_for': '978 MHz (UAT)',
+                    'gain': env.get('SDR_978_GAIN', 'autogain') or env.get('DUMP978_GAIN', 'autogain'),
+                    'biastee': False
+                })
+
+        return jsonify({'success': True, 'devices': devices})
+
+    except Exception as e:
+        return jsonify({'success': False, 'devices': [], 'error': str(e)}), 500
+
 @app.route('/api/sdr/detect', methods=['GET'])
 def api_sdr_detect():
     """Detect connected SDR devices"""
     import re
     try:
-        # Run rtl_test to detect devices
+        # Run SoapySDRUtil to detect devices
         result = subprocess.run(
-            ['rtl_test', '-t'],
+            ['SoapySDRUtil', '--find'],
             capture_output=True,
             text=True,
-            timeout=5
+            timeout=8
         )
-        
-        output = result.stderr + result.stdout
+        output = result.stdout + result.stderr
         devices = []
-        
-        # Parse output
-        device_pattern = r'(\d+):\s+([^,]+),\s+([^,]+),\s+SN:\s+(\S+)'
-        matches = re.findall(device_pattern, output)
-        
-        for match in matches:
-            index, manufacturer, product, serial = match
+
+        devices_raw = re.split(r'Found device \d+', output)
+        idx = 0
+        for block in devices_raw:
+            if not block.strip():
+                continue
+
+            def get_field(key):
+                m = re.search(rf'{key}\s*=\s*(.+)', block, re.IGNORECASE)
+                return m.group(1).strip() if m else ''
+
+            serial = get_field('serial')
+            driver = get_field('driver')
+            label  = get_field('label') or get_field('product') or driver
+
             device = {
-                'index': int(index),
-                'type': 'rtlsdr',
-                'manufacturer': manufacturer.strip(),
-                'product': product.strip(),
-                'serial': serial.strip(),
-                'useFor': '',  # Default empty
-                'gain': 'autogain',  # Default
-                'biastee': False  # Default
+                'index': idx,
+                'type': label or driver or 'RTL-SDR',
+                'serial': serial or 'Unknown',
+                'useFor': '',
+                'gain': 'autogain',
+                'biastee': False
             }
-            
+
             # Check if already configured
             env = read_env()
-            device_key = f'SDR_{index}'
-            if device_key in env:
-                config = env[device_key].split(',')
-                if len(config) >= 3:
-                    device['useFor'] = config[0]
-                    device['gain'] = config[1]
-                    device['biastee'] = config[2].lower() == 'true'
-            
+            if serial and env.get('SDR_1090_SERIAL', '').strip() == serial:
+                device['useFor'] = '1090'
+                device['gain'] = env.get('SDR_1090_GAIN', 'autogain')
+                device['biastee'] = env.get('READSB_ENABLE_BIASTEE', '').upper() == 'ON'
+            elif serial and env.get('SDR_978_SERIAL', '').strip() == serial:
+                device['useFor'] = '978'
+                device['gain'] = env.get('SDR_978_GAIN', '') or env.get('DUMP978_GAIN', 'autogain')
+
             devices.append(device)
-        
+            idx += 1
+
         return jsonify({'success': True, 'devices': devices})
         
     except subprocess.TimeoutExpired:
-        return jsonify({'success': False, 'devices': [], 'error': 'Detection timed out'}), 500
+        return jsonify({'success': False, 'devices': [], 'error': 'SoapySDR detection timed out'}), 500
     except FileNotFoundError:
-        return jsonify({'success': False, 'devices': [], 'error': 'rtl_test not found'}), 500
+        return jsonify({'success': False, 'devices': [], 'error': 'SoapySDRUtil not found'}), 500
     except Exception as e:
         return jsonify({'success': False, 'devices': [], 'error': str(e)}), 500
 
