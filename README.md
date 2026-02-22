@@ -3,7 +3,7 @@
 **Tactical Awareness Kit Network - Public Safety**  
 **For Enhanced Tracking**
 
-**Current Version: 2.59.14**
+**Current Version: 2.59.15**
 
 A comprehensive ADS-B aircraft tracking solution designed for distributed deployment with centralized aggregation. Built for public safety, emergency services, and aviation tracking networks.
 
@@ -193,7 +193,7 @@ TAKNET-PS uses two VPN layers with distinct roles:
 
 ### NetBird Setup
 
-NetBird is the primary VPN used to connect feeders to the TAKNET-PS aggregator. Contact your TAKNET-PS administrator for a management URL and setup key.
+NetBird is the primary VPN used to connect feeders to the TAKNET-PS aggregator. To obtain a management URL and setup key, contact **Michael Leckliter** at [michael.leckliter@yahoo.com](mailto:michael.leckliter@yahoo.com).
 
 **Setup Process:**
 
@@ -515,7 +515,7 @@ TAKNET-PS is an independently developed, free service providing low-latency ADS-
 
 ## 📝 Version Information
 
-**Current Version:** 2.59.14  
+**Current Version:** 2.59.15  
 **Release Date:** February 20, 2026  
 **Minimum Version:** 2.40.0
 

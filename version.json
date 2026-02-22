@@ -1,10 +1,10 @@
 {
-  "version": "2.59.14",
+  "version": "2.59.15",
   "release_date": "2026-02-22",
-  "release_name": "Fix spurious SDR device 0",
+  "release_name": "NetBird contact info",
   "download_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh",
   "changelog_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/CHANGELOG.md",
   "minimum_version": "2.40.0",
   "breaking_changes": false,
-  "release_notes": "Fix SoapySDR parser producing a phantom device 0 from the output header. Now skips the pre-device header block before parsing device entries."
+  "release_notes": "Added contact info for NetBird setup key requests (Michael Leckliter, michael.leckliter@yahoo.com) in Settings page and README."
 }
