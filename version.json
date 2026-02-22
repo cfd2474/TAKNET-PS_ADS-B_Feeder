@@ -1,10 +1,10 @@
 {
-  "version": "2.59.7",
+  "version": "2.59.8",
   "release_date": "2026-02-21",
-  "release_name": "Fix env key migration persistence",
+  "release_name": "TAKNET-PS logo header",
   "download_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh",
   "changelog_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/CHANGELOG.md",
   "minimum_version": "2.40.0",
   "breaking_changes": false,
-  "release_notes": "Fix write_env not persisting deleted keys. HOST_PRIMARY → HOST_VPN migration now correctly removes the old key from .env on disk."
+  "release_notes": "Replace text heading with TAKNET-PS logo on all pages. Subheading reads 'Raspberry Pi based ADSB Services Feeder'. Shield logo removed from dashboard."
 }

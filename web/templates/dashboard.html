@@ -9,8 +9,10 @@
 <body>
     <div class="container">
         <header>
-            <h1>TAKNET-PS-ADSB-Feeder</h1>
-            <p style="margin: 5px 0 5px 0; color: #9ca3af; font-size: 0.9em;">Tactical Awareness Kit Network for Enhanced Tracking – Public Safety</p>
+            <div style="text-align: center; margin-bottom: 5px;">
+                <img src="/static/taknetlogo.png" alt="TAKNET-PS" style="max-height: 80px; width: auto;">
+            </div>
+            <p style="margin: 4px 0 5px 0; color: #9ca3af; font-size: 0.85em; text-align: center;">Raspberry Pi based ADSB Services Feeder</p>
             <p style="margin: 0 0 15px 0; color: #6b7280; font-size: 0.8em;">v{{ version }}</p>
             <nav>
                 <a href="/dashboard" class="active">Dashboard</a>
@@ -24,11 +26,6 @@
         </header>
 
         <div class="dashboard">
-            <!-- Logo -->
-            <div style="text-align: center; margin-bottom: 30px;">
-                <img src="/static/taknet-ps_shield.png" alt="TAKNET-PS" style="max-width: 300px; height: auto;">
-            </div>
-
             <!-- Update Available Banner -->
             {% if update_available %}
             <div style="padding: 15px 20px; background: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 8px; margin-bottom: 25px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
