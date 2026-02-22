@@ -457,7 +457,8 @@ wget -q $REPO/web/templates/taknet-ps-status.html -O /opt/adsb/web/templates/tak
 wget -q $REPO/web/static/css/style.css -O /opt/adsb/web/static/css/style.css
 wget -q $REPO/web/static/js/setup.js -O /opt/adsb/web/static/js/setup.js
 wget -q $REPO/web/static/js/dashboard.js -O /opt/adsb/web/static/js/dashboard.js
-wget -q $REPO/web/static/taknet-ps_shield.png -O /opt/adsb/web/static/taknet-ps_shield.png 2>/dev/null || echo "  (logo not found, skipping)"
+wget -q $REPO/web/static/taknet-ps_shield.png -O /opt/adsb/web/static/taknet-ps_shield.png 2>/dev/null || echo "  (shield logo not found, skipping)"
+wget -q $REPO/web/static/taknetlogo.png -O /opt/adsb/web/static/taknetlogo.png 2>/dev/null || echo "  (taknet logo not found, skipping)"
 chmod +x /opt/adsb/web/app.py
 
 # Configure Nginx reverse proxy
