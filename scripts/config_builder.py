@@ -71,7 +71,7 @@ def read_env(env_file):
     return env_vars
 
 def write_env(env_file, env_vars):
-    """Write env vars back to .env file"""
+    """Write env vars back to .env file, including deletions"""
     lines = []
     with open(env_file) as f:
         for line in f:
@@ -80,11 +80,10 @@ def write_env(env_file, env_vars):
                 key = stripped.split('=', 1)[0].strip()
                 if key in env_vars:
                     lines.append(f"{key}={env_vars[key]}\n")
-                else:
-                    lines.append(line)
+                # else: key was deleted from env_vars - omit it from output
             else:
                 lines.append(line)
-    
+
     with open(env_file, 'w') as f:
         f.writelines(lines)
 
