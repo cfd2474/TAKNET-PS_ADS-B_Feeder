@@ -1,10 +1,10 @@
 {
-  "version": "2.59.10",
-  "release_date": "2026-02-21",
-  "release_name": "Logo full-width",
+  "version": "2.59.11",
+  "release_date": "2026-02-22",
+  "release_name": "NetBird status indicator, MLAT dashboard fix",
   "download_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh",
   "changelog_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/CHANGELOG.md",
   "minimum_version": "2.40.0",
   "breaking_changes": false,
-  "release_notes": "Logo now fills full width of the header block on all pages."
+  "release_notes": "Status page: Tailscale replaced with NetBird indicator showing VPN IP. Dashboard: MLAT column now initializes as '?' and only shows '+'/'-' after live check resolves - fixes stale '+' when MLAT is down."
 }

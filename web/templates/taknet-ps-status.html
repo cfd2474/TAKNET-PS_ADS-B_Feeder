@@ -50,7 +50,7 @@
             font-size: 1.1em;
         }
         
-        .connection-tailscale {
+        .connection-netbird {
             background: linear-gradient(135deg, #10b981 0%, #059669 100%);
             color: white;
         }
@@ -170,9 +170,9 @@
                         <span class="info-label">Aggregator Host</span>
                         <span id="aggregator-host" class="info-value">-</span>
                     </div>
-                    <div class="info-row" id="tailscale-ip-row" style="display: none;">
-                        <span class="info-label">Tailscale IP</span>
-                        <span id="tailscale-ip" class="info-value">-</span>
+                    <div class="info-row" id="netbird-ip-row" style="display: none;">
+                        <span class="info-label">NetBird IP</span>
+                        <span id="netbird-ip" class="info-value">-</span>
                     </div>
                 </div>
 
@@ -222,15 +222,14 @@
                     const iconEl = document.getElementById('connection-icon');
                     const textEl = document.getElementById('connection-text');
                     
-                    if (connData.connection_method === 'tailscale') {
-                        methodEl.className = 'connection-method connection-tailscale';
+                    if (connData.connection_method === 'netbird') {
+                        methodEl.className = 'connection-method connection-netbird';
                         iconEl.textContent = '🔒';
-                        textEl.textContent = 'Tailscale VPN';
-                        
-                        // Show Tailscale IP
-                        if (connData.tailscale_ip) {
-                            document.getElementById('tailscale-ip-row').style.display = 'flex';
-                            document.getElementById('tailscale-ip').textContent = connData.tailscale_ip;
+                        textEl.textContent = 'NetBird VPN';
+
+                        if (connData.netbird_ip) {
+                            document.getElementById('netbird-ip-row').style.display = 'flex';
+                            document.getElementById('netbird-ip').textContent = connData.netbird_ip;
                         }
                     } else {
                         methodEl.className = 'connection-method connection-public';
