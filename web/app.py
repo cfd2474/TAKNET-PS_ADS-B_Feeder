@@ -2121,9 +2121,9 @@ def api_sdr_status():
             )
             output = result.stdout + result.stderr
             devices_raw = re.split(r'Found device \d+', output)
-
+            # Skip index 0 - it's the header text before the first device block
             idx = 0
-            for block in devices_raw:
+            for block in devices_raw[1:]:
                 if not block.strip():
                     continue
 
@@ -2203,8 +2203,9 @@ def api_sdr_detect():
         devices = []
 
         devices_raw = re.split(r'Found device \d+', output)
+        # Skip index 0 - it's the header text before the first device block
         idx = 0
-        for block in devices_raw:
+        for block in devices_raw[1:]:
             if not block.strip():
                 continue
 

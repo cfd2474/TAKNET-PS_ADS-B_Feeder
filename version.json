@@ -1,10 +1,10 @@
 {
-  "version": "2.59.13",
+  "version": "2.59.14",
   "release_date": "2026-02-22",
-  "release_name": "SDR detection via SoapySDR",
+  "release_name": "Fix spurious SDR device 0",
   "download_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh",
   "changelog_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/CHANGELOG.md",
   "minimum_version": "2.40.0",
   "breaking_changes": false,
-  "release_notes": "SDR detection switched from rtl_test to SoapySDRUtil --find in both /api/sdr/status and /api/sdr/detect."
+  "release_notes": "Fix SoapySDR parser producing a phantom device 0 from the output header. Now skips the pre-device header block before parsing device entries."
 }
