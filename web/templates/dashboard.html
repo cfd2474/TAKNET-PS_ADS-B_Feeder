@@ -243,7 +243,7 @@
                             {% if config.get('TAKNET_PS_ENABLED') == 'true' %}
                             <tr>
                                 <td><strong>TAKNET-PS Server</strong></td>
-                                <td style="text-align: center;"><span class="feed-check" id="taknet-check" data-status="good">✓</span></td>
+                                <td style="text-align: center;"><span class="feed-check" id="taknet-check" data-status="unknown">✓</span></td>
                                 <td style="text-align: center;" id="taknet-data">?</td>
                                 <td style="text-align: center;" id="taknet-mlat">?</td>
                                 <td style="text-align: center;">
@@ -421,11 +421,12 @@
                         const taknetMlatCol = document.getElementById('taknet-mlat');
                         
                         if (taknetCheck) {
-                            // Update checkmark based on data feed status
-                            if (taknetData.data_feed_active) {
-                                taknetCheck.setAttribute('data-status', 'good');
-                            } else {
+                            if (!taknetData.data_feed_active) {
                                 taknetCheck.setAttribute('data-status', 'down');
+                            } else if (taknetData.mlat_enabled && !taknetData.mlat_active) {
+                                taknetCheck.setAttribute('data-status', 'mlat-down');
+                            } else {
+                                taknetCheck.setAttribute('data-status', 'good');
                             }
                         }
                         

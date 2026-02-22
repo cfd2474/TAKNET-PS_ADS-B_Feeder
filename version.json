@@ -1,10 +1,10 @@
 {
-  "version": "2.59.15",
+  "version": "2.59.16",
   "release_date": "2026-02-22",
-  "release_name": "NetBird contact info",
+  "release_name": "Fix feed checkmark status colors",
   "download_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh",
   "changelog_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/CHANGELOG.md",
   "minimum_version": "2.40.0",
   "breaking_changes": false,
-  "release_notes": "Added contact info for NetBird setup key requests (Michael Leckliter, michael.leckliter@yahoo.com) in Settings page and README."
+  "release_notes": "Fix TAKNET-PS dashboard checkmark not reflecting MLAT-down state (amber). Checkmark now correctly shows green (both active), amber (data up / MLAT down), red (data down). Initial state changed from hardcoded green to unknown (gray) until JS resolves."
 }
