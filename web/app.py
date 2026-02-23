@@ -3161,15 +3161,15 @@ def api_service_state(service_name):
 
 @app.route('/api/service/<service_name>/restart', methods=['POST'])
 def api_restart_individual_service(service_name):
-    """Restart an individual service (ultrafeeder, fr24, piaware, or tailscale)"""
+    """Restart an individual service (ultrafeeder, fr24, piaware, netbird, or tailscale)"""
     try:
-        valid_services = ['ultrafeeder', 'fr24', 'piaware', 'tailscale']
+        valid_services = ['ultrafeeder', 'fr24', 'piaware', 'netbird', 'tailscale']
         if service_name not in valid_services:
             return jsonify({
                 'success': False,
                 'message': f'Invalid service name. Must be one of: {", ".join(valid_services)}'
             }), 400
-        
+
         # Rebuild config if restarting ultrafeeder
         if service_name == 'ultrafeeder':
             config_ok = rebuild_config()
@@ -3178,14 +3178,18 @@ def api_restart_individual_service(service_name):
                     'success': False,
                     'message': 'Configuration rebuild failed. Check logs for details.'
                 }), 500
-        
-        # Restart the service
-        result = subprocess.run(
-            ['sudo', 'systemctl', 'restart', service_name],
-            capture_output=True,
-            text=True,
-            timeout=30
-        )
+
+        # NetBird runs as a Docker container — restart via docker
+        if service_name == 'netbird':
+            result = subprocess.run(
+                ['docker', 'restart', 'netbird-client'],
+                capture_output=True, text=True, timeout=30
+            )
+        else:
+            result = subprocess.run(
+                ['sudo', 'systemctl', 'restart', service_name],
+                capture_output=True, text=True, timeout=30
+            )
         
         if result.returncode == 0:
             return jsonify({

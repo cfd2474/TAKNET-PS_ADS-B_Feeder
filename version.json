@@ -1,10 +1,10 @@
 {
-  "version": "2.59.16",
+  "version": "2.59.17",
   "release_date": "2026-02-22",
-  "release_name": "Fix feed checkmark status colors",
+  "release_name": "NetBird in restart services",
   "download_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh",
   "changelog_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/CHANGELOG.md",
   "minimum_version": "2.40.0",
   "breaking_changes": false,
-  "release_notes": "Fix TAKNET-PS dashboard checkmark not reflecting MLAT-down state (amber). Checkmark now correctly shows green (both active), amber (data up / MLAT down), red (data down). Initial state changed from hardcoded green to unknown (gray) until JS resolves."
+  "release_notes": "NetBird added to Restart Services modal. Restarts via docker restart netbird-client. Backend valid_services list updated."
 }
