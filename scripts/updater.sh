@@ -113,6 +113,21 @@ run_update() {
 # Function to restart services
 restart_services() {
     echo "🔄 Restarting services..."
+
+    # Ensure 24-hour aircraft data retention cron is in place
+    CLEANUP_SCRIPT="/opt/adsb/scripts/cleanup-aircraft-data.sh"
+    if [ ! -f "$CLEANUP_SCRIPT" ]; then
+        cat > "$CLEANUP_SCRIPT" << 'CLEANUP_EOF'
+#!/bin/bash
+find /opt/adsb/ultrafeeder -type f -mmin +1440 -delete 2>/dev/null
+find /opt/adsb/ultrafeeder -type d -empty -delete 2>/dev/null
+CLEANUP_EOF
+        chmod +x "$CLEANUP_SCRIPT"
+    fi
+    if ! grep -q "cleanup-aircraft-data" /etc/crontab 2>/dev/null; then
+        echo "0 * * * * root $CLEANUP_SCRIPT" >> /etc/crontab
+        echo "   ✓ Aircraft data retention (24h) configured"
+    fi
     
     # Rebuild docker-compose.yml with new config_builder.py
     echo "   • Rebuilding docker-compose configuration..."

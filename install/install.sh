@@ -320,6 +320,24 @@ fi
 
 echo "✓ vnstat configured (30-day retention)"
 
+# Configure 24-hour aircraft data retention
+echo "Configuring aircraft data retention (24-hour limit)..."
+CLEANUP_SCRIPT="/opt/adsb/scripts/cleanup-aircraft-data.sh"
+cat > "$CLEANUP_SCRIPT" << 'CLEANUP_EOF'
+#!/bin/bash
+# Remove aircraft history files older than 24 hours
+find /opt/adsb/ultrafeeder -type f -mmin +1440 -delete 2>/dev/null
+find /opt/adsb/ultrafeeder -type d -empty -delete 2>/dev/null
+CLEANUP_EOF
+chmod +x "$CLEANUP_SCRIPT"
+
+# Add cron job to run every hour
+CRON_JOB="0 * * * * root $CLEANUP_SCRIPT"
+if ! grep -q "cleanup-aircraft-data" /etc/crontab 2>/dev/null; then
+    echo "$CRON_JOB" >> /etc/crontab
+fi
+echo "✓ Aircraft data retention set to 24 hours"
+
 # Create remote user with sudo privileges (Tailscale-only access)
 echo "Creating remote user..."
 if ! id "remote" &>/dev/null; then

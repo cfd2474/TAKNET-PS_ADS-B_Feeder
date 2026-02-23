@@ -31,6 +31,11 @@ services:
       - TAR1090_SITESHOW=true
       - ULTRAFEEDER_CONFIG=${ULTRAFEEDER_CONFIG}
       - PROMETHEUS_ENABLE=true
+      - READSB_EXTRA_ARGS=--write-json-every 1 --net-connector-delay 15 --quiet
+      - TAR1090_ENABLE_AC_DB=true
+      - READSB_MAX_RANGE=400
+      - READSB_HEATMAP_INTERVAL=0
+      - READSB_HEATMAP_DUTY_CYCLE=0
     devices:
       - /dev/bus/usb:/dev/bus/usb
     volumes:
