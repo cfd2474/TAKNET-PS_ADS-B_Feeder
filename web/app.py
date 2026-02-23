@@ -3179,10 +3179,10 @@ def api_restart_individual_service(service_name):
                     'message': 'Configuration rebuild failed. Check logs for details.'
                 }), 500
 
-        # NetBird runs as a Docker container — restart via docker
+        # NetBird on feeder runs as a systemd service
         if service_name == 'netbird':
             result = subprocess.run(
-                ['docker', 'restart', 'netbird-client'],
+                ['sudo', 'systemctl', 'restart', 'netbird'],
                 capture_output=True, text=True, timeout=30
             )
         else:

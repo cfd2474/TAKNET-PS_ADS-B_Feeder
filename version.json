@@ -1,10 +1,10 @@
 {
-  "version": "2.59.17",
+  "version": "2.59.18",
   "release_date": "2026-02-22",
-  "release_name": "NetBird in restart services",
+  "release_name": "Fix NetBird restart method",
   "download_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh",
   "changelog_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/CHANGELOG.md",
   "minimum_version": "2.40.0",
   "breaking_changes": false,
-  "release_notes": "NetBird added to Restart Services modal. Restarts via docker restart netbird-client. Backend valid_services list updated."
+  "release_notes": "Fix NetBird restart - feeder uses systemctl netbird, not docker restart netbird-client."
 }
