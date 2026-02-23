@@ -1,10 +1,10 @@
 {
-  "version": "2.59.19",
+  "version": "2.59.20",
   "release_date": "2026-02-23",
-  "release_name": "24-hour aircraft data retention",
+  "release_name": "Internet connection quality indicator",
   "download_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh",
   "changelog_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/CHANGELOG.md",
   "minimum_version": "2.40.0",
   "breaking_changes": false,
-  "release_notes": "Aircraft data retention limited to 24 hours. Heatmap disabled in docker-compose. Hourly cron cleanup removes files older than 1440 minutes from /opt/adsb/ultrafeeder. Updater installs cron on existing deployments."
+  "release_notes": "Dashboard Network section now shows Connection Quality: Good/Moderate/Poor with avg latency and packet loss. Measured via 10-packet ping on page load. New /api/network-quality endpoint."
 }

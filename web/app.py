@@ -7,6 +7,7 @@ Flask app with Tailscale hostname management
 from flask import Flask, render_template, request, jsonify, redirect, url_for
 import subprocess
 import os
+import re
 import shutil
 from pathlib import Path
 import json
@@ -3441,6 +3442,44 @@ def api_network_status():
         'ip_address': ip_address,
         'hostname': hostname
     })
+
+@app.route('/api/network-quality', methods=['GET'])
+def api_network_quality():
+    """Measure internet connection quality via ping. Returns poor/moderate/good."""
+    try:
+        result = subprocess.run(
+            ['ping', '-c', '10', '-W', '2', '8.8.8.8'],
+            capture_output=True, text=True, timeout=25
+        )
+        output = result.stdout
+
+        # Parse packet loss
+        loss_match = re.search(r'(\d+)% packet loss', output)
+        loss = int(loss_match.group(1)) if loss_match else 100
+
+        # Parse average RTT
+        rtt_match = re.search(r'rtt min/avg/max/mdev = [\d.]+/([\d.]+)/', output)
+        avg_rtt = float(rtt_match.group(1)) if rtt_match else 9999
+
+        # Determine quality
+        if loss >= 30 or avg_rtt > 200:
+            quality = 'poor'
+        elif loss >= 10 or avg_rtt > 80:
+            quality = 'moderate'
+        else:
+            quality = 'good'
+
+        return jsonify({
+            'success': True,
+            'quality': quality,
+            'packet_loss': loss,
+            'avg_rtt_ms': round(avg_rtt, 1)
+        })
+
+    except subprocess.TimeoutExpired:
+        return jsonify({'success': True, 'quality': 'poor', 'packet_loss': 100, 'avg_rtt_ms': None})
+    except Exception as e:
+        return jsonify({'success': False, 'quality': 'unknown', 'error': str(e)})
 
 # ========================================
 # WiFi Management API Endpoints

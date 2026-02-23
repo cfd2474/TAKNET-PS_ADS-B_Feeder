@@ -134,6 +134,15 @@
                                 </span>
                             </td>
                         </tr>
+                        <tr>
+                            <td style="padding: 6px 12px; color: #6b7280;">Connection Quality</td>
+                            <td colspan="3" style="padding: 6px 12px;">
+                                <span id="network-quality-badge" style="display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 12px; font-size: 0.85em; font-weight: 600; background: #f3f4f6; color: #6b7280;">
+                                    ⏳ Measuring...
+                                </span>
+                                <span id="network-quality-detail" style="font-size: 0.8em; color: #9ca3af; margin-left: 8px;"></span>
+                            </td>
+                        </tr>
                         
                         <!-- Location Section -->
                         <tr style="background: #f9fafb;">
@@ -620,6 +629,35 @@
             }
         }
         
+        async function loadNetworkQuality() {
+            const badge = document.getElementById('network-quality-badge');
+            const detail = document.getElementById('network-quality-detail');
+            if (!badge) return;
+            try {
+                const response = await fetch('/api/network-quality');
+                const data = await response.json();
+                if (data.success) {
+                    const styles = {
+                        'good':     { bg: '#d1fae5', color: '#065f46', icon: '🟢', label: 'Good' },
+                        'moderate': { bg: '#fef3c7', color: '#92400e', icon: '🟡', label: 'Moderate' },
+                        'poor':     { bg: '#fee2e2', color: '#991b1b', icon: '🔴', label: 'Poor' },
+                        'unknown':  { bg: '#f3f4f6', color: '#6b7280', icon: '❓', label: 'Unknown' }
+                    };
+                    const s = styles[data.quality] || styles['unknown'];
+                    badge.style.background = s.bg;
+                    badge.style.color = s.color;
+                    badge.textContent = `${s.icon} ${s.label}`;
+                    if (data.avg_rtt_ms !== null && data.avg_rtt_ms !== undefined) {
+                        detail.textContent = `${data.avg_rtt_ms}ms avg · ${data.packet_loss}% loss`;
+                    }
+                } else {
+                    badge.textContent = '❓ Unknown';
+                }
+            } catch (e) {
+                badge.textContent = '❓ Unknown';
+            }
+        }
+
         async function loadSdrStatus() {
             const tbody = document.getElementById('sdr-table-body');
             if (!tbody) return;
@@ -652,6 +690,7 @@
             updateServiceStates(); // Initial update
             checkPowerStatus(); // Check power status on load
             loadSdrStatus(); // Load SDR devices once on page load
+            loadNetworkQuality(); // Measure connection quality once on page load
             startAutoRefresh();
             
             // Check power status every 30 seconds
