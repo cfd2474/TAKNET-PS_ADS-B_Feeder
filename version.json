@@ -1,5 +1,5 @@
 {
-  "version": "2.59.26",
+  "version": "2.59.27",
   "release_date": "2026-02-23",
   "release_name": "Fix installer banner version",
   "download_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh",

@@ -1,8 +1,8 @@
 #!/bin/bash
-# TAKNET-PS-ADSB-Feeder One-Line Installer v2.59.26
+# TAKNET-PS-ADSB-Feeder One-Line Installer v2.59.27
 # curl -fsSL https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh | sudo bash
 
-INSTALLER_VERSION="2.59.26"
+INSTALLER_VERSION="2.59.27"
 
 set -e
 
@@ -483,7 +483,6 @@ wget -q $REPO/web/templates/taknet-ps-status.html -O /opt/adsb/web/templates/tak
 wget -q $REPO/web/static/css/style.css -O /opt/adsb/web/static/css/style.css
 wget -q $REPO/web/static/js/setup.js -O /opt/adsb/web/static/js/setup.js
 wget -q $REPO/web/static/js/dashboard.js -O /opt/adsb/web/static/js/dashboard.js
-wget -q $REPO/web/static/taknet-ps_shield.png -O /opt/adsb/web/static/taknet-ps_shield.png 2>/dev/null || echo "  (shield logo not found, skipping)"
 wget -q $REPO/web/static/taknetlogo.png -O /opt/adsb/web/static/taknetlogo.png 2>/dev/null || echo "  (taknet logo not found, skipping)"
 chmod +x /opt/adsb/web/app.py
 
