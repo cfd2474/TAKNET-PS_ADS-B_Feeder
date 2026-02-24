@@ -371,28 +371,33 @@ SUDOEOF
     
     chmod 0440 /etc/sudoers.d/remote-adsb
     
-    # SECURITY: Immediately restrict 'remote' user to Tailscale-only access
-    # Block all SSH access by default until Tailscale is configured
-    if ! grep -q "^DenyUsers remote" /etc/ssh/sshd_config; then
-        # Backup SSH config first
-        cp /etc/ssh/sshd_config /etc/ssh/sshd_config.backup-install
-        
-        # Add DenyUsers restriction at end of file
-        echo "" >> /etc/ssh/sshd_config
-        echo "# TAKNET-PS: Block remote user until Tailscale configured" >> /etc/ssh/sshd_config
-        echo "DenyUsers remote" >> /etc/ssh/sshd_config
-        
-        # Test and restart SSH
-        if sshd -t 2>/dev/null; then
-            systemctl restart sshd 2>/dev/null || true
-            echo "✓ User 'remote' created (SSH access BLOCKED until VPN configured)"
-        else
-            # If test fails, restore backup
-            cp /etc/ssh/sshd_config.backup-install /etc/ssh/sshd_config
-            echo "✓ User 'remote' created (SSH restriction failed - manual config needed)"
-        fi
+    # Configure SSH: allow 'remote' user only via VPN (NetBird + Tailscale 100.x.x.x)
+    cp /etc/ssh/sshd_config /etc/ssh/sshd_config.backup-install
+
+    # Enable password authentication
+    sed -i 's/^#*PasswordAuthentication.*/PasswordAuthentication yes/' /etc/ssh/sshd_config
+
+    # Remove any prior DenyUsers or TAKNET-PS SSH blocks
+    sed -i '/^DenyUsers remote/d' /etc/ssh/sshd_config
+    sed -i '/# TAKNET-PS: Block remote user/d' /etc/ssh/sshd_config
+
+    # Add Match block restricting remote user to VPN addresses only
+    if ! grep -q "# TAKNET-PS: remote VPN-only access" /etc/ssh/sshd_config; then
+        cat >> /etc/ssh/sshd_config << 'SSHEOF'
+
+# TAKNET-PS: remote VPN-only access (NetBird + Tailscale use 100.x.x.x)
+Match User remote Address 100.*
+    PasswordAuthentication yes
+SSHEOF
+    fi
+
+    if sshd -t 2>/dev/null; then
+        systemctl restart sshd 2>/dev/null || true
+        echo "✓ User 'remote' created (SSH accessible via NetBird/Tailscale VPN only)"
     else
-        echo "✓ User 'remote' created (SSH already configured)"
+        cp /etc/ssh/sshd_config.backup-install /etc/ssh/sshd_config
+        systemctl restart sshd 2>/dev/null || true
+        echo "✓ User 'remote' created (SSH config failed - backup restored)"
     fi
 else
     echo "✓ User 'remote' already exists"

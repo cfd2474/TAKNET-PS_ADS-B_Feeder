@@ -1,10 +1,10 @@
 {
-  "version": "2.59.20",
+  "version": "2.59.21",
   "release_date": "2026-02-23",
-  "release_name": "Internet connection quality indicator",
+  "release_name": "SSH access via NetBird VPN",
   "download_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh",
   "changelog_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/CHANGELOG.md",
   "minimum_version": "2.40.0",
   "breaking_changes": false,
-  "release_notes": "Dashboard Network section now shows Connection Quality: Good/Moderate/Poor with avg latency and packet loss. Measured via 10-packet ping on page load. New /api/network-quality endpoint."
+  "release_notes": "SSH for remote user (password: adsb) now allowed from NetBird and Tailscale VPN addresses (100.x.x.x) only. Removed DenyUsers block. Uses sshd Match Address block. Updater verifies and applies config on existing installs."
 }

@@ -114,7 +114,24 @@ run_update() {
 restart_services() {
     echo "🔄 Restarting services..."
 
-    # Ensure 24-hour aircraft data retention cron is in place
+    # Verify SSH is configured for remote user via VPN
+    if ! grep -q "# TAKNET-PS: remote VPN-only access" /etc/ssh/sshd_config 2>/dev/null; then
+        sed -i 's/^#*PasswordAuthentication.*/PasswordAuthentication yes/' /etc/ssh/sshd_config
+        sed -i '/^DenyUsers remote/d' /etc/ssh/sshd_config
+        sed -i '/# TAKNET-PS: Block remote user/d' /etc/ssh/sshd_config
+        cat >> /etc/ssh/sshd_config << 'SSHEOF'
+
+# TAKNET-PS: remote VPN-only access (NetBird + Tailscale use 100.x.x.x)
+Match User remote Address 100.*
+    PasswordAuthentication yes
+SSHEOF
+        if sshd -t 2>/dev/null; then
+            systemctl restart sshd 2>/dev/null || true
+            echo "   ✓ SSH configured: remote user accessible via VPN (100.x.x.x)"
+        fi
+    else
+        echo "   ✓ SSH config verified"
+    fi
     CLEANUP_SCRIPT="/opt/adsb/scripts/cleanup-aircraft-data.sh"
     if [ ! -f "$CLEANUP_SCRIPT" ]; then
         cat > "$CLEANUP_SCRIPT" << 'CLEANUP_EOF'
