@@ -1,10 +1,10 @@
 {
-  "version": "2.59.21",
+  "version": "2.59.22",
   "release_date": "2026-02-23",
-  "release_name": "SSH access via NetBird VPN",
+  "release_name": "Fix cleanup script install error",
   "download_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh",
   "changelog_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/CHANGELOG.md",
   "minimum_version": "2.40.0",
   "breaking_changes": false,
-  "release_notes": "SSH for remote user (password: adsb) now allowed from NetBird and Tailscale VPN addresses (100.x.x.x) only. Removed DenyUsers block. Uses sshd Match Address block. Updater verifies and applies config on existing installs."
+  "release_notes": "Fix: mkdir -p /opt/adsb/scripts before writing cleanup-aircraft-data.sh during install."
 }

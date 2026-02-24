@@ -3,7 +3,7 @@
 **Tactical Awareness Kit Network - Public Safety**  
 **For Enhanced Tracking**
 
-**Current Version: 2.59.21**
+**Current Version: 2.59.22**
 
 A comprehensive ADS-B aircraft tracking solution designed for distributed deployment with centralized aggregation. Built for public safety, emergency services, and aviation tracking networks.
 
@@ -515,7 +515,7 @@ TAKNET-PS is an independently developed, free service providing low-latency ADS-
 
 ## 📝 Version Information
 
-**Current Version:** 2.59.21  
+**Current Version:** 2.59.22  
 **Release Date:** February 20, 2026  
 **Minimum Version:** 2.40.0
 

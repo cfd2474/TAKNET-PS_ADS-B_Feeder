@@ -323,6 +323,7 @@ echo "✓ vnstat configured (30-day retention)"
 # Configure 24-hour aircraft data retention
 echo "Configuring aircraft data retention (24-hour limit)..."
 CLEANUP_SCRIPT="/opt/adsb/scripts/cleanup-aircraft-data.sh"
+mkdir -p /opt/adsb/scripts
 cat > "$CLEANUP_SCRIPT" << 'CLEANUP_EOF'
 #!/bin/bash
 # Remove aircraft history files older than 24 hours
