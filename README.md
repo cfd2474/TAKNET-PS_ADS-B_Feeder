@@ -7,7 +7,7 @@
 **Tactical Awareness Kit Network - Public Safety**  
 **For Enhanced Tracking**
 
-**Current Version: 2.59.28**
+**Current Version: 2.59.29**
 
 A comprehensive ADS-B aircraft tracking solution designed for distributed deployment with centralized aggregation. Built for public safety, emergency services, and aviation tracking networks.
 
@@ -496,7 +496,7 @@ Michael Leckliter — [michael.leckliter@yahoo.com](mailto:michael.leckliter@yah
 
 ## 📝 Version History
 
-**Current Version:** 2.59.28
+**Current Version:** 2.59.29
 **Release Date:** February 23, 2026
 **Minimum Supported Version:** 2.40.0
 
