@@ -2577,6 +2577,8 @@ def api_netbird_enable():
             # Rebuild docker-compose with new VPN detection
             subprocess.run(['python3', '/opt/adsb/scripts/config_builder.py'],
                          capture_output=True, timeout=15)
+            # Restart ultrafeeder so it picks up the new VPN host immediately
+            restart_service()
             return jsonify({'success': True, 'message': 'NetBird connected successfully'})
         else:
             env['NETBIRD_ENABLED'] = 'false'
@@ -2600,9 +2602,12 @@ def api_netbird_disable():
         if shutil.which('netbird'):
             subprocess.run(['netbird', 'down'], capture_output=True, timeout=10)
 
-        # Rebuild config to fall back to public IP or Tailscale
+        # Rebuild config to fall back to public endpoint
         subprocess.run(['python3', '/opt/adsb/scripts/config_builder.py'],
                      capture_output=True, timeout=15)
+
+        # Restart ultrafeeder so it switches to public endpoint immediately
+        restart_service()
 
         return jsonify({'success': True, 'message': 'NetBird disconnected'})
 
@@ -4078,5 +4083,41 @@ def get_update_status():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 if __name__ == '__main__':
+    # Start VPN state watchdog — monitors NetBird connect/disconnect and
+    # triggers config rebuild + ultrafeeder restart automatically
+    def vpn_watchdog():
+        import sys
+        sys.path.insert(0, '/opt/adsb/scripts')
+        last_state = None  # None = unknown, True = connected, False = disconnected
+        POLL_INTERVAL = 30  # seconds between checks
+
+        while True:
+            try:
+                from config_builder import check_netbird_running
+                connected, _ = check_netbird_running()
+
+                if last_state is not None and connected != last_state:
+                    # State changed — rebuild config and restart ultrafeeder
+                    direction = "connected" if connected else "disconnected"
+                    print(f"[VPN watchdog] NetBird {direction} — rebuilding config and restarting ultrafeeder")
+                    try:
+                        subprocess.run(
+                            ['python3', '/opt/adsb/scripts/config_builder.py'],
+                            capture_output=True, timeout=15
+                        )
+                        restart_service()
+                    except Exception as e:
+                        print(f"[VPN watchdog] Restart error: {e}")
+
+                last_state = connected
+
+            except Exception as e:
+                print(f"[VPN watchdog] Poll error: {e}")
+
+            time.sleep(POLL_INTERVAL)
+
+    watchdog_thread = threading.Thread(target=vpn_watchdog, daemon=True)
+    watchdog_thread.start()
+
     # Run on all interfaces, port 5000
     app.run(host='0.0.0.0', port=5000, debug=False)
