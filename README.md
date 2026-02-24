@@ -11,17 +11,18 @@ A comprehensive ADS-B aircraft tracking solution designed for distributed deploy
 
 ## 🎯 Overview
 
-TAKNET-PS is an independently developed project focused on delivering free, low-latency ADS-B data to public safety users worldwide. This comprehensive feeder system combines real-time aircraft tracking with a professional web interface, supporting multiple aggregator feeds and providing detailed statistics for emergency services and aviation tracking networks.
+TAKNET-PS is an independently developed project focused on delivering free, low-latency ADS-B data to public safety users worldwide. This feeder system combines real-time aircraft tracking with a professional web interface, supporting multiple aggregator feeds and providing detailed statistics for emergency services and aviation tracking networks.
 
 ### Key Features
 
 - **🌐 Web-Based Interface** - Complete configuration and monitoring through browser
-- **📡 Multiple Aggregators** - Feed to TAKNET-PS Server, FlightAware, FlightRadar24, ADSBHub, and more
+- **📡 Multiple Aggregators** - Feed to TAKNET-PS Server, FlightAware, FlightRadar24, ADSBHub, ADSBExchange, and more
 - **📊 Real-Time Statistics** - Built-in graphs1090 for performance monitoring
 - **🗺️ Local Map** - tar1090 web map on port 8080
-- **🔒 Secure VPN** - NetBird (primary aggregator connection) + Tailscale (remote management)
+- **🔒 Dual VPN** - NetBird (primary aggregator connection) + Tailscale (optional personal remote access)
 - **📶 WiFi Hotspot** - Captive portal for easy initial configuration
 - **🔄 Auto-Updates** - One-click updates from web interface
+- **📡 Universal SDR Detection** - SoapySDR-based detection supports RTL-SDR and compatible hardware
 
 ---
 
@@ -30,7 +31,7 @@ TAKNET-PS is an independently developed project focused on delivering free, low-
 ### Hardware
 
 **Minimum:**
-- Raspberry Pi 3B (2GB RAM)
+- Raspberry Pi 3B (1GB RAM)
 - RTL-SDR dongle (RTL2832U chipset)
 - ADS-B antenna (1090 MHz)
 - MicroSD card (16GB minimum, 32GB recommended)
@@ -38,20 +39,20 @@ TAKNET-PS is an independently developed project focused on delivering free, low-
 
 **Recommended:**
 - Raspberry Pi 4 (4GB+ RAM)
-- FlightAware Pro Stick Plus (or similar with LNA/filter)
-- Quality outdoor antenna with proper mounting
-- Ethernet connection (more stable than WiFi)
+- FlightAware Pro Stick Plus or similar (LNA + filter)
+- Quality outdoor antenna with proper coax and mounting
+- Ethernet connection (more stable than WiFi for MLAT)
 - Power supply (5V/3A USB-C for Pi 4)
 
 **Optional 978 MHz UAT (US Only):**
-- Second RTL-SDR dongle (for 978 MHz)
-- **OR** FTDI-based Stratux UATRadio (978 MHz only)
-- 978 MHz antenna (for general aviation tracking)
+- Second RTL-SDR dongle
+- **OR** FTDI-based Stratux UATRadio
+- 978 MHz antenna
 
 ### Software
 
-- **Raspberry Pi OS Lite 64-bit (Bookworm)** - Required for dependencies
-- Internet connection (for installation and updates)
+- **Raspberry Pi OS Lite 64-bit (Bookworm)** — Required
+- Internet connection (installation and updates)
 - Modern web browser (Chrome, Firefox, Safari, Edge)
 
 ---
@@ -67,31 +68,34 @@ curl -fsSL https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main
 ### Installation Steps
 
 1. **Flash Raspberry Pi OS Lite 64-bit (Bookworm)** to SD card
-2. **Connect SDR** and antenna
-3. **Run installer** (command above - this will take 5-10 minutes!)
+2. **Connect SDR** and antenna before powering on
+3. **Run installer** (command above — takes 5–10 minutes)
 4. **Access web interface** at `http://taknet-ps.local` or `http://[raspberry-pi-ip]`
 5. **Complete setup wizard**
 
 The installer handles:
-- Docker installation
-- Container configuration
-- Web interface setup
-- Service registration
-- Nginx reverse proxy
-- WiFi hotspot (if configured)
+- Docker installation and image pre-download
+- SoapySDR universal SDR detection tools
+- NetBird VPN installation
+- Tailscale VPN installation
+- Web interface and Nginx reverse proxy
+- Service registration (systemd)
+- WiFi hotspot manager
+- Aircraft data retention (24-hour limit)
+- SSH access configuration for remote user
 
 ### First-Time Setup
 
-After installation completes:
+After installation:
 
 1. Navigate to `http://taknet-ps.local` or `http://[raspberry-pi-ip]`
 2. Follow the setup wizard:
-   - **SDR Configuration** - Auto-detect dongles and assign functions (1090 MHz, 978 MHz)
-   - **Location & Name** - Enter latitude, longitude, altitude, and feeder name
-
-3. After setup wizard completes:
-   - **Feed Selection** - Navigate to Feed Selection tab to choose aggregators
-   - **Tailscale VPN** (optional) - Navigate to Settings tab to configure secure connection
+   - **SDR Configuration** — Auto-detect dongles via SoapySDR and assign functions (1090 MHz, 978 MHz)
+   - **Location & Name** — Latitude, longitude, altitude, timezone, and feeder name
+3. After wizard completes:
+   - **Feed Selection** — Enable/disable aggregators
+   - **Settings → NetBird VPN** — Connect to TAKNET-PS private network (recommended)
+   - **Settings → Tailscale VPN** — Optional, for personal remote management
 
 ---
 
@@ -99,34 +103,34 @@ After installation completes:
 
 ### Core Components
 
-**ultrafeeder** - Main ADS-B aggregation container
-- Receives data from readsb/dump1090
-- Forwards to multiple aggregators
+**ultrafeeder** — Main ADS-B aggregation container
+- Receives decoded data from readsb
+- Forwards to multiple aggregators via ULTRAFEEDER_CONFIG
 - Provides data to tar1090 and graphs1090
 - Handles MLAT processing
 
-**readsb** - Software-defined radio decoder
-- Decodes 1090 MHz ADS-B signals
-- Processes Mode S messages
-- Outputs to ultrafeeder
+**readsb** — Software-defined radio decoder
+- Decodes 1090 MHz ADS-B and Mode S signals
+- Outputs Beast format to ultrafeeder
 
-**tar1090** - Web map interface
-- Real-time aircraft display
-- Multiple layer options
+**tar1090** — Web map interface
+- Real-time aircraft display on port 8080
 - Historical track playback
-- Accessible on port 8080
+- Multiple map layers
 
-**graphs1090** - Statistics and performance
-- Signal quality metrics
-- Message rate graphs
-- Range analysis
-- CPU/memory monitoring
+**graphs1090** — Statistics and performance
+- Signal quality metrics, message rate graphs
+- Range analysis and CPU/memory monitoring
 
-**Flask Web App** - Configuration interface
-- Feeder management
-- Service monitoring
-- Update system
-- Settings control
+**Flask Web App** — Configuration interface
+- Feeder setup and management
+- Service monitoring and restart
+- OTA update system
+- VPN management (NetBird + Tailscale)
+
+**NetBird** — Primary VPN (systemd service)
+- Encrypted peer-to-peer tunnel to TAKNET-PS aggregator
+- SSH access for remote user restricted to VPN addresses
 
 ---
 
@@ -136,176 +140,174 @@ Access at `http://taknet-ps.local` or `http://[feeder-ip]`
 
 ### Navigation Tabs
 
-- **Dashboard** - System status, feed health, statistics
-- **Feed Selection** - Enable/disable aggregators
-- **Settings** - Location, network, Tailscale, updates
-- **Map** - Opens tar1090 (port 8080) in new tab
-- **Statistics** - Opens graphs1090 in new tab
-- **About** - System information and version
+- **Dashboard** — System status, feed health, live statistics
+- **Feed Selection** — Enable/disable aggregators
+- **Settings** — Location, VPN, updates, service restarts
+- **Map** — Opens tar1090 (port 8080) in new tab
+- **Statistics** — Opens graphs1090 in new tab
+- **About** — System information and version
 
-### Dashboard Features
+### Dashboard — System Status Card
 
-**System Status Card:**
-- Core Service (ultrafeeder status)
-- Location (coordinates, altitude, timezone)
-- Network (hostname, connection type, internet status)
+**Network section:**
+- Hostname, machine name, connection type (Ethernet/WiFi), internet status
+- **Connection Quality** — Good / Moderate / Poor with avg latency and packet loss (measured on page load)
 
-**Feed Status Table:**
-- Enabled/disabled state for each aggregator
-- Connection health indicators
-- Quick enable/disable toggles
+**Location section:**
+- Latitude, longitude, altitude, timezone
+
+**SDR Devices section:**
+- Auto-detected via SoapySDR on page load
+- Columns: Index, Type, Serial, Use For, Gain, Bias Tee
+- Read-only — configure via setup wizard or Settings
+
+### Dashboard — Feed Status Table
+
+| Indicator | Meaning |
+|---|---|
+| 🟢 Green ✓ | Feed active, MLAT active |
+| 🟡 Amber ✓ | Feed active, MLAT down |
+| 🔴 Red ✓ | Feed down |
+| ⚫ Gray ✓ | Status unknown |
 
 ---
 
 ## 📶 Supported Aggregators
 
-### Account-Free Feeds
+### Account-Free
 
-- **TAKNET-PS Server** - Primary aggregation server
-- **Airplanes.Live** - Community aggregator
-- **adsb.fi** - Finnish ADS-B network
-- **adsb.lol** - Community network
+| Aggregator | Notes |
+|---|---|
+| **TAKNET-PS Server** | Primary — encrypted via NetBird |
+| **Airplanes.Live** | Community aggregator |
+| **adsb.fi** | Finnish ADS-B network |
+| **adsb.lol** | Community network |
+| **ADSBExchange** | Unfiltered feed (UUID auto-generated) |
 
-### Account-Required Feeds
+### Account-Required
 
-- **FlightRadar24** - Commercial tracking service
-- **FlightAware** (PiAware) - Flight tracking platform
-- **ADSBHub** - Community data exchange
-
-### Configuration
-
-Each aggregator can be:
-- Enabled/disabled via toggle buttons
-- Configured with account credentials
-- Monitored for connection health
-- Tested for connectivity
+| Aggregator | Notes |
+|---|---|
+| **FlightRadar24** | FR24 key required |
+| **FlightAware** (PiAware) | Feeder ID required |
+| **ADSBHub** | Station key required |
 
 ---
 
 ## 🔒 VPN Integration
 
-TAKNET-PS uses two VPN layers with distinct roles:
-
 | VPN | Role | Purpose |
 |-----|------|---------|
-| **NetBird** | Primary | Encrypted aggregator connection |
-| **Tailscale** | Reserve | Remote management / owner SSH access |
+| **NetBird** | Primary | Encrypted aggregator connection + SSH access |
+| **Tailscale** | Optional | Personal remote management |
+
+### Aggregator Routing
+
+```
+NetBird connected  →  vpn.tak-solutions.com:30004/30105
+NetBird inactive   →  adsb.tak-solutions.com:30004/30105 (public fallback)
+```
+
+Tailscale is **not** used for aggregator routing.
 
 ### NetBird Setup
 
-NetBird is the primary VPN used to connect feeders to the TAKNET-PS aggregator. To obtain a management URL and setup key, contact **Michael Leckliter** at [michael.leckliter@yahoo.com](mailto:michael.leckliter@yahoo.com).
+**Option 1 — Self-service (recommended):**
+1. Visit [https://netbird.tak-solutions.com](https://netbird.tak-solutions.com)
+2. Create a free account (email or Google sign-in)
+3. Request will be approved by the administrator
+4. Once approved, generate setup keys and manage unlimited devices at no cost
 
-**Setup Process:**
+**Option 2 — Contact administrator:**
+Michael Leckliter — [michael.leckliter@yahoo.com](mailto:michael.leckliter@yahoo.com)
 
-1. Navigate to **Settings** → **NetBird VPN**
-2. Enter the Management URL and Setup Key provided by your administrator
+**Connecting:**
+1. **Settings → NetBird VPN**
+2. Enter Management URL and Setup Key
 3. Click **Connect**
-4. Wait for connection (5–15 seconds)
-5. Verify the status shows Connected with an assigned IP
-
-If NetBird is unavailable, the feeder automatically falls back to the public aggregator endpoint.
+4. Confirm status shows Connected with assigned IP
 
 ### Tailscale Setup
 
-Tailscale is used for reserve/owner SSH access and is not required for aggregator connectivity.
-
-1. Navigate to **Settings** → **Tailscale VPN**
-2. Enter your Tailscale auth key
+1. **Settings → Tailscale VPN**
+2. Enter your personal Tailscale auth key
 3. Click **Connect**
 
-### Hostname Sanitization
+> **Migrating from TAKNET-PS Tailscale?** Once on NetBird, disconnect from the TAKNET-PS Tailscale network and reconnect with your own personal key — or leave Tailscale disconnected if NetBird covers your access needs.
 
-The system automatically:
-- Converts feeder name to DNS-safe format
-- Prepends zip code (from location or coordinates)
-- Removes special characters
-- Example: "Corona Feeder #1" → "92882-corona-feeder-1"
+### Feeder Hostname
+
+Automatically formatted for VPN/MLAT registration:
+- `"Corona Feeder #1"` → `"92882-corona-feeder-1"`
+
+---
+
+## 🔐 Remote SSH Access
+
+| Setting | Value |
+|---|---|
+| Username | `remote` |
+| Password | `adsb` |
+| Network requirement | NetBird or Tailscale (100.x.x.x) |
+| Permissions | Limited sudo for ADSB services |
+
+```bash
+# Connect via NetBird or Tailscale, then:
+ssh remote@<vpn-ip>
+```
+
+SSH is blocked from the public internet. Only connections originating from `100.x.x.x` are accepted. This is configured automatically during install and verified on every update.
 
 ---
 
 ## 📍 Location Configuration
 
-### Setting Your Location
-
 **Via Web Interface:**
-1. Navigate to **Settings** → **Location**
-2. Enter coordinates:
-   - Latitude (DD.DDDDD format, e.g., 33.55390)
-   - Longitude (DD.DDDDD format, e.g., -117.21390)
-   - Altitude (meters, whole number)
-3. Select timezone
-4. Optional: Enter zip/postal code
-5. **Provide a feeder name** that describes your station (e.g., "Corona Rooftop Feeder", "Downtown Fire Station")
-6. Click **Apply Changes & Restart Ultrafeeder**
+1. **Settings → Location**
+2. Enter latitude, longitude, altitude (meters), timezone, feeder name
+3. Click **Apply Changes & Restart Ultrafeeder**
 
-**Important:** Accurate location is critical for:
-- MLAT positioning calculations
-- Coverage analysis
-- Proper data attribution
-- Statistics accuracy
+Accurate location is critical for MLAT, coverage analysis, and data attribution.
 
 ---
 
 ## 🔄 Updates
 
-### Web Interface Method (Recommended)
+### Web Interface (Recommended)
 
-1. Navigate to **Settings** → **System Updates**
-2. Click **Check for Updates**
-3. If update available, click **Update Now**
-4. Wait for progress bar to complete
-5. System restarts automatically
+**Settings → System Updates → Check for Updates → Update Now**
 
-### Manual Update Method
+### Manual
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh | sudo bash -s -- --update
 ```
 
-### Update Process
+### What Updates Preserve
+Location, aggregator configs, feed selections, VPN credentials, network settings
 
-Updates preserve:
-- Location settings
-- Aggregator configurations
-- Feed selections
-- Network settings
-- Tailscale connection
-
-Updates replace:
-- Web interface files
-- Docker compose configuration
-- System scripts
-- Static assets
+### What Updates Replace
+Web interface files, Docker Compose config, system scripts, static assets
 
 ---
 
 ## 📊 Performance Monitoring
 
-### graphs1090 Access
+**graphs1090:** `http://[feeder-ip]:8080/graphs1090/?timeframe=24h`
 
-Available at `http://[feeder-ip]:8080/graphs1090/?timeframe=24h`
+Timeframes: 6h, 24h, 48h, 7d, 30d, 90d, 365d
 
-**Available Metrics:**
-- Aircraft positions tracked
-- Message rate per second
-- Signal strength distribution
-- Max range over time
-- CPU and memory usage
-- Network throughput
+**Logs:** `http://taknet-ps.local/logs`
 
-**Timeframe Options:**
-- 6h, 24h (default), 48h
-- 7d, 30d, 90d, 365d
+---
 
-### Logs Access
+## 💾 Data Retention
 
-Available at `http://taknet-ps.local/logs` or `http://[feeder-ip]/logs`
+Aircraft history is automatically purged after **24 hours** to prevent SD card fill-up.
 
-**Log Sources:**
-- ultrafeeder (main service)
-- readsb (SDR decoder)
-- tar1090 (web map)
-- graphs1090 (statistics)
+- Cleanup runs hourly via cron (`/opt/adsb/scripts/cleanup-aircraft-data.sh`)
+- Heatmap accumulation disabled
+- Applied to `/opt/adsb/ultrafeeder/`
 
 ---
 
@@ -314,53 +316,54 @@ Available at `http://taknet-ps.local/logs` or `http://[feeder-ip]/logs`
 ### SDR Not Detected
 
 ```bash
-# Check USB devices
-lsusb | grep RTL
+# Detect SDR devices
+SoapySDRUtil --find
 
-# Check Docker can see device
-docker exec ultrafeeder rtl_test -t
+# Check USB
+lsusb | grep -i rtl
+
+# Check from inside container
+docker exec ultrafeeder SoapySDRUtil --find
 ```
 
-**Common Solutions:**
-- Reseat USB connection
-- Try different USB port
-- Check power supply (need 5V/3A minimum)
-- Verify RTL-SDR driver not blacklisted
+Common fixes: reseat USB, try different port, check power supply (5V/3A min), verify `dvb_usb_rtl28xxu` is blacklisted.
 
 ### No Aircraft Showing
 
-**Checklist:**
-1. Verify SDR connected and recognized
-2. Check antenna connection
-3. Confirm location settings accurate
+1. Verify SDR detected (`SoapySDRUtil --find`)
+2. Check antenna and coax
+3. Confirm location settings
 4. Verify ultrafeeder running: `docker ps`
-5. Check logs for errors: Settings → System Updates → View Logs
-6. Ensure 1090 MHz not blocked by local interference
+5. Check logs: Settings → Logs
 
-### Tailscale Connection Issues
+### NetBird Issues
 
-**Diagnosis:**
-1. Settings → Tailscale VPN → Check status
-2. Verify auth key is valid
-3. Check internet connectivity
-4. Review Tailscale connection logs
+```bash
+# Check status
+netbird status
 
-**Solutions:**
-- Disable and re-enable with fresh auth key
+# Check logs
+journalctl -u netbird --no-pager | tail -50
+```
+
+- Try **Settings → Restart Services → NetBird**
+- Verify setup key is not expired
+- If NetBird fails, feeder auto-falls back to public endpoint — data still flows
+
+### Tailscale Issues
+
+- Verify auth key is valid
 - Check firewall not blocking UDP 41641
 - Verify system time is accurate
 
 ### Update Failures
 
-**Recovery Steps:**
 ```bash
-# Re-run installer in update mode
+# Re-run update
 curl -fsSL https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh | sudo bash -s -- --update
 
-# If that fails, check Docker
+# Check Docker
 sudo systemctl status docker
-
-# Restart Docker if needed
 sudo systemctl restart docker
 ```
 
@@ -368,50 +371,48 @@ sudo systemctl restart docker
 
 ## 🔧 Advanced Configuration
 
-### Manual Configuration Files
+### Key `.env` Variables
 
-**Location:** `/opt/adsb/config/.env`
+**File:** `/opt/adsb/config/.env`
 
-**Key Variables:**
 ```bash
+# Location
 FEEDER_LAT=33.55390
 FEEDER_LONG=-117.21390
 FEEDER_ALT_M=304
 FEEDER_TZ=America/Los_Angeles
 MLAT_SITE_NAME=92882-Corona-Feeder
 
-# Aggregator enables
-TAKNET_ENABLED=true
+# TAKNET-PS aggregator
+TAKNET_PS_ENABLED=true
+TAKNET_PS_SERVER_HOST_VPN=vpn.tak-solutions.com
+TAKNET_PS_SERVER_HOST_FALLBACK=adsb.tak-solutions.com
+TAKNET_PS_SERVER_PORT=30004
+TAKNET_PS_MLAT_PORT=30105
+
+# SDR
+SDR_1090_SERIAL=10901090
+SDR_1090_GAIN=autogain
+
+# Feed enables
 FR24_ENABLED=false
+ADSBFI_ENABLED=true
 ADSBLOL_ENABLED=true
-# ... etc
+ADSBX_ENABLED=true
+AIRPLANESLIVE_ENABLED=true
+ADSBHUB_ENABLED=false
+PIAWARE_ENABLED=false
 ```
 
-**After manual edits:**
-```bash
-cd /opt/adsb/config
-sudo docker compose up -d
-```
+After manual edits: `cd /opt/adsb/config && sudo docker compose up -d`
 
-### Adding Custom Aggregators
+### Service Restarts
 
-Edit `/opt/adsb/config/docker-compose.yml`:
+**Settings → Restart Services** — Available: Ultrafeeder, FlightRadar24, PiAware, NetBird, Tailscale
 
-```yaml
-- ULTRAFEEDER_CONFIG=
-    # Add custom aggregator
-    mlathub,custom.server.com,30005,beast_reduce_plus_out;
-```
+### WiFi Hotspot
 
-### WiFi Hotspot Configuration
-
-**Files:**
-- `/opt/adsb/wifi-manager/check-connection.sh`
-- `/etc/systemd/system/wifi-manager.service`
-
-**Hotspot Details:**
-- SSID: `TAKNET-PS-Setup`
-- Portal: `http://192.168.50.1`
+SSID: `TAKNET-PS-Setup` | Portal: `http://192.168.50.1`
 
 ---
 
@@ -424,7 +425,8 @@ Edit `/opt/adsb/config/docker-compose.yml`:
 │   └── .env
 ├── scripts/
 │   ├── config_builder.py
-│   └── updater.sh
+│   ├── updater.sh
+│   └── cleanup-aircraft-data.sh
 ├── web/
 │   ├── app.py
 │   ├── templates/
@@ -435,7 +437,7 @@ Edit `/opt/adsb/config/docker-compose.yml`:
 │   └── static/
 │       ├── css/
 │       ├── js/
-│       └── taknet-ps_shield.png
+│       └── taknetlogo.png
 ├── wifi-manager/
 │   └── check-connection.sh
 ├── VERSION
@@ -448,115 +450,103 @@ Edit `/opt/adsb/config/docker-compose.yml`:
 
 | Port | Service | Purpose |
 |------|---------|---------|
-| 80 | Nginx/Flask Web | Main web interface (redirects to SSL if configured) |
-| 8080 | tar1090 | Map display |
-| 8080 | graphs1090 | Statistics (subpath) |
-| 30005 | readsb | Beast output |
-| 30104 | MLAT | Multilateration |
+| 80 | Nginx/Flask | Main web interface |
+| 8080 | tar1090 / graphs1090 | Map and statistics |
+| 30005 | readsb | Beast output (internal) |
+| 30004 | TAKNET-PS aggregator | Outbound Beast feed |
+| 30105 | TAKNET-PS MLAT | Outbound MLAT |
+| 51820 UDP | NetBird / WireGuard | VPN tunnel |
+| 41641 UDP | Tailscale | VPN tunnel (if used) |
 
-**Firewall Note:** Only port 80 needs to be accessible from your network for normal operation. Access the web interface without specifying a port number.
+Only port 80 needs to be accessible on your local network for normal operation.
 
 ---
 
-## 🔐 Security Considerations
+## 🔐 Security
 
-### Web Interface Access
-
-- No authentication by default
-- Runs on local network only
-- Use Tailscale for remote access
-- Consider firewall rules for exposure
-
-### Tailscale Benefits
-
-- Encrypted VPN tunnel
-- No exposed ports
-- Certificate-based auth
-- Centralized access control
-
-### Best Practices
-
-1. Keep system updated
-2. Use strong WiFi passwords
-3. Enable Tailscale for remote access
-4. Regularly review aggregator connections
-5. Monitor logs for anomalies
+- Web interface runs on local network, no authentication by default
+- SSH access for `remote` user restricted to VPN (100.x.x.x) — blocked from public internet
+- Keep feeder updated for latest security patches
+- Use strong WiFi password if hotspot is active
 
 ---
 
 ## 💖 Supporting the Project
 
-TAKNET-PS is an independently developed, free service providing low-latency ADS-B data to public safety users worldwide. If you find this project valuable, please consider supporting continued development and operation.
-
-**To support:**
-- Navigate to the **About** tab in your feeder's web interface
-- Find donation and support information
-- Your contributions help maintain servers, develop new features, and expand coverage
+TAKNET-PS is independently developed and free for public safety use. Navigate to the **About** tab in your feeder's web interface for donation and support information.
 
 ---
 
 ## 📞 Support
 
-### Getting Help
+**GitHub Issues:** [https://github.com/cfd2474/TAKNET-PS_ADS-B_Feeder/issues](https://github.com/cfd2474/TAKNET-PS_ADS-B_Feeder/issues)
 
-**Documentation:**
-- This README
-- In-app About page
-- Web interface tooltips
+**Direct Contact:**
+Michael Leckliter — [michael.leckliter@yahoo.com](mailto:michael.leckliter@yahoo.com)
+*NetBird setup keys, network access, general support*
 
-**Community:**
-- GitHub Issues: [Report bugs/request features](https://github.com/cfd2474/TAKNET-PS_ADS-B_Feeder/issues)
-
-**Direct Support:**
-- Email: michael.leckliter@yahoo.com
-- For Tailscale auth keys and network access
+**NetBird Self-Service:**
+[https://netbird.tak-solutions.com](https://netbird.tak-solutions.com) — Register, get approved, manage your own keys at no cost
 
 ---
 
-## 📝 Version Information
+## 📝 Version History
 
-**Current Version:** 2.59.23  
-**Release Date:** February 20, 2026  
-**Minimum Version:** 2.40.0
+**Current Version:** 2.59.23
+**Release Date:** February 23, 2026
+**Minimum Supported Version:** 2.40.0
 
-### Recent Improvements (v2.58.x – v2.59.x)
+### v2.59.x — NetBird Integration & Dashboard Enhancements
 
-- **NetBird Integration** - NetBird added as primary VPN for aggregator connection
-- **VPN Priority Logic** - Aggregator connection now uses NetBird → Tailscale → public fallback
-- **NetBird UI** - Full connect/disconnect flow with progress modal in Settings
-- **Private Tailscale Removed** - Dual-Tailscale architecture replaced by NetBird + Tailscale reserve
-- **Settings UI Cleanup** - Removed stale labels, warnings, and contact references
-- **Tailscale UI Simplified** - Merged disabled/not-connected states into single Connect button
+- **NetBird as Primary VPN** — Aggregator routes via NetBird (`vpn.tak-solutions.com`) or falls back to public endpoint. Tailscale removed from aggregator routing entirely.
+- **NetBird Self-Service** — Users register at `netbird.tak-solutions.com` without contacting admin
+- **NetBird SSH Flags** — `--allow-server-ssh --enable-ssh-root` applied on install, verified on every update
+- **SSH VPN-Only Access** — `remote` user (password: adsb) restricted to NetBird/Tailscale (`100.x.x.x`), blocked from public internet
+- **Beast_out Feed** — TAKNET-PS feed changed from `beast_reduce_plus_out` to `beast_out` (full position data)
+- **SoapySDR Detection** — SDR detection migrated from `rtl_test` to `SoapySDRUtil --find`
+- **SDR Status on Dashboard** — System Status card shows detected SDR devices (Type, Serial, Use For, Gain, Bias Tee)
+- **Connection Quality Indicator** — Dashboard shows Good/Moderate/Poor with latency and packet loss
+- **Feed Checkmark Colors** — Green (good), Amber (MLAT down), Red (feed down), Gray (unknown)
+- **24-Hour Data Retention** — Hourly cron purges aircraft data, heatmap disabled
+- **NetBird in Restart Services** — NetBird added to service restart modal
+- **NetBird Contact Info** — Settings page and README updated with self-service portal and contact
+- **Installer Banner Version** — Banner reads from `INSTALLER_VERSION` variable, stays in sync with `VERSION` file
+- **Logo** — TAKNET-PS logo across all pages
+
+### v2.58.x — Dual-Tailscale Removal
+
+- Removed private TAKNET-PS Tailscale network
+- Single Tailscale instance reserved for personal/owner access
+- Groundwork for NetBird integration
 
 ---
 
 ## 🏗️ Technical Stack
 
-- **OS:** Raspberry Pi OS Lite 64-bit (Bookworm) - Required
-- **Container:** Docker / Docker Compose
-- **Core Service:** ghcr.io/sdr-enthusiasts/docker-adsb-ultrafeeder
-- **Web Framework:** Python Flask
-- **Web Server:** Nginx (reverse proxy)
-- **Map:** tar1090
-- **Graphs:** graphs1090
-- **VPN:** Tailscale
-- **Frontend:** HTML, CSS, JavaScript
-
----
-
-## 📜 License
-
-This project is designed for public safety and community use. See repository for license details.
+| Component | Technology |
+|---|---|
+| OS | Raspberry Pi OS Lite 64-bit (Bookworm) |
+| Containers | Docker / Docker Compose |
+| ADS-B Core | ghcr.io/sdr-enthusiasts/docker-adsb-ultrafeeder |
+| Web Framework | Python Flask |
+| Web Server | Nginx (reverse proxy) |
+| Map | tar1090 |
+| Graphs | graphs1090 |
+| SDR Detection | SoapySDR (universal) |
+| Primary VPN | NetBird |
+| Reserve VPN | Tailscale (optional) |
+| Frontend | HTML, CSS, JavaScript |
 
 ---
 
 ## 🙏 Acknowledgments
 
-- **SDR-Enthusiasts** - For excellent docker-adsb-ultrafeeder container
-- **wiedehopf** - For tar1090 and graphs1090
-- **FlightAware** - For PiAware integration
-- **Tailscale** - For seamless VPN solution
-- **ADS-B Community** - For continued support and development
+- **SDR-Enthusiasts** — docker-adsb-ultrafeeder container
+- **wiedehopf** — tar1090 and graphs1090
+- **FlightAware** — PiAware integration
+- **NetBird** — Open-source WireGuard-based VPN
+- **Tailscale** — VPN solution
+- **ADS-B Community** — Continued support and development
 
 ---
 
@@ -565,16 +555,22 @@ This project is designed for public safety and community use. See repository for
 ### Essential Commands
 
 ```bash
-# Check system status
+# System status
 docker ps
 
-# View logs
-docker logs ultrafeeder
+# Ultrafeeder logs
+docker logs ultrafeeder --tail 100
 
-# Restart services
+# Restart all services
 cd /opt/adsb/config && docker compose restart
 
-# Update system
+# NetBird status
+netbird status
+
+# Detect SDR devices
+SoapySDRUtil --find
+
+# Run update
 curl -fsSL https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh | sudo bash -s -- --update
 
 # Check version
@@ -583,13 +579,15 @@ cat /opt/adsb/VERSION
 
 ### Essential URLs
 
-- Web Interface: `http://taknet-ps.local` or `http://[feeder-ip]`
-- Map: `http://[feeder-ip]:8080`
-- Statistics: `http://[feeder-ip]:8080/graphs1090/`
-- Logs: `http://taknet-ps.local/logs`
+| Resource | URL |
+|---|---|
+| Web Interface | `http://taknet-ps.local` or `http://[feeder-ip]` |
+| Live Map | `http://[feeder-ip]:8080` |
+| Statistics | `http://[feeder-ip]:8080/graphs1090/` |
+| Logs | `http://taknet-ps.local/logs` |
+| Global Map | `http://adsb.tak-solutions.com/tar1090/` |
+| NetBird Portal | `https://netbird.tak-solutions.com` |
 
 ---
 
-**TAKNET-PS ADS-B Feeder**  
-*Tactical Awareness Kit Network - Public Safety*  
-*For Enhanced Tracking*
+*TAKNET-PS ADS-B Feeder — Tactical Awareness Kit Network, Public Safety*
