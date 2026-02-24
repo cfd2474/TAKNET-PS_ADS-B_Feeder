@@ -1,9 +1,13 @@
 # TAKNET-PS ADS-B Feeder
 
+<p align="center">
+  <img src="web/static/taknetlogo.png" alt="TAKNET-PS Logo" width="600">
+</p>
+
 **Tactical Awareness Kit Network - Public Safety**  
 **For Enhanced Tracking**
 
-**Current Version: 2.59.27**
+**Current Version: 2.59.28**
 
 A comprehensive ADS-B aircraft tracking solution designed for distributed deployment with centralized aggregation. Built for public safety, emergency services, and aviation tracking networks.
 
@@ -492,7 +496,7 @@ Michael Leckliter — [michael.leckliter@yahoo.com](mailto:michael.leckliter@yah
 
 ## 📝 Version History
 
-**Current Version:** 2.59.27
+**Current Version:** 2.59.28
 **Release Date:** February 23, 2026
 **Minimum Supported Version:** 2.40.0
 
