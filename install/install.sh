@@ -1,6 +1,8 @@
 #!/bin/bash
-# TAKNET-PS-ADSB-Feeder One-Line Installer v2.57.8
+# TAKNET-PS-ADSB-Feeder One-Line Installer v2.59.23
 # curl -fsSL https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh | sudo bash
+
+INSTALLER_VERSION="2.59.23"
 
 set -e
 
@@ -42,7 +44,7 @@ fi
 if [ "$UPDATE_MODE" != true ]; then
     echo ""
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    echo "  TAKNET-PS-ADSB-Feeder Installer v2.57.8"
+    echo "  TAKNET-PS-ADSB-Feeder Installer v${INSTALLER_VERSION}"
     echo "  Ultrafeeder + TAKNET-PS + Web UI"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo ""
@@ -1299,11 +1301,12 @@ else
     echo "   • User: remote"
     echo "   • Password: adsb"
     echo "   • Limited sudo privileges for ADSB commands"
-    echo "   • SSH access BLOCKED until VPN configured (secure by default)"
+    echo "   • SSH accessible via NetBird/Tailscale VPN only (100.x.x.x)"
     echo ""
-    echo "🔒 SSH Security (automatic):"
-    echo "   • 'remote' user currently BLOCKED from all SSH access"
-    echo "   • Will auto-configure when Tailscale is enabled via the dashboard"
+    echo "🔒 SSH Access:"
+    echo "   • Connect via NetBird or Tailscale, then:"
+    echo "     ssh remote@<vpn-ip>  (password: adsb)"
+    echo "   • Not accessible from public internet"
     echo ""
     echo "📊 Network Monitoring:"
     echo "   • vnstat configured (30-day retention)"

@@ -1,10 +1,10 @@
 {
-  "version": "2.59.22",
+  "version": "2.59.23",
   "release_date": "2026-02-23",
-  "release_name": "Fix cleanup script install error",
+  "release_name": "Fix installer banner version",
   "download_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh",
   "changelog_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/CHANGELOG.md",
   "minimum_version": "2.40.0",
   "breaking_changes": false,
-  "release_notes": "Fix: mkdir -p /opt/adsb/scripts before writing cleanup-aircraft-data.sh during install."
+  "release_notes": "Fix installer banner always showing old version. Added INSTALLER_VERSION variable at top of install.sh, kept in sync with VERSION file. Fixed SSH summary to accurately reflect NetBird/Tailscale-only access."
 }
