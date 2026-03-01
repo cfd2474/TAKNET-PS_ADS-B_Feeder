@@ -95,13 +95,13 @@ def read_env():
 
 def get_taknet_connection_status(env_vars):
     """
-    Get current TAKNET-PS connection status by running Tailscale detection
+    Get current TAKNET-PS connection status (NetBird only; Tailscale does not affect routing).
     Returns dict with selected_host, connection_type, etc.
     """
     import sys
     sys.path.insert(0, '/opt/adsb/scripts')
     try:
-        from config_builder import check_tailscale_running, select_taknet_host
+        from config_builder import select_taknet_host
         
         if env_vars.get('TAKNET_PS_ENABLED', 'true').lower() != 'true':
             return None
