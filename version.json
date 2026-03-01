@@ -1,10 +1,10 @@
 {
-  "version": "2.59.30",
+  "version": "2.59.31",
   "release_date": "2026-02-28",
-  "release_name": "Tailscale universal tailnet; version SOP and tar.gz",
+  "release_name": "NetBird URL hardcoded; contact email",
   "download_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh",
   "changelog_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/CHANGELOG.md",
   "minimum_version": "2.40.0",
   "breaking_changes": false,
-  "release_notes": "Tailscale status and SSH work for any tailnet (no longer tied to tail4d77be.ts.net). Version bump script builds complete tar.gz per SOP."
+  "release_notes": "NetBird management URL prefilled and hardcoded to https://netbird.tak-solutions.com. Contact email for setup key updated to mike@tak-solutions.com in Settings and README."
 }
