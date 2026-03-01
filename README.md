@@ -223,7 +223,7 @@ Tailscale is **not** used for aggregator routing.
 4. Once approved, generate setup keys and manage unlimited devices at no cost
 
 **Option 2 — Contact administrator:**
-Michael Leckliter — [michael.leckliter@yahoo.com](mailto:michael.leckliter@yahoo.com)
+Michael Leckliter — [mike@tak-solutions.com](mailto:mike@tak-solutions.com)
 
 **Connecting:**
 1. **Settings → NetBird VPN**
@@ -486,7 +486,7 @@ TAKNET-PS is independently developed and free for public safety use. Navigate to
 **GitHub Issues:** [https://github.com/cfd2474/TAKNET-PS_ADS-B_Feeder/issues](https://github.com/cfd2474/TAKNET-PS_ADS-B_Feeder/issues)
 
 **Direct Contact:**
-Michael Leckliter — [michael.leckliter@yahoo.com](mailto:michael.leckliter@yahoo.com)
+Michael Leckliter — [mike@tak-solutions.com](mailto:mike@tak-solutions.com)
 *NetBird setup keys, network access, general support*
 
 **NetBird Self-Service:**
