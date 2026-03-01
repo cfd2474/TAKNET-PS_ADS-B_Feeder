@@ -1,10 +1,10 @@
 {
-  "version": "2.59.31",
+  "version": "2.59.32",
   "release_date": "2026-02-28",
-  "release_name": "NetBird URL hardcoded; contact email",
+  "release_name": "NetBird-only connection listener",
   "download_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh",
   "changelog_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/CHANGELOG.md",
   "minimum_version": "2.40.0",
   "breaking_changes": false,
-  "release_notes": "NetBird management URL prefilled and hardcoded to https://netbird.tak-solutions.com. Contact email for setup key updated to mike@tak-solutions.com in Settings and README."
+  "release_notes": "Connection type and network output are driven only by NetBird; removed dead Tailscale import and clarified docstring in get_taknet_connection_status."
 }

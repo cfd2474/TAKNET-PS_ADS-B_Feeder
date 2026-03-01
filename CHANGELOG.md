@@ -1,3 +1,9 @@
+## v2.59.32 — 2026-02-28
+
+### Changed
+- Connection type and network output are driven only by NetBird; removed dead Tailscale import and clarified docstring in get_taknet_connection_status.
+
+---
 ## v2.59.31 — 2026-02-28
 
 ### Changed
