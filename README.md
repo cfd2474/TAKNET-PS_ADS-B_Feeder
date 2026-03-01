@@ -7,7 +7,7 @@
 **Tactical Awareness Kit Network - Public Safety**  
 **For Enhanced Tracking**
 
-**Current Version: 2.59.29**
+**Current Version: 2.59.30**
 
 A comprehensive ADS-B aircraft tracking solution designed for distributed deployment with centralized aggregation. Built for public safety, emergency services, and aviation tracking networks.
 
@@ -496,9 +496,13 @@ Michael Leckliter — [michael.leckliter@yahoo.com](mailto:michael.leckliter@yah
 
 ## 📝 Version History
 
-**Current Version:** 2.59.29
-**Release Date:** February 23, 2026
+**Current Version:** 2.59.30
+**Release Date:** February 28, 2026
 **Minimum Supported Version:** 2.40.0
+
+### v2.59.30 — Tailscale universal tailnet; version SOP & tar.gz
+- **Tailscale any tailnet** — Status shows Connected for any tailnet; SSH from any device on that tailnet (no longer tied to tail4d77be.ts.net)
+- **Version bump script** — `scripts/version-bump.sh` updates all version locations per SOP and builds a complete tar.gz every release
 
 ### v2.59.x — NetBird Integration & Dashboard Enhancements
 

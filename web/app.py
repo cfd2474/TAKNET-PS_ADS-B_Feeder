@@ -638,7 +638,7 @@ def install_tailscale(auth_key=None, hostname=None):
         return {'success': False, 'message': str(e)}
 
 def get_tailscale_status():
-    """Get Tailscale connection status with tailnet validation"""
+    """Get Tailscale connection status. Accepts any tailnet for personal remote management (SSH via 100.x.x.x)."""
     try:
         tailscale_bin = '/usr/bin/tailscale'
         
@@ -662,34 +662,18 @@ def get_tailscale_status():
                 backend_state = status_data.get('BackendState', '')
                 connected = backend_state == 'Running'
                 
-                # Get self info
+                # Get self info (any tailnet - for SSH access from that tailnet)
                 self_info = status_data.get('Self', {})
                 ip = self_info.get('TailscaleIPs', [''])[0] if self_info.get('TailscaleIPs') else None
                 hostname = self_info.get('DNSName', '').rstrip('.')
                 
-                # CRITICAL: Validate we're on TAKNET-PS tailnet
-                expected_suffix = 'tail4d77be.ts.net'
-                on_correct_tailnet = hostname.endswith(expected_suffix) if hostname else False
-                
-                if connected and not on_correct_tailnet:
-                    # Connected but to WRONG tailnet
-                    return {
-                        'installed': True,
-                        'connected': False,  # Treat as not connected
-                        'wrong_tailnet': True,
-                        'ip': ip,
-                        'hostname': hostname,
-                        'backend_state': backend_state,
-                        'message': f'Connected to wrong tailnet: {hostname}. Expected: *.{expected_suffix}'
-                    }
-                
                 return {
                     'installed': True,
-                    'connected': connected and on_correct_tailnet,
+                    'connected': connected,
                     'ip': ip,
                     'hostname': hostname,
                     'backend_state': backend_state,
-                    'on_correct_tailnet': on_correct_tailnet
+                    'message': f'Connected as {hostname}' if (connected and hostname) else ('Connected' if connected else 'Not connected')
                 }
             except json.JSONDecodeError:
                 # Fall back to non-JSON status

@@ -1,29 +1,35 @@
 # TAKNET-PS Packaging Checklist
 
-Run through this before every release package. Claude: read this before packaging.
+Run through this before every release package. See also: **Version Bump SOP** (taknet-ps-version-sop.docx).
 
-## Required for every release
+## Standard flow: use the version-bump script
 
-- [ ] `VERSION` file updated
-- [ ] `version.json` — version, release_date, release_notes updated
-- [ ] `install/install.sh` — VERSION= string updated to match
-- [ ] `README.md` — **Current Version** in header updated
-- [ ] `README.md` — **Version Information** section (version, date, changelog bullets) updated
-
-## Verify before tar
+**Every version update must produce a complete tar.gz of the entire build.** The script updates all version locations per SOP, verifies them, and builds the tar.gz.
 
 ```bash
-grep "Current Version" README.md
-cat VERSION
-grep '"version"' version.json
+# From repo root. Optional: pass release_name and release_notes.
+./scripts/version-bump.sh NEW_VERSION [release_name] [release_notes]
+# Example:
+./scripts/version-bump.sh 2.59.31 "Short name" "What changed."
 ```
 
-All three should agree. (`install.sh` pulls VERSION from the repo at install time — no hardcoded string to update.)
+The script:
+1. Updates `install/install.sh` (INSTALLER_VERSION + comment)
+2. Writes `VERSION`
+3. Updates `version.json` (version, release_date, release_name, release_notes)
+4. Updates `README.md` (both **Current Version** refs)
+5. Prepends `CHANGELOG.md` entry
+6. Verifies all three canonical versions match
+7. **Builds `ARCHIVE/taknet-ps-complete-vX.XX.XX-production.tar.gz`** (entire repo, no .git). Each run adds a new file; old tar.gz files in ARCHIVE are kept.
 
-## Package command
+Output: new tar.gz in `ARCHIVE/`. Commit and push all changed files including the new ARCHIVE/*.tar.gz; do not delete or replace previous archives.
 
-```bash
-VERSION=$(cat VERSION)
-cp -r taknet-ps-v2.58.0 taknet-ps-complete-v${VERSION}-production
-tar -czf taknet-ps-complete-v${VERSION}-production.tar.gz taknet-ps-complete-v${VERSION}-production/
-```
+## Manual checklist (if not using script)
+
+- [ ] `install/install.sh` — `INSTALLER_VERSION="X.XX.XX"` and line 3 comment
+- [ ] `VERSION` file — single line, no trailing newline
+- [ ] `version.json` — version, release_date (YYYY-MM-DD), release_name, release_notes; validate: `python3 -c "import json; json.load(open('version.json'))"`
+- [ ] `README.md` — **Current Version** (header and Version History section)
+- [ ] `CHANGELOG.md` — new entry prepended
+- [ ] Verify: `grep INSTALLER_VERSION install/install.sh`, `cat VERSION`, `python3 -c "import json; print(json.load(open('version.json'))['version'])"`
+- [ ] Build complete tar.gz (full repo, no .git); name: `taknet-ps-complete-vX.XX.XX-production.tar.gz`

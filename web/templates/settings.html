@@ -339,7 +339,7 @@
             <div class="card">
                 <h3>Tailscale VPN</h3>
                 <div class="info-note" style="margin-bottom: 15px;">
-                    <p>ℹ️ Tailscale VPN for remote management</p>
+                    <p>ℹ️ Tailscale VPN for personal remote management. Use any tailnet; SSH is available from devices on that tailnet at the shown IP.</p>
                 </div>
                 
                 <!-- Tailscale Status Display -->
@@ -365,8 +365,8 @@
                             </button>
                         </div>
                     </div>
-                    <small style="color: #666; display: block; margin-top: 5px;">
-                        Tailscale provides secure VPN connectivity to TAKNET-PS Server
+                    <small style="color: #666; display: block; margin-top: 5px;" id="tailscale-ssh-hint">
+                        Use an auth key from your own tailnet to enable SSH from any device on that network.
                     </small>
                 </div>
                 
@@ -799,20 +799,13 @@
             // Add event listener to toggle button
             document.getElementById('tailscale-toggle-btn').addEventListener('click', toggleTailscale);
             
-            // If enabled in config, check actual connection status
+            // If enabled in config, check actual connection status (any tailnet)
             if (tailscaleEnabled) {
                 fetch('/api/tailscale/status')
                     .then(response => response.json())
                     .then(data => {
-                        // Check for wrong tailnet condition
-                        if (data.wrong_tailnet) {
-                            // Connected to wrong tailnet - treat as not connected
-                            updateTailscaleStatusUI(true, false, data.message || 'Wrong tailnet');
-                        } else {
-                            // Normal connection status check
-                            const connected = data.status === 'Running' || data.backend_state === 'Running';
-                            updateTailscaleStatusUI(true, connected);
-                        }
+                        const connected = data.connected === true;
+                        updateTailscaleStatusUI(true, connected, null, data.hostname, data.ip);
                     })
                     .catch(error => console.error('Error checking Tailscale status:', error));
             }
@@ -823,44 +816,44 @@
         let tailscaleConnected = false;
         
         // Update Tailscale status UI (global scope for checkTailscaleStatus)
-        function updateTailscaleStatusUI(enabled, connected, errorMessage) {
+        // hostname and ip are optional; when connected, show them for SSH access from that tailnet
+        function updateTailscaleStatusUI(enabled, connected, errorMessage, hostname, ip) {
             const statusIcon = document.getElementById('tailscale-status-icon');
             const statusText = document.getElementById('tailscale-status-text');
             const statusIndicator = document.getElementById('tailscale-status-indicator');
             const toggleBtn = document.getElementById('tailscale-toggle-btn');
             const toggleText = document.getElementById('tailscale-toggle-text');
-            
-            // Check for wrong tailnet error
-            if (errorMessage && errorMessage.includes('Wrong tailnet')) {
-                // Wrong tailnet - show critical error
-                if (statusIndicator) statusIndicator.style.display = 'flex';
-                statusIcon.textContent = '❌';
-                statusText.innerHTML = 'Wrong Tailnet!<br><span style="font-size: 0.9em; color: #991b1b;">Not connected to TAKNET-PS network</span>';
-                statusIcon.parentElement.style.background = '#fee2e2';
-                statusIcon.parentElement.style.border = '1px solid #dc2626';
-                toggleBtn.className = 'btn btn-primary';
-                toggleText.textContent = '🔄 Reconnect to TAKNET-PS';
-                tailscaleEnabled = false; // Show auth key field for correct key
-                tailscaleConnected = false;
-                toggleTailscaleConfig();
-                return;
-            }
+            const sshHint = document.getElementById('tailscale-ssh-hint');
             
             if (enabled && connected) {
-                // Enabled and connected - show green status
+                // Enabled and connected (any tailnet) - show green status and SSH hint
                 if (statusIndicator) {
                     statusIndicator.style.display = 'flex';
                     statusIcon.textContent = '✓';
-                    statusText.textContent = 'Connected';
                     statusIcon.parentElement.style.background = '#d1fae5';
                     statusIcon.parentElement.style.border = '1px solid #10b981';
+                    if (hostname || ip) {
+                        statusText.innerHTML = 'Connected' + (hostname ? ` as ${escapeHtml(hostname)}` : '') + (ip ? ` <span style="font-size: 0.9em; color: #059669;">(${escapeHtml(ip)})</span>` : '');
+                    } else {
+                        statusText.textContent = 'Connected';
+                    }
+                }
+                if (sshHint && ip) {
+                    sshHint.innerHTML = `SSH from any device on your tailnet: <code>ssh remote@${escapeHtml(ip)}</code>`;
                 }
                 toggleBtn.className = 'btn';
                 toggleText.textContent = '🔴 Disable Tailscale';
                 tailscaleEnabled = true;
             } else {
-                // Disabled or not connected - single clean state
-                if (statusIndicator) statusIndicator.style.display = 'none';
+                // Disabled or not connected
+                if (statusIndicator) statusIndicator.style.display = 'flex';
+                if (statusIcon) statusIcon.textContent = '○';
+                if (statusText) statusText.textContent = 'Not connected';
+                if (statusIndicator) {
+                    statusIndicator.style.background = '#f3f4f6';
+                    statusIndicator.style.border = '1px solid #e5e7eb';
+                }
+                if (sshHint) sshHint.textContent = 'Use an auth key from your own tailnet to enable SSH from any device on that network.';
                 toggleBtn.className = 'btn btn-primary';
                 toggleText.textContent = 'Connect';
                 tailscaleEnabled = false;
@@ -868,6 +861,11 @@
             
             tailscaleConnected = connected;
             toggleTailscaleConfig();
+        }
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
         }
         
         function toggleTailscaleConfig() {
@@ -1709,10 +1707,10 @@
                 // Update top connection status box
                 updateTailscaleStatusDisplay(data);
                 
-                // Update toggle button and status indicator
+                // Update toggle button and status indicator (any tailnet; show hostname/IP for SSH)
                 const enabled = data.installed || false;
                 const connected = data.connected || false;
-                updateTailscaleStatusUI(enabled, connected);
+                updateTailscaleStatusUI(enabled, connected, null, data.hostname, data.ip);
                 
             } catch (error) {
                 console.error('Failed to check Tailscale status:', error);

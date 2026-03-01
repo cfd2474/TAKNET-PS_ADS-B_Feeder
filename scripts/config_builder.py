@@ -235,8 +235,8 @@ def check_netbird_running():
 
 def check_tailscale_running():
     """
-    Check if Tailscale is running and connected to TAKNET-PS tailnet.
-    Used as secondary VPN fallback if NetBird is not active.
+    Check if Tailscale is running and connected (any tailnet).
+    Used for reserve/personal remote management; SSH is allowed from any 100.x.x.x (Tailscale/NetBird).
     Returns: (is_running, tailscale_ip)
     """
     import subprocess
@@ -261,13 +261,8 @@ def check_tailscale_running():
             dns_name = self_info.get('DNSName', '').rstrip('.')
 
             if tailscale_ips:
-                expected_suffix = 'tail4d77be.ts.net'
-                if dns_name.endswith(expected_suffix):
-                    print(f"✓ Tailscale: Running on TAKNET-PS tailnet ({tailscale_ips[0]})")
-                    return (True, tailscale_ips[0])
-                else:
-                    print(f"⚠ Tailscale: Connected to different tailnet ({dns_name}) - skipping")
-                    return (False, None)
+                print(f"✓ Tailscale: Running on {dns_name or 'tailnet'} ({tailscale_ips[0]})")
+                return (True, tailscale_ips[0])
 
         return (False, None)
 
