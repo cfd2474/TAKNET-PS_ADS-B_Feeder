@@ -1,0 +1,2 @@
+# Built tar.gz live in ARCHIVE/ and are committed; ignore only if left in repo root by mistake
+/taknet-ps-complete-*.tar.gz
