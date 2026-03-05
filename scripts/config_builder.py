@@ -446,6 +446,41 @@ def build_dump978_service(env_vars):
     
     return service
 
+
+def build_ais_service(env_vars):
+    """
+    Build AIS-catcher service (Phase 1 AIS-Beta).
+    Decoder + built-in web viewer on port 8100. 162 MHz AIS only.
+    """
+    if env_vars.get('AIS_ENABLED', 'false').lower() != 'true':
+        return None
+    ais_device = env_vars.get('AIS_DEVICE', '0')
+    ais_gain = env_vars.get('AIS_GAIN', 'autogain')
+    feeder_tz = env_vars.get('FEEDER_TZ', 'UTC')
+    feeder_lat = env_vars.get('FEEDER_LAT', '')
+    feeder_long = env_vars.get('FEEDER_LONG', '')
+    # AIS-catcher: -d:index or -d serial, -N 8100 for web viewer, -g gain
+    cmd = ['AIS-catcher', '-d:' + str(ais_device), '-N', '8100']
+    if ais_gain and ais_gain != 'autogain':
+        cmd.extend(['-g', str(ais_gain)])
+    service = {
+        'image': 'ghcr.io/jvde-github/ais-catcher:latest',
+        'container_name': 'aiscatcher',
+        'hostname': 'aiscatcher',
+        'restart': 'unless-stopped',
+        'networks': ['adsb_net'],
+        'ports': ['8100:8100'],
+        'environment': [
+            f'TZ={feeder_tz}',
+            f'LAT={feeder_lat}',
+            f'LONG={feeder_long}',
+        ],
+        'devices': ['/dev/bus/usb:/dev/bus/usb'],
+        'command': cmd,
+    }
+    return service
+
+
 def build_sdr_configuration(env_vars):
     """
     Phase B: Smart SDR configuration builder
@@ -681,7 +716,12 @@ def build_docker_compose(env_vars):
     dump978_service = build_dump978_service(env_vars)
     if dump978_service:
         compose['services']['dump978'] = dump978_service
-    
+
+    # Include AIS-catcher (AIS-Beta) if enabled
+    ais_service = build_ais_service(env_vars)
+    if ais_service:
+        compose['services']['aiscatcher'] = ais_service
+
     return compose
 
 def write_docker_compose(compose_dict, compose_file):

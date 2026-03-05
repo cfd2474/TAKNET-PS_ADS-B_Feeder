@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AIS-Beta - TAKNET-PS</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <style>
+        .ais-container { padding: 20px; }
+        .ais-iframe {
+            width: 100%;
+            height: calc(100vh - 220px);
+            min-height: 400px;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            background: #f9fafb;
+        }
+        .ais-placeholder {
+            padding: 40px;
+            text-align: center;
+            background: #f3f4f6;
+            border-radius: 8px;
+            border: 1px dashed #d1d5db;
+        }
+        .ais-placeholder a { color: #2563eb; font-weight: 600; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div style="text-align: center; margin-bottom: 5px;">
+                <img src="/static/taknetlogo.png" alt="TAKNET-PS" style="width: 100%; height: auto; display: block;">
+            </div>
+            <p style="margin: 4px 0 5px 0; color: #9ca3af; font-size: 0.85em; text-align: center;">Raspberry Pi based ADSB Services Feeder</p>
+            <p style="margin: 0 0 15px 0; color: #6b7280; font-size: 0.8em;">v{{ version }}</p>
+            <nav>
+                <a href="/dashboard">Dashboard</a>
+                <a href="/feeds">Feed Selection</a>
+                <a href="/settings">Settings</a>
+                <a href="http://{{ request.host.split(':')[0] }}:8080" target="_blank">Map</a>
+                <a href="http://{{ request.host.split(':')[0] }}:8080/graphs1090/?timeframe=24h" target="_blank">Statistics</a>
+                <a href="/ais-beta" class="active">AIS-Beta</a>
+                <a href="/about">About</a>
+            </nav>
+        </header>
+
+        <div class="dashboard ais-container">
+            <h2 style="margin-bottom: 15px;">AIS (162 MHz) — Vessel map</h2>
+            <p style="color: #6b7280; margin-bottom: 20px;">Phase 1: AIS-catcher decoder and built-in web viewer. Assign an SDR to AIS in Settings → SDR Configuration to enable.</p>
+            {% if ais_enabled %}
+            <iframe
+                class="ais-iframe"
+                src="http://{{ request.host.split(':')[0] }}:8100"
+                title="AIS vessel map"
+            ></iframe>
+            <p style="margin-top: 10px; font-size: 0.9em; color: #6b7280;">If the map does not load, ensure AIS-catcher is running (Settings → Restart Services → restart after assigning an SDR to AIS).</p>
+            {% else %}
+            <div class="ais-placeholder">
+                <p><strong>AIS is not enabled.</strong></p>
+                <p>Go to <a href="/settings">Settings</a> → SDR Configuration, assign an SDR to <strong>AIS (162 MHz) — Vessels</strong>, save, then restart services.</p>
+                <p style="margin-top: 20px;"><a href="/settings">Open Settings →</a></p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</body>
+</html>

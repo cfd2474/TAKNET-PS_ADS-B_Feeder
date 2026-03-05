@@ -310,16 +310,20 @@ for idx in "${!ALL_DEVICES[@]}"; do
     LABEL="${DEVICE_LABELS[$idx]}"
     SOAPY_STR="${SOAPY_STRINGS[$idx]}"
     
-    # Determine capabilities
+    # Determine capabilities (1090/978/AIS)
     SUPPORTS_1090="true"
     SUPPORTS_978="true"
+    SUPPORTS_AIS="true"
     if [ "$DEVICE_TYPE" = "ftdi" ]; then
         SUPPORTS_1090="false"
         SUPPORTS_978="true"
+        SUPPORTS_AIS="false"
     elif [ "$DEVICE_TYPE" = "airspy" ]; then
         SUPPORTS_1090="true"
         SUPPORTS_978="false"
+        SUPPORTS_AIS="true"
     fi
+    # rtlsdr, hackrf, soapy: 1090, 978 (if applicable), AIS (162 MHz in range)
     
     # Build device JSON
     echo "    {" >> "$OUTPUT"
@@ -334,7 +338,8 @@ for idx in "${!ALL_DEVICES[@]}"; do
     echo "      \"suggested_use\": \"$USE\"," >> "$OUTPUT"
     echo "      \"suggested_gain\": \"autogain\"," >> "$OUTPUT"
     echo "      \"supports_1090\": $SUPPORTS_1090," >> "$OUTPUT"
-    echo "      \"supports_978\": $SUPPORTS_978" >> "$OUTPUT"
+    echo "      \"supports_978\": $SUPPORTS_978," >> "$OUTPUT"
+    echo "      \"supports_ais\": $SUPPORTS_AIS" >> "$OUTPUT"
     
     if [ $idx -lt $((TOTAL_COUNT - 1)) ]; then
         echo "    }," >> "$OUTPUT"

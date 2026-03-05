@@ -64,7 +64,12 @@
             background: #fef3c7;
             color: #92400e;
         }
-        
+
+        .badge-ais {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
         .badge-unconfigured {
             background: #f3f4f6;
             color: #9ca3af;
@@ -255,6 +260,7 @@
                     <option value="">-- Select Frequency --</option>
                     <option value="1090">1090 MHz (ADS-B)</option>
                     <option value="978">978 MHz (UAT)</option>
+                    <option value="ais">AIS (162 MHz) — Vessels</option>
                 </select>
                 <p style="margin: 5px 0 0 0; color: #6b7280; font-size: 0.85em;">
                     Select the frequency this receiver will monitor
@@ -411,7 +417,7 @@
                     <td>${device.serial}</td>
                     <td>
                         ${device.useFor ? 
-                            `<span class="badge badge-${device.useFor}">${device.useFor} MHz</span>` : 
+                            (device.useFor === 'ais' ? '<span class="badge badge-ais">AIS (162 MHz)</span>' : `<span class="badge badge-${device.useFor}">${device.useFor} MHz</span>`) :
                             '<span class="badge badge-unconfigured">Click here to configure</span>'
                         }
                     </td>
@@ -432,7 +438,19 @@
             document.getElementById('modalDeviceInfo').textContent = 
                 `${device.type.toUpperCase()}${driverInfo} - Serial: ${device.serial}`;
             
-            document.getElementById('modalUseFor').value = device.useFor || '';
+            // Build Use For options from device capabilities
+            const useForSelect = document.getElementById('modalUseFor');
+            useForSelect.innerHTML = '<option value="">-- Select Frequency --</option>';
+            if (device.supports_1090 !== false) {
+                useForSelect.innerHTML += '<option value="1090">1090 MHz (ADS-B)</option>';
+            }
+            if (device.supports_978 !== false) {
+                useForSelect.innerHTML += '<option value="978">978 MHz (UAT)</option>';
+            }
+            if (device.supports_ais !== false) {
+                useForSelect.innerHTML += '<option value="ais">AIS (162 MHz) — Vessels</option>';
+            }
+            useForSelect.value = device.useFor || '';
             document.getElementById('modalBiasTee').checked = device.biastee || false;
             
             // Load driver-specific gain options
@@ -525,11 +543,10 @@
         }
         
         async function applySDRSettings() {
-            // Check if at least one device is configured for 1090
             const has1090 = devices.some(d => d.useFor === '1090');
-            
-            if (!has1090) {
-                alert('Please configure at least one SDR device for 1090 MHz');
+            const hasAIS = devices.some(d => d.useFor === 'ais');
+            if (!has1090 && !hasAIS) {
+                alert('Please configure at least one SDR for 1090 MHz (ADS-B) or AIS (162 MHz).');
                 return;
             }
             

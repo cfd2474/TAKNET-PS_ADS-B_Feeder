@@ -1152,6 +1152,15 @@ def about():
     """About page"""
     return render_template('about.html', version=VERSION)
 
+
+@app.route('/ais-beta')
+def ais_beta():
+    """AIS-Beta: vessel map (AIS-catcher web viewer on port 8100)"""
+    env = read_env()
+    ais_enabled = env.get('AIS_ENABLED', 'false').lower() == 'true'
+    return render_template('ais-beta.html', version=VERSION, ais_enabled=ais_enabled)
+
+
 @app.route('/api/logs/<source>')
 def get_logs(source):
     """Fetch logs from various sources"""
@@ -2132,6 +2141,10 @@ def api_sdr_status():
                     use_for = '978 MHz (UAT)'
                     gain = env.get('SDR_978_GAIN', '') or env.get('DUMP978_GAIN', 'autogain')
                     biastee = False
+                elif serial and env.get('AIS_ENABLED', 'false').lower() == 'true' and env.get('AIS_SDR_SERIAL', '').strip() == serial:
+                    use_for = 'AIS (162 MHz)'
+                    gain = env.get('AIS_GAIN', 'autogain')
+                    biastee = False
 
                 devices.append({
                     'index': idx,
@@ -2747,7 +2760,8 @@ def api_configure_sdrs():
         # Reset SDR configuration
         sdr_1090 = None
         sdr_978 = None
-        
+        sdr_ais = None
+
         # Process each SDR
         for sdr in sdrs:
             index = sdr.get('index')
@@ -2757,10 +2771,10 @@ def api_configure_sdrs():
             device_path = sdr.get('device_path', str(index))
             driver = sdr.get('driver', 'rtlsdr')  # Phase B
             serial = sdr.get('serial', '')  # Phase B
-            
+
             # Phase B: Validate gain for driver type
             gain = validate_gain_for_driver(driver, gain)
-            
+
             if use == '1090':
                 if sdr_1090 is not None:
                     return jsonify({
@@ -2774,11 +2788,10 @@ def api_configure_sdrs():
                 env['SDR_1090_TYPE'] = device_type
                 env['SDR_1090_PATH'] = device_path
                 env['SDR_1090_GAIN'] = gain
-                # Phase B: Add driver and serial
                 env['SDR_1090_DRIVER'] = driver
                 env['SDR_1090_SERIAL'] = serial
                 print(f"✓ SDR {index} ({driver}) configured for 1090 MHz (gain: {gain}, serial: {serial})")
-                
+
             elif use == '978':
                 if sdr_978 is not None:
                     return jsonify({
@@ -2793,22 +2806,48 @@ def api_configure_sdrs():
                 env['SDR_978_TYPE'] = device_type
                 env['SDR_978_PATH'] = device_path
                 env['SDR_978_GAIN'] = gain
-                # Phase B: Add driver and serial
                 env['SDR_978_DRIVER'] = driver
                 env['SDR_978_SERIAL'] = serial
                 print(f"✓ SDR {index} ({driver}) configured for 978 MHz (gain: {gain}, serial: {serial})")
-        
-        # Validate we have at least 1090 MHz
-        if sdr_1090 is None:
+
+            elif use == 'ais':
+                if sdr_ais is not None:
+                    return jsonify({
+                        'success': False,
+                        'message': 'Cannot assign multiple SDRs to AIS'
+                    }), 400
+                sdr_ais = sdr
+                env['AIS_ENABLED'] = 'true'
+                env['AIS_DEVICE'] = str(index)
+                env['AIS_GAIN'] = gain
+                env['AIS_SDR_SERIAL'] = serial
+                env['AIS_SDR_DRIVER'] = driver
+                print(f"✓ SDR {index} ({driver}) configured for AIS 162 MHz (gain: {gain}, serial: {serial})")
+
+        # Validate: need at least 1090 MHz OR AIS (dev build allows AIS-only testing)
+        if sdr_1090 is None and sdr_ais is None:
             return jsonify({
                 'success': False,
-                'message': 'At least one SDR must be assigned to 1090 MHz'
+                'message': 'Assign at least one SDR to 1090 MHz (ADS-B) or AIS'
             }), 400
-        
+        if sdr_1090 is None:
+            if sdr_ais is not None:
+                print("ℹ AIS-only mode: no 1090 MHz assigned (dev build)")
+            env['READSB_DEVICE'] = ''
+            env['SDR_1090_SERIAL'] = ''
+            env['SDR_1090_DEVICE'] = ''
+            env['SDR_1090_GAIN'] = 'autogain'
+            env['SDR_1090_DRIVER'] = 'rtlsdr'
+
         # Disable 978 MHz if not configured
         if sdr_978 is None:
             env['DUMP978_ENABLED'] = 'false'
             print("ℹ 978 MHz UAT disabled (no SDR assigned)")
+
+        # Disable AIS if not configured
+        if sdr_ais is None:
+            env['AIS_ENABLED'] = 'false'
+            print("ℹ AIS disabled (no SDR assigned)")
         
         # Write environment
         write_env(env)
@@ -2820,7 +2859,8 @@ def api_configure_sdrs():
                 'message': 'SDR configuration saved',
                 'config': {
                     '1090_mhz': sdr_1090 is not None,
-                    '978_mhz': sdr_978 is not None
+                    '978_mhz': sdr_978 is not None,
+                    'ais': sdr_ais is not None
                 }
             })
         else:
@@ -2849,7 +2889,10 @@ def api_get_current_sdr_config():
             'readsb_gain': env.get('READSB_GAIN', 'autogain'),
             'dump978_enabled': env.get('DUMP978_ENABLED', 'false') == 'true',
             'dump978_device': env.get('DUMP978_DEVICE', '1'),
-            'dump978_gain': env.get('DUMP978_GAIN', 'autogain')
+            'dump978_gain': env.get('DUMP978_GAIN', 'autogain'),
+            'ais_enabled': env.get('AIS_ENABLED', 'false') == 'true',
+            'ais_device': env.get('AIS_DEVICE', '0'),
+            'ais_gain': env.get('AIS_GAIN', 'autogain'),
         }
         
         return jsonify(config)

@@ -47,6 +47,16 @@ SDR_978_PATH=1
 SDR_978_GAIN=autogain
 
 # ============================================
+# AIS 162 MHz (Beta — Vessel tracking)
+# Optional: assign one SDR to AIS for AIS-catcher map on port 8100
+# ============================================
+AIS_ENABLED=false
+AIS_DEVICE=0
+AIS_GAIN=autogain
+AIS_SDR_SERIAL=
+AIS_SDR_DRIVER=rtlsdr
+
+# ============================================
 # SoapySDR Runtime Mode (Phase B)
 # ============================================
 # Controls whether to use SoapySDR for device access

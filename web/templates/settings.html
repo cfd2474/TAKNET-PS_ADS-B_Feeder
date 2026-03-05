@@ -156,6 +156,7 @@
                 <a href="/settings" class="active">Settings</a>
                 <a href="http://{{ request.host.split(':')[0] }}:8080" target="_blank">Map</a>
                 <a href="http://{{ request.host.split(':')[0] }}:8080/graphs1090/?timeframe=24h" target="_blank">Statistics</a>
+                <a href="/ais-beta">AIS-Beta</a>
                 <a href="/about">About</a>
             </nav>
         </header>
@@ -1455,15 +1456,19 @@
                         let useFor = '';
                         let gain = 'autogain';
                         
-                        if (device.type === 'rtlsdr' && device.index === 0 && currentConfig.readsb_device === device.index.toString()) {
+                        if (device.type === 'rtlsdr' && currentConfig.readsb_device === device.index.toString()) {
                             useFor = '1090';
                             gain = currentConfig.readsb_gain || 'autogain';
                         } else if (device.type === 'ftdi' || (device.type === 'rtlsdr' && currentConfig.dump978_enabled)) {
-                            if (currentConfig.dump978_device === device.index.toString() || 
+                            if (currentConfig.dump978_device === device.index.toString() ||
                                 (device.type === 'ftdi' && currentConfig.dump978_enabled)) {
                                 useFor = '978';
                                 gain = currentConfig.dump978_gain || 'autogain';
                             }
+                        }
+                        if (currentConfig.ais_enabled && currentConfig.ais_device === device.index.toString()) {
+                            useFor = 'ais';
+                            gain = currentConfig.ais_gain || 'autogain';
                         }
                         
                         return {
@@ -1522,7 +1527,7 @@
                     <td>${device.serial}</td>
                     <td>
                         ${device.useFor ? 
-                            `<span class="badge-${device.useFor}">${device.useFor} MHz</span>` : 
+                            (device.useFor === 'ais' ? '<span class="badge-ais">AIS (162 MHz)</span>' : `<span class="badge-${device.useFor}">${device.useFor} MHz</span>`) :
                             '<span style="color: #9ca3af;">Not Configured</span>'
                         }
                     </td>
@@ -1559,7 +1564,9 @@
             if (device.supports_978) {
                 useForSelect.innerHTML += '<option value="978">978 MHz (UAT)</option>';
             }
-            
+            if (device.supports_ais !== false) {
+                useForSelect.innerHTML += '<option value="ais">AIS (162 MHz) — Vessels</option>';
+            }
             // Add Disabled option
             useForSelect.innerHTML += '<option value="disabled">Disabled</option>';
             
@@ -1939,6 +1946,14 @@
             font-weight: 600;
         }
         
+        .badge-ais {
+            background: #d1fae5;
+            color: #065f46;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.85em;
+            font-weight: 600;
+        }
         .badge-978 {
             background: #fef3c7;
             color: #92400e;
