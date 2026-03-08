@@ -1,8 +1,8 @@
 #!/bin/bash
-# TAKNET-PS-ADSB-Feeder One-Line Installer v2.59.32
+# TAKNET-PS-ADSB-Feeder One-Line Installer v2.59.33
 # curl -fsSL https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh | sudo bash
 
-INSTALLER_VERSION="2.59.32"
+INSTALLER_VERSION="2.59.33"
 
 set -e
 
@@ -533,6 +533,35 @@ systemctl restart nginx
 
 echo "✓ Nginx configured (taknet-ps.local/, /web, /map)"
 
+# Disable WiFi power management (prevents drops to aggregator; persists across reboots/installs)
+echo "Disabling WiFi power management..."
+mkdir -p /etc/NetworkManager/conf.d
+cat > /etc/NetworkManager/conf.d/100-wifi-powersave-off.conf << 'POWEREOF'
+# TAKNET-PS: Disable WiFi power save to avoid connection drops to aggregators
+[connection]
+wifi.powersave = 2
+POWEREOF
+systemctl restart NetworkManager 2>/dev/null || true
+# Apply at boot via iw (covers non-NM and re-associations)
+cat > /etc/systemd/system/wifi-powersave-off.service << 'POWERSVCEOF'
+[Unit]
+Description=Disable WiFi power save (TAKNET-PS feeder stability)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+# Wait for wlan0 to appear (e.g. WiFi managed by NetworkManager or wpa_supplicant)
+ExecStart=/bin/bash -c 'for i in $(seq 1 45); do ip link show wlan0 &>/dev/null && /usr/sbin/iw dev wlan0 set power_save off 2>/dev/null && exit 0; sleep 2; done; exit 0'
+RemainAfterExit=no
+
+[Install]
+WantedBy=multi-user.target
+POWERSVCEOF
+systemctl daemon-reload
+systemctl enable wifi-powersave-off.service
+echo "✓ WiFi power management disabled (persists across reboots and reinstalls)"
+
 # Install WiFi Hotspot Manager
 echo "Installing WiFi hotspot manager..."
 mkdir -p /opt/adsb/wifi-manager/templates
@@ -742,7 +771,8 @@ while true; do
     
     case $CHECK_RESULT in
         0)
-            # Connected to internet
+            # Connected to internet - keep WiFi power save off (survives re-associations)
+            iw dev wlan0 set power_save off 2>/dev/null || true
             CURRENT_STATE=$(cat "$STATE_FILE" 2>/dev/null || echo "unknown")
             if [ "$CURRENT_STATE" != "connected" ]; then
                 log "Internet connection established"

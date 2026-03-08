@@ -7,7 +7,7 @@
 **Tactical Awareness Kit Network - Public Safety**  
 **For Enhanced Tracking**
 
-**Current Version: 2.59.32**
+**Current Version: 2.59.33**
 
 A comprehensive ADS-B aircraft tracking solution designed for distributed deployment with centralized aggregation. Built for public safety, emergency services, and aviation tracking networks.
 
@@ -496,9 +496,12 @@ Michael Leckliter — [mike@tak-solutions.com](mailto:mike@tak-solutions.com)
 
 ## 📝 Version History
 
-**Current Version:** 2.59.32
-**Release Date:** February 28, 2026
+**Current Version:** 2.59.33
+**Release Date:** March 8, 2026
 **Minimum Supported Version:** 2.40.0
+
+### v2.59.33 — WiFi power management disabled
+- **Feeder stability** — WiFi power save disabled to prevent connection drops to aggregators. Persists across reboots and reinstalls via NetworkManager conf, systemd oneshot at boot, and network-monitor re-apply on re-association.
 
 ### v2.59.32 — NetBird-only connection listener
 - **Connection type / network output** — Driven only by NetBird; Tailscale no longer affects aggregator routing or the VPN watchdog. Docstring and dead import cleaned up.
