@@ -1,10 +1,10 @@
 {
-  "version": "2.59.32",
-  "release_date": "2026-02-28",
-  "release_name": "NetBird-only connection listener",
+  "version": "2.59.33",
+  "release_date": "2026-03-08",
+  "release_name": "WiFi power management disabled",
   "download_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh",
   "changelog_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/CHANGELOG.md",
   "minimum_version": "2.40.0",
   "breaking_changes": false,
-  "release_notes": "Connection type and network output are driven only by NetBird; removed dead Tailscale import and clarified docstring in get_taknet_connection_status."
+  "release_notes": "WiFi power save disabled on feeder to prevent connection drops to aggregators; persists across reboots and reinstalls (NetworkManager conf, systemd oneshot, network-monitor re-apply)."
 }
