@@ -464,6 +464,10 @@ SSID: `TAKNET-PS-Setup` | Portal: `http://192.168.50.1`
 
 Only port 80 needs to be accessible on your local network for normal operation.
 
+### Feeder software version (for aggregator)
+
+Feeders send their software version to the aggregator via the **MLAT client name**: the value is `{MLAT_SITE_NAME} | v{VERSION}` (e.g. `92882-corona-feeder-1 | v2.59.33`). The aggregator can split on ` | v` to show feeder name and software version separately in its feeder list. Version is read from `/opt/adsb/VERSION` on the feeder (or `FEEDER_SOFTWARE_VERSION` in `.env` to override).
+
 ---
 
 ## 🔐 Security

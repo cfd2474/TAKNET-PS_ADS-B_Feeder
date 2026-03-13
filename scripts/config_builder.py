@@ -546,6 +546,27 @@ def build_sdr_configuration(env_vars):
     
     return config
 
+def get_feeder_software_version(env_vars):
+    """
+    Get feeder software version for sending to aggregator (e.g. in MLAT client name).
+    Order: FEEDER_SOFTWARE_VERSION env, /opt/adsb/VERSION, repo VERSION, 'unknown'.
+    Aggregator can parse MLAT_USER "name | vX.Y.Z" to show feeder name and version separately.
+    """
+    v = (env_vars or {}).get('FEEDER_SOFTWARE_VERSION', '').strip()
+    if v:
+        return v
+    for path in [
+        Path('/opt/adsb/VERSION'),
+        Path(__file__).resolve().parent.parent / 'VERSION',
+    ]:
+        if path.exists():
+            try:
+                return path.read_text().strip() or 'unknown'
+            except OSError:
+                continue
+    return 'unknown'
+
+
 def build_docker_compose(env_vars):
     """Build docker-compose.yml with conditional FR24 service"""
     # Get all env vars needed for ultrafeeder (write actual values, not ${VARIABLE})
@@ -556,6 +577,9 @@ def build_docker_compose(env_vars):
     feeder_uuid = env_vars.get('FEEDER_UUID', '')
     mlat_site_name = env_vars.get('MLAT_SITE_NAME', 'feeder')
     ultrafeeder_config = env_vars.get('ULTRAFEEDER_CONFIG', '')
+    # Send software version to aggregator via MLAT client name (parseable: "name | vX.Y.Z")
+    software_version = get_feeder_software_version(env_vars)
+    mlat_user = f"{mlat_site_name} | v{software_version}"
     
     # Phase B: Smart SDR configuration
     sdr_config = build_sdr_configuration(env_vars)
@@ -582,7 +606,7 @@ def build_docker_compose(env_vars):
                     *sdr_config['environment'],
                     'READSB_RX_LOCATION_ACCURACY=2',
                     'READSB_STATS_RANGE=true',
-                    f'MLAT_USER={mlat_site_name}',
+                    f'MLAT_USER={mlat_user}',
                     'UPDATE_TAR1090=true',
                     'TAR1090_ENABLE_AC_DB=true',
                     'TAR1090_FLIGHTAWARELINKS=true',
