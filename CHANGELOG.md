@@ -1,3 +1,9 @@
+## v2.59.34 — 2026-03-12
+
+### Changed
+- MLAT client name includes software version (name | vX.Y.Z) so aggregator can list feeder name and version; README documents format for aggregator.
+
+---
 ## v2.59.33 — 2026-03-08
 
 ### Changed
