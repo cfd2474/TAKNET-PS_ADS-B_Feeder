@@ -1,3 +1,9 @@
+## v2.59.44 — 2026-03-15
+
+### Changed
+- Tunnel client flushes stderr after each log; service sets PYTHONUNBUFFERED=1 so journalctl shows output immediately.
+
+---
 ## v2.59.43 — 2026-03-15
 
 ### Changed
