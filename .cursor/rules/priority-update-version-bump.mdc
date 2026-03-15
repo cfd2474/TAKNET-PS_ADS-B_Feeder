@@ -1,0 +1,31 @@
+---
+description: When user says "mark as priority X update", do a full version bump and set update_priority to X
+alwaysApply: true
+---
+
+# Priority X update = new version + update_priority
+
+When the user says **"mark it as a priority X update"** (or similar), that means:
+
+1. **Assign a new version number** — bump the version (e.g. 2.59.35 → 2.59.36) and update all canonical version locations.
+2. **Set update_priority to X** in `version.json` (1 = immediate, 2 = overnight 02:00, 3 = alert only).
+
+**Do not** only add CHANGELOG text or notes. **Do** run the full version-bump flow so the release gets a new version everywhere.
+
+## How to do it
+
+From repo root, run the version-bump script with the new version and priority as the 4th argument:
+
+```bash
+./scripts/version-bump.sh NEW_VERSION "Release name" "Release notes." PRIORITY
+```
+
+Example for a priority 3 (alert only) release:
+
+```bash
+./scripts/version-bump.sh 2.59.36 "USB GPS support" "Get coordinates from GPS in setup and Settings." 3
+```
+
+The script updates: `install/install.sh` (INSTALLER_VERSION), `VERSION`, `version.json` (version, release_date, release_name, release_notes, **update_priority**), `README.md`, prepends `CHANGELOG.md`, and builds the tar.gz in `ARCHIVE/`.
+
+If you cannot run the script (e.g. no shell), update these files manually to the new version and set `version.json`'s `update_priority` to the requested number (1, 2, or 3).

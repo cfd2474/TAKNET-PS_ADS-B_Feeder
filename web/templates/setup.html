@@ -93,10 +93,9 @@
                 </div>
                 
                 <div class="form-group">
-                    <button type="button" class="btn" id="gps-btn" onclick="getCoordinatesFromGps()" style="margin-bottom: 8px;">
+                    <button type="button" class="btn" id="gps-btn" onclick="openGpsModal()" style="margin-bottom: 8px;">
                         📍 Get coordinates from GPS
                     </button>
-                    <small class="help-text" id="gps-status" style="display: block; margin-top: 4px;"></small>
                 </div>
                 
                 <div class="form-group">
@@ -205,6 +204,44 @@
         <div id="status"></div>
     </div>
 
+    <!-- GPS coordinates modal -->
+    <div id="gpsModal" class="modal">
+        <div class="modal-content" style="max-width: 520px;">
+            <h2 class="modal-header">📍 Get coordinates from GPS</h2>
+            <div class="modal-body">
+                <div id="gps-progress" style="padding: 15px 0;">
+                    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 15px;">
+                        <div id="gps-spinner" class="status-spinner" style="flex-shrink: 0;"></div>
+                        <div>
+                            <div id="gps-status-text" style="font-weight: 500; color: #374151;">Starting GPS...</div>
+                            <div id="gps-status-detail" style="font-size: 0.9em; color: #6b7280; margin-top: 4px;">Acquiring fix (up to 20 seconds)</div>
+                        </div>
+                    </div>
+                    <div id="gps-log" style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 10px; max-height: 160px; overflow-y: auto; font-family: monospace; font-size: 0.85em; color: #374151;"></div>
+                </div>
+                <div id="gps-result" style="display: none; padding: 15px 0;">
+                    <div id="gps-result-success" style="display: none;">
+                        <div style="margin-bottom: 12px; font-weight: 500; color: #059669;">✓ Fix acquired</div>
+                        <div style="background: #f0fdf4; border: 1px solid #86efac; border-radius: 8px; padding: 12px; margin-bottom: 8px;">
+                            <div><strong>Latitude:</strong> <span id="gps-result-lat"></span></div>
+                            <div><strong>Longitude:</strong> <span id="gps-result-lon"></span></div>
+                            <div><strong>Altitude:</strong> <span id="gps-result-alt"></span> m</div>
+                            <div><strong>Accuracy:</strong> <span id="gps-result-accuracy"></span></div>
+                        </div>
+                    </div>
+                    <div id="gps-result-error" style="display: none;">
+                        <div style="color: #dc2626; font-weight: 500;" id="gps-result-error-msg"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-buttons" id="gps-buttons" style="display: none; gap: 10px; justify-content: center; padding: 0 20px 20px;">
+                <button type="button" class="btn" onclick="gpsModalTryAgain()">Try again</button>
+                <button type="button" class="btn btn-success" id="gps-btn-accept" onclick="gpsModalAccept()">Accept</button>
+                <button type="button" class="btn" onclick="gpsModalCancel()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
     <script src="/static/js/setup.js"></script>
     <script>
         // Set timezone dropdown to current value
@@ -306,34 +343,107 @@
             statusDiv.style.display = 'block';
         }
         
-        async function getCoordinatesFromGps() {
-            const btn = document.getElementById('gps-btn');
-            const statusEl = document.getElementById('gps-status');
-            if (!btn || !statusEl) return;
-            btn.disabled = true;
-            statusEl.textContent = 'Acquiring GPS fix... (up to 15 seconds)';
-            statusEl.style.color = '#666';
-            try {
-                const response = await fetch('/api/gps/coordinates');
-                const data = await response.json();
-                if (data.success) {
-                    document.getElementById('lat').value = data.lat;
-                    document.getElementById('lon').value = data.lon;
-                    if (data.alt != null && data.alt !== undefined) {
-                        document.getElementById('alt').value = data.alt;
+        let gpsPollInterval = null;
+
+        function openGpsModal() {
+            document.getElementById('gpsModal').style.display = 'block';
+            document.getElementById('gps-progress').style.display = 'block';
+            document.getElementById('gps-result').style.display = 'none';
+            document.getElementById('gps-buttons').style.display = 'none';
+            document.getElementById('gps-spinner').style.display = 'block';
+            document.getElementById('gps-btn-accept').style.display = 'inline-block';
+            startGpsAcquisition();
+        }
+
+        function startGpsAcquisition() {
+            document.getElementById('gps-status-text').textContent = 'Starting GPS...';
+            document.getElementById('gps-status-detail').textContent = 'Acquiring fix (up to 20 seconds)';
+            document.getElementById('gps-log').textContent = '';
+            fetch('/api/gps/start', { method: 'POST', headers: { 'Content-Type': 'application/json' } })
+                .then(r => r.json())
+                .then(() => { gpsPollInterval = setInterval(pollGpsStatus, 1200); pollGpsStatus(); })
+                .catch(() => {
+                    document.getElementById('gps-status-text').textContent = 'Failed to start';
+                    showGpsResultError('Could not start GPS acquisition');
+                    showGpsButtons(false);
+                });
+        }
+
+        function pollGpsStatus() {
+            fetch('/api/gps/status')
+                .then(r => r.json())
+                .then(data => {
+                    document.getElementById('gps-status-text').textContent = data.status === 'acquiring' ? 'Acquiring GPS fix...' : data.message || data.status;
+                    if (data.satellites_used != null) {
+                        document.getElementById('gps-status-detail').textContent = 'Satellites: ' + data.satellites_used + (data.mode ? ' • ' + data.mode : '');
                     }
-                    statusEl.textContent = 'Coordinates filled from GPS. You can edit them or run again before saving.';
-                    statusEl.style.color = '#059669';
-                } else {
-                    statusEl.textContent = data.message || 'GPS failed';
-                    statusEl.style.color = '#dc2626';
-                }
-            } catch (err) {
-                statusEl.textContent = 'Error: ' + (err.message || 'Could not get GPS');
-                statusEl.style.color = '#dc2626';
-            } finally {
-                btn.disabled = false;
-            }
+                    if (data.log_lines && data.log_lines.length) {
+                        document.getElementById('gps-log').textContent = data.log_lines.join('\n');
+                        document.getElementById('gps-log').scrollTop = document.getElementById('gps-log').scrollHeight;
+                    }
+                    if (data.status === 'fix') {
+                        clearInterval(gpsPollInterval);
+                        gpsPollInterval = null;
+                        document.getElementById('gps-spinner').style.display = 'none';
+                        document.getElementById('gps-progress').style.display = 'none';
+                        document.getElementById('gps-result').style.display = 'block';
+                        document.getElementById('gps-result-success').style.display = 'block';
+                        document.getElementById('gps-result-error').style.display = 'none';
+                        document.getElementById('gps-result-lat').textContent = data.lat;
+                        document.getElementById('gps-result-lon').textContent = data.lon;
+                        document.getElementById('gps-result-alt').textContent = data.alt != null ? data.alt : '—';
+                        document.getElementById('gps-result-accuracy').textContent = data.accuracy_m != null ? '~' + data.accuracy_m + ' m' : '—';
+                        showGpsButtons(true);
+                    } else if (data.status === 'timeout' || data.status === 'error') {
+                        clearInterval(gpsPollInterval);
+                        gpsPollInterval = null;
+                        document.getElementById('gps-spinner').style.display = 'none';
+                        document.getElementById('gps-progress').style.display = 'none';
+                        document.getElementById('gps-result').style.display = 'block';
+                        document.getElementById('gps-result-success').style.display = 'none';
+                        document.getElementById('gps-result-error').style.display = 'block';
+                        document.getElementById('gps-result-error-msg').textContent = data.message || data.status;
+                        showGpsButtons(false);
+                    }
+                })
+                .catch(() => {});
+        }
+
+        function showGpsResultError(msg) {
+            document.getElementById('gps-result').style.display = 'block';
+            document.getElementById('gps-result-success').style.display = 'none';
+            document.getElementById('gps-result-error').style.display = 'block';
+            document.getElementById('gps-result-error-msg').textContent = msg;
+        }
+
+        function showGpsButtons(showAccept) {
+            document.getElementById('gps-buttons').style.display = 'flex';
+            document.getElementById('gps-btn-accept').style.display = showAccept ? 'inline-block' : 'none';
+        }
+
+        function gpsModalTryAgain() {
+            document.getElementById('gps-progress').style.display = 'block';
+            document.getElementById('gps-result').style.display = 'none';
+            document.getElementById('gps-buttons').style.display = 'none';
+            document.getElementById('gps-spinner').style.display = 'block';
+            startGpsAcquisition();
+        }
+
+        function gpsModalAccept() {
+            fetch('/api/gps/status')
+                .then(r => r.json())
+                .then(data => {
+                    if (data.lat != null) document.getElementById('lat').value = data.lat;
+                    if (data.lon != null) document.getElementById('lon').value = data.lon;
+                    if (data.alt != null) document.getElementById('alt').value = data.alt;
+                });
+            document.getElementById('gpsModal').style.display = 'none';
+        }
+
+        function gpsModalCancel() {
+            if (gpsPollInterval) clearInterval(gpsPollInterval);
+            gpsPollInterval = null;
+            document.getElementById('gpsModal').style.display = 'none';
         }
     </script>
 

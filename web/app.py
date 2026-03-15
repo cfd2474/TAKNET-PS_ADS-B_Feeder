@@ -52,6 +52,111 @@ tailscale_progress = {
 }
 tailscale_progress_lock = threading.Lock()
 
+# GPS acquisition state (for modal with live status)
+gps_state = {
+    'status': 'idle',  # idle, acquiring, fix, timeout, error
+    'message': '',
+    'lat': None,
+    'lon': None,
+    'alt': None,
+    'accuracy_m': None,
+    'satellites_used': None,
+    'mode': None,  # '2D' or '3D'
+    'log_lines': []  # recent status lines for UI
+}
+gps_lock = threading.Lock()
+GPS_LOG_MAX = 20
+GPS_ACQUIRE_TIMEOUT = 20
+
+def _gps_acquisition_thread():
+    """Background thread: run gpspipe, parse TPV/SKY, update gps_state."""
+    global gps_state
+    import math
+    try:
+        proc = subprocess.Popen(
+            ['timeout', str(GPS_ACQUIRE_TIMEOUT), 'gpspipe', '-w', '-n', '100'],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL,
+            text=True,
+            cwd='/opt/adsb/scripts',
+            env={**os.environ}
+        )
+        last_tpv = {}
+        satellites_used = None
+        start = time.time()
+        while True:
+            line = proc.stdout.readline()
+            if not line:
+                break
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                obj = json.loads(line)
+                cls = obj.get('class')
+                with gps_lock:
+                    if cls == 'TPV':
+                        last_tpv = obj
+                        lat = obj.get('lat')
+                        lon = obj.get('lon')
+                        if lat is not None and lon is not None:
+                            epx = obj.get('epx')
+                            epy = obj.get('epy')
+                            epv = obj.get('epv')
+                            mode = obj.get('mode', 0)
+                            acc = None
+                            if epx is not None and epy is not None:
+                                acc = round(math.sqrt(epx*epx + epy*epy), 1)
+                            gps_state['lat'] = round(lat, 5)
+                            gps_state['lon'] = round(lon, 5)
+                            gps_state['alt'] = int(round(obj['alt'])) if obj.get('alt') is not None else None
+                            gps_state['accuracy_m'] = acc
+                            gps_state['mode'] = '3D' if mode == 2 else ('2D' if mode == 1 else None)
+                            gps_state['satellites_used'] = satellites_used
+                            gps_state['status'] = 'fix'
+                            gps_state['message'] = 'Fix acquired'
+                            gps_state['log_lines'].append(
+                                f"Fix: {gps_state['lat']}, {gps_state['lon']} "
+                                f"(accuracy ~{acc}m, {gps_state['mode']})" if acc else
+                                f"Fix: {gps_state['lat']}, {gps_state['lon']} ({gps_state['mode']})"
+                            )
+                            if len(gps_state['log_lines']) > GPS_LOG_MAX:
+                                gps_state['log_lines'] = gps_state['log_lines'][-GPS_LOG_MAX:]
+                            try:
+                                proc.terminate()
+                            except OSError:
+                                pass
+                            break
+                        else:
+                            gps_state['log_lines'].append(
+                                f"Waiting for fix... mode={mode}" if mode is not None else "Waiting for fix..."
+                            )
+                    elif cls == 'SKY':
+                        sats = obj.get('satellites', [])
+                        used = sum(1 for s in sats if s.get('used'))
+                        satellites_used = used if sats else satellites_used
+                        gps_state['satellites_used'] = satellites_used
+                        if satellites_used is not None:
+                            gps_state['log_lines'].append(f"Satellites used: {satellites_used}")
+                    if len(gps_state['log_lines']) > GPS_LOG_MAX:
+                        gps_state['log_lines'] = gps_state['log_lines'][-GPS_LOG_MAX:]
+            except (json.JSONDecodeError, KeyError):
+                continue
+        proc.wait(timeout=2)
+    except FileNotFoundError:
+        with gps_lock:
+            gps_state['status'] = 'error'
+            gps_state['message'] = 'gpspipe not found. Run the installer or update.'
+    except Exception as e:
+        with gps_lock:
+            gps_state['status'] = 'error'
+            gps_state['message'] = str(e)
+    finally:
+        with gps_lock:
+            if gps_state['status'] == 'acquiring':
+                gps_state['status'] = 'timeout'
+                gps_state['message'] = 'No GPS fix (timeout). Ensure USB GPS has sky view and gpsd is running.'
+
 def update_progress(service, progress, total=100, status='', details=''):
     """Update global progress state"""
     global service_progress
@@ -2271,9 +2376,49 @@ def get_config():
     """Get current configuration"""
     return jsonify(read_env())
 
+def _gps_state_snapshot():
+    """Return a JSON-serializable snapshot of gps_state."""
+    with gps_lock:
+        return {
+            'status': gps_state['status'],
+            'message': gps_state['message'],
+            'lat': gps_state['lat'],
+            'lon': gps_state['lon'],
+            'alt': gps_state['alt'],
+            'accuracy_m': gps_state['accuracy_m'],
+            'satellites_used': gps_state['satellites_used'],
+            'mode': gps_state['mode'],
+            'log_lines': list(gps_state['log_lines']),
+        }
+
+@app.route('/api/gps/start', methods=['POST'])
+def api_gps_start():
+    """Start background GPS acquisition. Frontend polls GET /api/gps/status for progress and result."""
+    with gps_lock:
+        if gps_state['status'] == 'acquiring':
+            return jsonify({'success': True, 'message': 'Acquisition already in progress'})
+        gps_state['status'] = 'acquiring'
+        gps_state['message'] = 'Starting GPS...'
+        gps_state['lat'] = gps_state['lon'] = gps_state['alt'] = None
+        gps_state['accuracy_m'] = gps_state['satellites_used'] = gps_state['mode'] = None
+        gps_state['log_lines'] = []
+    if not shutil.which('gpspipe'):
+        with gps_lock:
+            gps_state['status'] = 'error'
+            gps_state['message'] = 'gpspipe not found. Run the installer or update.'
+        return jsonify({'success': False, 'message': gps_state['message']})
+    t = threading.Thread(target=_gps_acquisition_thread, daemon=True)
+    t.start()
+    return jsonify({'success': True})
+
+@app.route('/api/gps/status', methods=['GET'])
+def api_gps_status():
+    """Return current GPS acquisition status (for modal polling)."""
+    return jsonify(_gps_state_snapshot())
+
 @app.route('/api/gps/coordinates', methods=['GET'])
 def api_gps_coordinates():
-    """Get current coordinates from USB GPS (gpsd). Populates lat/lon/alt in UI only; does not save."""
+    """Legacy: single-shot GPS coordinates. Prefer POST /api/gps/start + GET /api/gps/status for modal flow."""
     try:
         script = '/opt/adsb/scripts/get-gps-coordinates.sh'
         if not Path(script).exists():
