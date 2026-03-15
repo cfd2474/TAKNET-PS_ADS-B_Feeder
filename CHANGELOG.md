@@ -1,3 +1,9 @@
+## v2.59.39 — 2026-03-15
+
+### Changed
+- Feeder-side tunnel client for remote access by web address; enabled by default, connects to public aggregator host so access works without NetBird. Set TUNNEL_AGGREGATOR_URL= to disable.
+
+---
 ## v2.59.38 — 2026-03-15
 
 ### Fixed

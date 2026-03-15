@@ -1,11 +1,11 @@
 {
-  "version": "2.59.38",
+  "version": "2.59.39",
   "release_date": "2026-03-15",
-  "release_name": "GPS check fix",
+  "release_name": "Remote access tunnel (feeder)",
   "download_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh",
   "changelog_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/CHANGELOG.md",
   "minimum_version": "2.40.0",
   "breaking_changes": false,
-  "release_notes": "Check GPS status: only report device present when device path exists (fixes false positive when GPS disconnected).",
+  "release_notes": "Feeder-side tunnel client for remote access by web address; enabled by default, connects to public aggregator host so access works without NetBird. Set TUNNEL_AGGREGATOR_URL= to disable.",
   "update_priority": 3
 }
