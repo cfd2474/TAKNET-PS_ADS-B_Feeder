@@ -2271,6 +2271,32 @@ def get_config():
     """Get current configuration"""
     return jsonify(read_env())
 
+@app.route('/api/gps/coordinates', methods=['GET'])
+def api_gps_coordinates():
+    """Get current coordinates from USB GPS (gpsd). Populates lat/lon/alt in UI only; does not save."""
+    try:
+        script = '/opt/adsb/scripts/get-gps-coordinates.sh'
+        if not Path(script).exists():
+            return jsonify({'success': False, 'message': 'GPS script not found. Run the installer or update.'})
+        result = subprocess.run(
+            [script],
+            capture_output=True,
+            text=True,
+            timeout=20,
+            cwd='/opt/adsb/scripts'
+        )
+        out = (result.stdout or '').strip()
+        if not out:
+            return jsonify({'success': False, 'message': 'No output from GPS (gpsd not running or no fix).'})
+        data = json.loads(out)
+        return jsonify(data)
+    except subprocess.TimeoutExpired:
+        return jsonify({'success': False, 'message': 'GPS read timed out. Ensure USB GPS has sky view.'})
+    except json.JSONDecodeError as e:
+        return jsonify({'success': False, 'message': f'Invalid GPS output: {e}'})
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)})
+
 @app.route('/api/config', methods=['POST'])
 def save_config():
     """

@@ -213,7 +213,16 @@ apt-get install -y python3-flask python3-pip python3-yaml wget curl rtl-sdr vnst
 echo "Installing SoapySDR tools (Phase B universal SDR detection)..."
 apt-get install -y soapysdr-tools soapysdr-module-rtlsdr
 
+# USB GPS support (gpsd + gpsd-clients for gpspipe)
+echo "Installing USB GPS support (gpsd)..."
+apt-get install -y gpsd gpsd-clients
+
 echo "✓ All packages installed"
+
+# Enable gpsd for USB GPS (coordinates in Location/Settings)
+systemctl enable gpsd 2>/dev/null || true
+systemctl start gpsd 2>/dev/null || true
+echo "✓ gpsd enabled (use 'Get coordinates from GPS' in Location settings when USB GPS is connected)"
 
 # Configure MLAT stability safeguards
 echo "Configuring MLAT stability safeguards..."
@@ -457,6 +466,10 @@ chmod +x /opt/adsb/scripts/emergency-ssh-fix.sh
 echo "  - fix-dns.sh..."
 wget -q $REPO/scripts/fix-dns.sh -O /opt/adsb/scripts/fix-dns.sh
 chmod +x /opt/adsb/scripts/fix-dns.sh
+
+echo "  - get-gps-coordinates.sh..."
+wget -q $REPO/scripts/get-gps-coordinates.sh -O /opt/adsb/scripts/get-gps-coordinates.sh
+chmod +x /opt/adsb/scripts/get-gps-coordinates.sh
 
 # Generate initial docker-compose.yml from .env configuration
 echo "  - Generating docker-compose.yml..."

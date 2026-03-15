@@ -93,6 +93,13 @@
                 </div>
                 
                 <div class="form-group">
+                    <button type="button" class="btn" id="gps-btn" onclick="getCoordinatesFromGps()" style="margin-bottom: 8px;">
+                        📍 Get coordinates from GPS
+                    </button>
+                    <small class="help-text" id="gps-status" style="display: block; margin-top: 4px;"></small>
+                </div>
+                
+                <div class="form-group">
                     <label>Timezone *</label>
                     <select id="tz">
                         <option value="">-- Select Timezone --</option>
@@ -297,6 +304,36 @@
             statusDiv.textContent = message;
             statusDiv.className = 'status-' + type;
             statusDiv.style.display = 'block';
+        }
+        
+        async function getCoordinatesFromGps() {
+            const btn = document.getElementById('gps-btn');
+            const statusEl = document.getElementById('gps-status');
+            if (!btn || !statusEl) return;
+            btn.disabled = true;
+            statusEl.textContent = 'Acquiring GPS fix... (up to 15 seconds)';
+            statusEl.style.color = '#666';
+            try {
+                const response = await fetch('/api/gps/coordinates');
+                const data = await response.json();
+                if (data.success) {
+                    document.getElementById('lat').value = data.lat;
+                    document.getElementById('lon').value = data.lon;
+                    if (data.alt != null && data.alt !== undefined) {
+                        document.getElementById('alt').value = data.alt;
+                    }
+                    statusEl.textContent = 'Coordinates filled from GPS. You can edit them or run again before saving.';
+                    statusEl.style.color = '#059669';
+                } else {
+                    statusEl.textContent = data.message || 'GPS failed';
+                    statusEl.style.color = '#dc2626';
+                }
+            } catch (err) {
+                statusEl.textContent = 'Error: ' + (err.message || 'Could not get GPS');
+                statusEl.style.color = '#dc2626';
+            } finally {
+                btn.disabled = false;
+            }
         }
     </script>
 

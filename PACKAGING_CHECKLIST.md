@@ -13,6 +13,8 @@ Run through this before every release package. See also: **Version Bump SOP** (t
 ./scripts/version-bump.sh 2.59.31 "Short name" "What changed."
 # Priority 1 = immediate update, 2 = overnight 02:00, 3 = alert only (default):
 ./scripts/version-bump.sh 2.59.32 "Security fix" "Critical fix." 1
+# USB GPS release is priority 3 (alert only):
+./scripts/version-bump.sh 2.59.36 "USB GPS support" "Get coordinates from GPS in setup and Settings." 3
 ```
 
 **Update priority** (in `version.json`): `1` = feeder updates immediately; `2` = feeder schedules update at 02:00 local; `3` = alert only, user clicks Update (default if omitted).

@@ -1,3 +1,9 @@
+## Unreleased (Priority 3)
+
+### Added
+- USB GPS support at host level: gpsd and gpsd-clients installed with initial installer and on updates. "Get coordinates from GPS" button in setup wizard and Settings → Location; populates latitude, longitude, and altitude from USB GPS without submitting so user can edit or re-run before saving.
+
+---
 ## v2.59.35 — 2026-03-14
 
 ### Changed
