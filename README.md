@@ -7,7 +7,7 @@
 **Tactical Awareness Kit Network - Public Safety**  
 **For Enhanced Tracking**
 
-**Current Version: 2.59.39**
+**Current Version: 2.59.40**
 
 A comprehensive ADS-B aircraft tracking solution designed for distributed deployment with centralized aggregation. Built for public safety, emergency services, and aviation tracking networks.
 
@@ -500,9 +500,13 @@ Michael Leckliter — [mike@tak-solutions.com](mailto:mike@tak-solutions.com)
 
 ## 📝 Version History
 
-**Current Version:** 2.59.39
+**Current Version:** 2.59.40
 **Release Date:** March 15, 2026
 **Minimum Supported Version:** 2.40.0
+
+### v2.59.40 — Reboot device & tunnel status
+- **Settings** — Reboot Device button (with confirmation); device reboots after a short delay.
+- **Dashboard** — Remote Access Tunnel section in System Status: Running/Stopped/Disabled and feeder ID.
 
 ### v2.59.39 — Remote access tunnel (feeder)
 - **Tunnel client** — Feeder connects outbound to aggregator for remote access by web address; enabled by default, uses public aggregator host so access works without NetBird. Set `TUNNEL_AGGREGATOR_URL=` in `.env` to disable.

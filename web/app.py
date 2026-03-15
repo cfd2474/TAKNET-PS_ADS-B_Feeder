@@ -1206,6 +1206,30 @@ def dashboard():
         'interface': connection_mode.get('interface', 'N/A')
     }
     
+    # Tunnel status (remote access)
+    tunnel_status = {'enabled': False, 'running': False, 'feeder_id': ''}
+    try:
+        tunnel_url = env.get('TUNNEL_AGGREGATOR_URL')
+        if tunnel_url is None:
+            tunnel_status['enabled'] = bool((env.get('TAKNET_PS_SERVER_HOST_FALLBACK') or '').strip())
+        else:
+            tunnel_status['enabled'] = bool((tunnel_url or '').strip())
+        if tunnel_status['enabled']:
+            feeder_id = (env.get('TUNNEL_FEEDER_ID') or env.get('MLAT_SITE_NAME') or '').strip()
+            if not feeder_id:
+                try:
+                    feeder_id = socket.gethostname() or 'feeder'
+                except Exception:
+                    feeder_id = 'feeder'
+            tunnel_status['feeder_id'] = feeder_id.replace(' ', '-').lower()
+            result = subprocess.run(
+                ['systemctl', 'is-active', 'tunnel-client'],
+                capture_output=True, text=True, timeout=2
+            )
+            tunnel_status['running'] = (result.returncode == 0 and result.stdout and result.stdout.strip() == 'active')
+    except Exception:
+        pass
+
     # Quick update check (non-blocking)
     update_available = False
     latest_version = None
@@ -1244,6 +1268,7 @@ def dashboard():
                          taknet_status=taknet_status, 
                          feeder_uuid=feeder_uuid, 
                          network_info=network_info,
+                         tunnel_status=tunnel_status,
                          update_available=update_available,
                          latest_version=latest_version)
 
@@ -4337,6 +4362,22 @@ def get_update_status():
     
     except Exception as e:
         print(f"❌ Error in get_update_status: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/system/reboot', methods=['POST'])
+def api_system_reboot():
+    """Reboot the device. Returns immediately; reboot is scheduled after a short delay."""
+    try:
+        # Delay reboot so the HTTP response can be sent first
+        subprocess.Popen(
+            ['sudo', 'bash', '-c', 'sleep 2 && reboot'],
+            start_new_session=True,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL
+        )
+        return jsonify({'success': True, 'message': 'Rebooting in a few seconds...'})
+    except Exception as e:
+        print(f"❌ Error in api_system_reboot: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
 if __name__ == '__main__':

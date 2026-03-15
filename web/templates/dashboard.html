@@ -143,6 +143,29 @@
                                 <span id="network-quality-detail" style="font-size: 0.8em; color: #9ca3af; margin-left: 8px;"></span>
                             </td>
                         </tr>
+
+                        <!-- Remote access tunnel -->
+                        <tr style="background: #f9fafb;">
+                            <td colspan="4" style="padding: 8px 12px; font-weight: 600; color: #374151; border-left: 3px solid #0ea5e9; border-top: 1px solid #e5e7eb;">
+                                🔗 Remote Access Tunnel
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 6px 12px; color: #6b7280;">Status</td>
+                            <td style="padding: 6px 12px; font-weight: 500;">
+                                {% if tunnel_status.enabled %}
+                                    {% if tunnel_status.running %}
+                                        <span style="color: #10b981;">● Running</span>
+                                    {% else %}
+                                        <span style="color: #f59e0b;">● Stopped</span>
+                                    {% endif %}
+                                {% else %}
+                                    <span style="color: #9ca3af;">○ Disabled</span>
+                                {% endif %}
+                            </td>
+                            <td style="padding: 6px 12px; color: #6b7280;">Feeder ID</td>
+                            <td style="padding: 6px 12px; font-weight: 500; color: #374151; font-family: monospace; font-size: 0.9em;">{{ tunnel_status.feeder_id or '—' }}</td>
+                        </tr>
                         
                         <!-- Location Section -->
                         <tr style="background: #f9fafb;">

@@ -558,6 +558,7 @@
 
             <div class="actions">
                 <button class="btn btn-primary" onclick="showRestartServicesModal()">🔄 Restart Services</button>
+                <button class="btn" onclick="rebootDevice()" style="margin-left: 8px;">🔌 Reboot Device</button>
                 <button class="btn" onclick="window.location.href='/dashboard'">← Back to Dashboard</button>
             </div>
         </div>
@@ -2952,6 +2953,24 @@
                 });
             };
         })());
+
+        // ========== Reboot Device ==========
+        async function rebootDevice() {
+            if (!confirm('Reboot this device now? The web interface will disconnect. The feeder will come back online in about one minute.')) {
+                return;
+            }
+            try {
+                const response = await fetch('/api/system/reboot', { method: 'POST' });
+                const data = await response.json();
+                if (data.success) {
+                    document.body.innerHTML = '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:60vh;font-family:system-ui;color:#374151;"><p style="font-size:1.2em;">🔌 Rebooting...</p><p style="color:#6b7280;margin-top:8px;">The device will be back in about one minute. Refresh or revisit the page then.</p></div>';
+                } else {
+                    alert('Reboot failed: ' + (data.error || data.message || 'Unknown error'));
+                }
+            } catch (e) {
+                alert('Reboot request failed: ' + e.message);
+            }
+        }
 
         // ========== Restart Services Functions ==========
         
