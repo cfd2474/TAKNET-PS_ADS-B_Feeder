@@ -89,6 +89,7 @@ def get_config():
 def log(msg):
     """Print to stderr so systemd captures it (journalctl -u tunnel-client)."""
     print(f"tunnel_client: {msg}", file=sys.stderr)
+    sys.stderr.flush()
 
 
 def write_status(connected, feeder_id=None, error=None):

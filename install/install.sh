@@ -1,8 +1,8 @@
 #!/bin/bash
-# TAKNET-PS-ADSB-Feeder One-Line Installer v2.59.43
+# TAKNET-PS-ADSB-Feeder One-Line Installer v2.59.44
 # curl -fsSL https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh | sudo bash
 
-INSTALLER_VERSION="2.59.43"
+INSTALLER_VERSION="2.59.44"
 
 set -e
 
@@ -1235,6 +1235,7 @@ Wants=network-online.target
 
 [Service]
 Type=simple
+Environment=PYTHONUNBUFFERED=1
 ExecStartPre=/bin/sh -c '/usr/bin/python3 -m pip install --quiet websocket-client 2>/dev/null || /usr/bin/python3 -m pip install --quiet --break-system-packages websocket-client 2>/dev/null || true'
 ExecStart=/usr/bin/python3 /opt/adsb/scripts/tunnel_client.py
 Restart=on-failure

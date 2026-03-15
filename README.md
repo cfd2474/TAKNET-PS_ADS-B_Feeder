@@ -7,7 +7,7 @@
 **Tactical Awareness Kit Network - Public Safety**  
 **For Enhanced Tracking**
 
-**Current Version: 2.59.43**
+**Current Version: 2.59.44**
 
 A comprehensive ADS-B aircraft tracking solution designed for distributed deployment with centralized aggregation. Built for public safety, emergency services, and aviation tracking networks.
 
@@ -500,9 +500,12 @@ Michael Leckliter — [mike@tak-solutions.com](mailto:mike@tak-solutions.com)
 
 ## 📝 Version History
 
-**Current Version:** 2.59.43
+**Current Version:** 2.59.44
 **Release Date:** March 15, 2026
 **Minimum Supported Version:** 2.40.0
+
+### v2.59.44 — Tunnel log visibility
+- **Tunnel client** — Flushes stderr after each log; service sets `PYTHONUNBUFFERED=1` so journalctl shows output immediately.
 
 ### v2.59.43 — Tunnel troubleshooting
 - **Tunnel client** — Logs connect/register/errors to journalctl; writes `/opt/adsb/var/tunnel-status.json`; `docs/TROUBLESHOOT-TUNNEL.md` for feeder-side diagnostics.
