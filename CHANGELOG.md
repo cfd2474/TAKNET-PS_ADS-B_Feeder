@@ -1,3 +1,9 @@
+## v2.59.38 — 2026-03-15
+
+### Fixed
+- Check GPS status: only report device present when device path exists (fixes false positive when GPS disconnected).
+
+---
 ## v2.59.37 — 2026-03-15
 
 ### Added

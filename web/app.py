@@ -2439,10 +2439,11 @@ def api_gps_check():
         if not out['gpsd_running']:
             out['message'] = 'gpsd is not running. Run the installer or start gpsd (e.g. sudo systemctl start gpsd).'
             return jsonify(out)
-        # Check if gpsd has a device and is producing data (quick read)
+        # Check if gpsd has a device that is actually connected: require DEVICES with a path that exists.
+        # (TPV/SKY alone can be stale after unplug, so we verify the device node exists.)
         try:
             r = subprocess.run(
-                ['timeout', '3', 'gpspipe', '-w', '-n', '5'],
+                ['timeout', '3', 'gpspipe', '-w', '-n', '15'],
                 capture_output=True,
                 text=True,
                 timeout=5,
@@ -2453,11 +2454,22 @@ def api_gps_check():
             for line in lines:
                 try:
                     obj = json.loads(line)
-                    if obj.get('class') in ('TPV', 'SKY', 'DEVICES'):
-                        out['gps_present'] = True
-                        if obj.get('class') == 'TPV' and obj.get('mode') is not None:
+                    cls = obj.get('class')
+                    if cls == 'DEVICES':
+                        for dev in obj.get('devices') or []:
+                            path = dev.get('path')
+                            if path and Path(path).exists():
+                                out['gps_present'] = True
+                                out['details']['device'] = path
+                                break
+                    elif cls == 'TPV':
+                        # Fallback: some gpsd configs don't send DEVICES; TPV can include device path
+                        dev_path = obj.get('device')
+                        if isinstance(dev_path, str) and dev_path.startswith('/') and Path(dev_path).exists():
+                            out['gps_present'] = True
+                            out['details']['device'] = dev_path
+                        if out['gps_present'] and obj.get('mode') is not None:
                             out['details']['mode'] = '3D' if obj.get('mode') == 2 else ('2D' if obj.get('mode') == 1 else 'no fix')
-                        break
                 except json.JSONDecodeError:
                     continue
         except FileNotFoundError:
