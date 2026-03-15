@@ -1,3 +1,9 @@
+## v2.59.35 — 2026-03-14
+
+### Changed
+- Update priority levels: 1=immediate update, 2=overnight at 02:00, 3=alert only (default). Feeder auto-acts based on version.json update_priority.
+
+---
 ## v2.59.34 — 2026-03-12
 
 ### Changed
