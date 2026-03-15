@@ -1,8 +1,8 @@
 #!/bin/bash
-# TAKNET-PS-ADSB-Feeder One-Line Installer v2.59.34
+# TAKNET-PS-ADSB-Feeder One-Line Installer v2.59.35
 # curl -fsSL https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh | sudo bash
 
-INSTALLER_VERSION="2.59.34"
+INSTALLER_VERSION="2.59.35"
 
 set -e
 
@@ -341,6 +341,14 @@ if ! grep -q "cleanup-aircraft-data" /etc/crontab 2>/dev/null; then
 fi
 echo "✓ Aircraft data retention set to 24 hours"
 
+# Priority 2 overnight update: run at 02:00 if scheduled (run-scheduled-update.sh checks flag)
+mkdir -p /opt/adsb/var
+SCHEDULED_CRON="0 2 * * * root /opt/adsb/scripts/run-scheduled-update.sh"
+if ! grep -q "run-scheduled-update" /etc/crontab 2>/dev/null; then
+    echo "$SCHEDULED_CRON" >> /etc/crontab
+fi
+echo "✓ Overnight update slot configured (02:00 when scheduled)"
+
 # Create remote user with sudo privileges (Tailscale-only access)
 echo "Creating remote user..."
 if ! id "remote" &>/dev/null; then
@@ -437,6 +445,10 @@ chmod +x /opt/adsb/scripts/migrate-phase-b.py
 echo "  - updater.sh..."
 wget -q $REPO/scripts/updater.sh -O /opt/adsb/scripts/updater.sh
 chmod +x /opt/adsb/scripts/updater.sh
+
+echo "  - run-scheduled-update.sh..."
+wget -q $REPO/scripts/run-scheduled-update.sh -O /opt/adsb/scripts/run-scheduled-update.sh
+chmod +x /opt/adsb/scripts/run-scheduled-update.sh
 
 echo "  - emergency-ssh-fix.sh..."
 wget -q $REPO/scripts/emergency-ssh-fix.sh -O /opt/adsb/scripts/emergency-ssh-fix.sh

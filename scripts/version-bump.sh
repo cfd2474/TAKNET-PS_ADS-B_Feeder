@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # TAKNET-PS Version Bump & Package Script
 # Follows Version Bump SOP: updates all locations, verifies, builds complete tar.gz.
-# Usage: ./scripts/version-bump.sh NEW_VERSION [release_name] [release_notes]
+# Usage: ./scripts/version-bump.sh NEW_VERSION [release_name] [release_notes] [update_priority]
 # Example: ./scripts/version-bump.sh 2.59.30 "Tailscale universal tailnet" "Tailscale status and SSH work for any tailnet."
-# If release_name/release_notes omitted, defaults are used.
+# update_priority: 1=immediate, 2=overnight 02:00, 3=alert only (default). Omit for 3.
 
 set -e
 
@@ -11,15 +11,23 @@ REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$REPO_ROOT"
 
 if [ -z "$1" ]; then
-    echo "Usage: $0 NEW_VERSION [release_name] [release_notes]"
+    echo "Usage: $0 NEW_VERSION [release_name] [release_notes] [update_priority]"
     echo "Example: $0 2.59.30 \"Short release name\" \"What changed.\""
+    echo "update_priority: 1=immediate, 2=02:00 overnight, 3=alert only (default)"
     exit 1
 fi
 
 NEW_VERSION="$1"
 RELEASE_NAME="${2:-Release v$NEW_VERSION}"
 RELEASE_NOTES="${3:-See CHANGELOG.md for details.}"
+UPDATE_PRIORITY="${4:-3}"
 RELEASE_DATE="$(date +%Y-%m-%d)"
+
+# Validate update_priority
+if [[ "$UPDATE_PRIORITY" != "1" && "$UPDATE_PRIORITY" != "2" && "$UPDATE_PRIORITY" != "3" ]]; then
+    echo "Error: update_priority must be 1, 2, or 3 (got: $UPDATE_PRIORITY)"
+    exit 1
+fi
 
 # Validate version format X.Y.Z
 if ! [[ "$NEW_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
@@ -45,7 +53,7 @@ echo -n "$NEW_VERSION" > VERSION
 
 # 3. version.json (pass args via env to avoid shell escaping issues)
 echo "3. Updating version.json..."
-export _VB_VERSION="$NEW_VERSION" _VB_DATE="$RELEASE_DATE" _VB_NAME="$RELEASE_NAME" _VB_NOTES="$RELEASE_NOTES"
+export _VB_VERSION="$NEW_VERSION" _VB_DATE="$RELEASE_DATE" _VB_NAME="$RELEASE_NAME" _VB_NOTES="$RELEASE_NOTES" _VB_PRIORITY="$UPDATE_PRIORITY"
 python3 << 'PYEOF'
 import os, json
 p = "version.json"
@@ -55,11 +63,12 @@ j["version"] = os.environ["_VB_VERSION"]
 j["release_date"] = os.environ["_VB_DATE"]
 j["release_name"] = os.environ["_VB_NAME"]
 j["release_notes"] = os.environ["_VB_NOTES"]
+j["update_priority"] = int(os.environ.get("_VB_PRIORITY", "3"))
 with open(p, "w") as f:
     json.dump(j, f, indent=2)
     f.write("\n")
 PYEOF
-unset _VB_VERSION _VB_DATE _VB_NAME _VB_NOTES
+unset _VB_VERSION _VB_DATE _VB_NAME _VB_NOTES _VB_PRIORITY
 
 # 4. README.md — both Current Version refs
 echo "4. Updating README.md..."

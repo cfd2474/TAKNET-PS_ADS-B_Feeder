@@ -1,10 +1,11 @@
 {
-  "version": "2.59.34",
-  "release_date": "2026-03-12",
-  "release_name": "Feeder version sent to aggregator",
+  "version": "2.59.35",
+  "release_date": "2026-03-14",
+  "release_name": "Priority updates",
   "download_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh",
   "changelog_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/CHANGELOG.md",
   "minimum_version": "2.40.0",
   "breaking_changes": false,
-  "release_notes": "MLAT client name includes software version (name | vX.Y.Z) so aggregator can list feeder name and version; README documents format for aggregator."
+  "release_notes": "Update priority levels: 1=immediate update, 2=overnight at 02:00, 3=alert only (default). Feeder auto-acts based on version.json update_priority.",
+  "update_priority": 3
 }

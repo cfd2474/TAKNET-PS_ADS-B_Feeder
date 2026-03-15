@@ -506,6 +506,12 @@
                         <p id="release-notes" style="margin: 10px 0 0 0; font-size: 0.9em; color: #1e3a8a;"></p>
                     </div>
                 </div>
+                <div class="form-group" id="update-scheduled" style="display: none;">
+                    <div style="padding: 15px; background: #ecfdf5; border-left: 4px solid #10b981; border-radius: 6px;">
+                        <strong style="color: #065f46;">⏰ Update scheduled for 02:00 overnight</strong>
+                        <p style="margin: 8px 0 0 0; font-size: 0.9em; color: #047857;">The system will update automatically at 2:00 AM local time.</p>
+                    </div>
+                </div>
 
                 <div class="form-group" id="update-error" style="display: none;">
                     <div style="padding: 15px; background: #fef2f2; border-left: 4px solid #ef4444; border-radius: 6px;">
@@ -2900,9 +2906,14 @@
         // SYSTEM UPDATE FUNCTIONS
         // ============================================================================
 
-        // Check for updates on page load
+        // Check for updates on page load; show scheduled banner if update already scheduled
         window.addEventListener('DOMContentLoaded', function() {
             checkForUpdates();
+            fetch('/api/system/update/schedule/status').then(r => r.json()).then(function(d) {
+                if (d.success && d.scheduled) {
+                    document.getElementById('update-scheduled').style.display = 'block';
+                }
+            }).catch(function() {});
         });
 
         async function checkForUpdates() {
@@ -2930,20 +2941,42 @@
                 if (data.success) {
                     // Show current version
                     currentVersionEl.textContent = `v${data.current_version}`;
+                    document.getElementById('update-scheduled').style.display = 'none';
 
                     if (data.update_available) {
-                        // Update available
+                        const priority = data.update_priority || 3;
                         latestVersionEl.textContent = `v${data.latest_version}`;
                         latestVersionGroup.style.display = 'block';
                         updateInfo.style.display = 'block';
-                        updateBtn.style.display = 'inline-block';
 
-                        // Show release notes
                         if (data.release_info && data.release_info.release_notes) {
                             releaseNotes.textContent = data.release_info.release_notes;
                         } else {
                             releaseNotes.textContent = `New version ${data.latest_version} is available`;
                         }
+
+                        if (priority === 1) {
+                            updateBtn.style.display = 'none';
+                            releaseNotes.textContent = (releaseNotes.textContent || '') + ' (Priority update — starting now...)';
+                            startPriority1Update();
+                            return;
+                        }
+                        if (priority === 2) {
+                            updateBtn.style.display = 'none';
+                            fetch('/api/system/update/schedule', { method: 'POST' })
+                                .then(r => r.json())
+                                .then(d => {
+                                    if (d.success) {
+                                        document.getElementById('update-scheduled').style.display = 'block';
+                                    }
+                                })
+                                .catch(() => {});
+                            checkBtn.disabled = false;
+                            checkBtn.textContent = '🔍 Check for Updates';
+                            return;
+                        }
+                        // priority 3: alert only, show Update button
+                        updateBtn.style.display = 'inline-block';
                     } else if (data.error) {
                         // Error checking for updates
                         updateError.style.display = 'block';
@@ -2984,6 +3017,10 @@
             document.body.classList.remove('modal-open');
         }
         
+        function startPriority1Update() {
+            confirmUpdate();
+        }
+
         async function confirmUpdate() {
             closeUpdateConfirmModal();
 

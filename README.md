@@ -7,7 +7,7 @@
 **Tactical Awareness Kit Network - Public Safety**  
 **For Enhanced Tracking**
 
-**Current Version: 2.59.34**
+**Current Version: 2.59.35**
 
 A comprehensive ADS-B aircraft tracking solution designed for distributed deployment with centralized aggregation. Built for public safety, emergency services, and aviation tracking networks.
 
@@ -500,9 +500,12 @@ Michael Leckliter — [mike@tak-solutions.com](mailto:mike@tak-solutions.com)
 
 ## 📝 Version History
 
-**Current Version:** 2.59.34
-**Release Date:** March 12, 2026
+**Current Version:** 2.59.35
+**Release Date:** March 14, 2026
 **Minimum Supported Version:** 2.40.0
+
+### v2.59.35 — Priority updates
+- **Update priorities** — 1 = immediate update, 2 = overnight at 02:00, 3 = alert only (default). Feeder auto-acts based on `version.json` `update_priority`; version-bump script accepts optional 4th argument.
 
 ### v2.59.34 — Feeder version sent to aggregator
 - **Aggregator feeder list** — MLAT client name includes software version (`name | vX.Y.Z`) so the aggregator can show feeder name and version; README documents the format for aggregator parsing.

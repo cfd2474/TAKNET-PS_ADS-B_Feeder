@@ -3959,11 +3959,17 @@ def get_system_version():
                         # If can't parse, do string comparison as fallback
                         update_available = (latest_version != current_version)
                 
+                # update_priority: 1=immediate, 2=overnight 02:00, 3=alert only (default)
+                update_priority = int(latest_info.get('update_priority', 3))
+                if update_priority not in (1, 2, 3):
+                    update_priority = 3
+
                 return jsonify({
                     'success': True,
                     'current_version': current_version,
                     'latest_version': latest_version,
                     'update_available': update_available,
+                    'update_priority': update_priority,
                     'release_info': latest_info
                 })
             else:
@@ -3974,6 +3980,7 @@ def get_system_version():
                     'current_version': current_version,
                     'latest_version': 'unknown',
                     'update_available': False,
+                    'update_priority': 3,
                     'error': 'Could not check for updates'
                 })
                 
@@ -3985,6 +3992,7 @@ def get_system_version():
                 'current_version': current_version,
                 'latest_version': 'unknown',
                 'update_available': False,
+                'update_priority': 3,
                 'error': f'Update check failed: {str(e)}'
             })
     
@@ -3993,6 +4001,30 @@ def get_system_version():
         import traceback
         traceback.print_exc()
         return jsonify({'success': False, 'error': str(e)}), 500
+
+SCHEDULED_UPDATE_FLAG = Path('/opt/adsb/var/scheduled-update')
+
+@app.route('/api/system/update/schedule', methods=['POST'])
+def schedule_overnight_update():
+    """Schedule update to run at 02:00 local time (priority 2)."""
+    try:
+        SCHEDULED_UPDATE_FLAG.parent.mkdir(parents=True, exist_ok=True)
+        SCHEDULED_UPDATE_FLAG.touch()
+        return jsonify({
+            'success': True,
+            'message': 'Update scheduled for 02:00 overnight'
+        })
+    except Exception as e:
+        print(f"Error scheduling update: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/system/update/schedule/status', methods=['GET'])
+def scheduled_update_status():
+    """Check if an overnight update is scheduled."""
+    return jsonify({
+        'success': True,
+        'scheduled': SCHEDULED_UPDATE_FLAG.exists()
+    })
 
 @app.route('/api/system/update', methods=['POST'])
 def trigger_system_update():
