@@ -1,8 +1,8 @@
 #!/bin/bash
-# TAKNET-PS-ADSB-Feeder One-Line Installer v2.59.40
+# TAKNET-PS-ADSB-Feeder One-Line Installer v2.59.41
 # curl -fsSL https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh | sudo bash
 
-INSTALLER_VERSION="2.59.40"
+INSTALLER_VERSION="2.59.41"
 
 set -e
 
@@ -462,7 +462,7 @@ chmod +x /opt/adsb/scripts/run-scheduled-update.sh
 echo "  - tunnel_client.py..."
 wget -q $REPO/scripts/tunnel_client.py -O /opt/adsb/scripts/tunnel_client.py
 chmod +x /opt/adsb/scripts/tunnel_client.py
-pip3 install -q websocket-client 2>/dev/null || true
+python3 -m pip install -q websocket-client 2>/dev/null || pip3 install -q websocket-client 2>/dev/null || echo "    ⚠ Install websocket-client if tunnel fails: sudo pip3 install websocket-client"
 
 echo "  - emergency-ssh-fix.sh..."
 wget -q $REPO/scripts/emergency-ssh-fix.sh -O /opt/adsb/scripts/emergency-ssh-fix.sh
@@ -1235,6 +1235,7 @@ Wants=network-online.target
 
 [Service]
 Type=simple
+ExecStartPre=/bin/sh -c '/usr/bin/python3 -m pip install --quiet websocket-client 2>/dev/null || /usr/bin/python3 -m pip install --quiet --break-system-packages websocket-client 2>/dev/null || true'
 ExecStart=/usr/bin/python3 /opt/adsb/scripts/tunnel_client.py
 Restart=on-failure
 RestartSec=10
