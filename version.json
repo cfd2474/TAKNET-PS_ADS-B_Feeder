@@ -1,11 +1,11 @@
 {
-  "version": "2.59.39",
+  "version": "2.59.40",
   "release_date": "2026-03-15",
-  "release_name": "Remote access tunnel (feeder)",
+  "release_name": "Reboot device & tunnel status",
   "download_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh",
   "changelog_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/CHANGELOG.md",
   "minimum_version": "2.40.0",
   "breaking_changes": false,
-  "release_notes": "Feeder-side tunnel client for remote access by web address; enabled by default, connects to public aggregator host so access works without NetBird. Set TUNNEL_AGGREGATOR_URL= to disable.",
+  "release_notes": "Settings: Reboot Device button; Dashboard: Remote Access Tunnel status (Running/Stopped/Disabled) and feeder ID in System Status.",
   "update_priority": 3
 }

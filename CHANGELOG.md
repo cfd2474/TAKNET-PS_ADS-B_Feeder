@@ -1,3 +1,9 @@
+## v2.59.40 — 2026-03-15
+
+### Changed
+- Settings: Reboot Device button; Dashboard: Remote Access Tunnel status (Running/Stopped/Disabled) and feeder ID in System Status.
+
+---
 ## v2.59.39 — 2026-03-15
 
 ### Changed
