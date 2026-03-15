@@ -1,3 +1,9 @@
+## v2.59.41 — 2026-03-15
+
+### Changed
+- Tunnel service ensures websocket-client is installed before start (ExecStartPre); installer pip step more robust for updates.
+
+---
 ## v2.59.40 — 2026-03-15
 
 ### Changed
