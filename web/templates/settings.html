@@ -2963,7 +2963,7 @@
                 const response = await fetch('/api/system/reboot', { method: 'POST' });
                 const data = await response.json();
                 if (data.success) {
-                    document.body.innerHTML = '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:60vh;font-family:system-ui;color:#374151;"><p style="font-size:1.2em;">🔌 Rebooting...</p><p style="color:#6b7280;margin-top:8px;">The device will be back in about one minute. Refresh or revisit the page then.</p></div>';
+                    document.body.innerHTML = '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:60vh;font-family:system-ui;padding:20px;"><div style="background:#fff;padding:32px 40px;border-radius:12px;box-shadow:0 4px 20px rgba(0,0,0,0.12);max-width:400px;text-align:center;"><p style="font-size:1.2em;color:#1f2937;margin:0 0 12px 0;">🔌 Rebooting...</p><p style="color:#6b7280;margin:0;font-size:0.95em;line-height:1.5;">The device will be back in about one minute. Refresh or revisit the page then.</p></div></div>';
                 } else {
                     alert('Reboot failed: ' + (data.error || data.message || 'Unknown error'));
                 }
