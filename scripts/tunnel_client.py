@@ -22,6 +22,7 @@ except ImportError:
     sys.exit(2)
 
 ENV_FILE = Path("/opt/adsb/config/.env")
+STATUS_FILE = Path("/opt/adsb/var/tunnel-status.json")
 LOCAL_HOST = "127.0.0.1"
 LOCAL_PORT = 80
 # Hop-by-hop headers we should not forward to localhost
@@ -85,6 +86,39 @@ def get_config():
     return url, feeder_id
 
 
+def log(msg):
+    """Print to stderr so systemd captures it (journalctl -u tunnel-client)."""
+    print(f"tunnel_client: {msg}", file=sys.stderr)
+
+
+def write_status(connected, feeder_id=None, error=None):
+    """Write tunnel status for dashboard and troubleshooting."""
+    try:
+        STATUS_FILE.parent.mkdir(parents=True, exist_ok=True)
+        if connected and feeder_id:
+            STATUS_FILE.write_text(
+                json.dumps({
+                    "connected": True,
+                    "feeder_id": feeder_id,
+                    "since": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+                }) + "\n"
+            )
+        elif STATUS_FILE.exists():
+            STATUS_FILE.write_text(
+                json.dumps({
+                    "connected": False,
+                    "error": error,
+                    "at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+                }) + "\n"
+            )
+        else:
+            STATUS_FILE.write_text(
+                json.dumps({"connected": False, "error": error}) + "\n"
+            )
+    except Exception as e:
+        log(f"Could not write status file: {e}")
+
+
 def forward_request(method, path, headers, body_b64):
     """Forward request to local web app; return (status, headers_dict, body_base64)."""
     body = base64.b64decode(body_b64) if body_b64 else b""
@@ -126,9 +160,18 @@ def forward_request(method, path, headers, body_b64):
 
 def run_once(ws_url, feeder_id):
     """Connect, register, and process messages until disconnect. Returns True if should reconnect."""
-    ws = websocket.create_connection(ws_url, timeout=30)
+    log(f"Connecting to {ws_url} as feeder_id={feeder_id}")
+    write_status(False, error="connecting")
+    try:
+        ws = websocket.create_connection(ws_url, timeout=30)
+    except Exception as e:
+        log(f"Connect failed: {e}")
+        write_status(False, error=str(e))
+        return True
     try:
         ws.send(json.dumps({"type": "register", "feeder_id": feeder_id}))
+        log("Registered; connected and waiting for requests")
+        write_status(True, feeder_id=feeder_id)
         while True:
             raw = ws.recv()
             if not raw:
@@ -161,11 +204,15 @@ def run_once(ws_url, feeder_id):
                 )
                 continue
     except websocket.WebSocketConnectionClosedException:
+        log("Connection closed by server or network")
+        write_status(False, error="connection closed")
         return True
     except Exception as e:
-        print(f"tunnel_client: {e}", file=sys.stderr)
+        log(f"Error: {e}")
+        write_status(False, error=str(e))
         return True
     finally:
+        write_status(False, error="disconnected")
         try:
             ws.close()
         except Exception:
