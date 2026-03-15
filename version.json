@@ -1,11 +1,11 @@
 {
-  "version": "2.59.35",
-  "release_date": "2026-03-14",
-  "release_name": "Priority updates",
+  "version": "2.59.36",
+  "release_date": "2026-03-15",
+  "release_name": "USB GPS support",
   "download_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh",
   "changelog_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/CHANGELOG.md",
   "minimum_version": "2.40.0",
   "breaking_changes": false,
-  "release_notes": "Update priority levels: 1=immediate update, 2=overnight at 02:00, 3=alert only (default). Feeder auto-acts based on version.json update_priority.",
+  "release_notes": "USB GPS: get coordinates in setup and Settings; modal shows satellites, accuracy, Accept/Try again/Cancel.",
   "update_priority": 3
 }
