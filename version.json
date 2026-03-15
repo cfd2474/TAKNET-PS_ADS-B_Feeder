@@ -1,11 +1,11 @@
 {
-  "version": "2.59.42",
+  "version": "2.59.43",
   "release_date": "2026-03-15",
-  "release_name": "Reboot message visibility",
+  "release_name": "Tunnel troubleshooting",
   "download_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh",
   "changelog_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/CHANGELOG.md",
   "minimum_version": "2.40.0",
   "breaking_changes": false,
-  "release_notes": "Reboot Device success message shown in a white box for readability.",
+  "release_notes": "Tunnel client logs connect/register/errors to journalctl; writes /opt/adsb/var/tunnel-status.json; docs/TROUBLESHOOT-TUNNEL.md for feeder-side diagnostics.",
   "update_priority": 3
 }

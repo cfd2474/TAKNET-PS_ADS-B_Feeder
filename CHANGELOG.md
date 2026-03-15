@@ -1,3 +1,9 @@
+## v2.59.43 — 2026-03-15
+
+### Changed
+- Tunnel client logs connect/register/errors to journalctl; writes /opt/adsb/var/tunnel-status.json; docs/TROUBLESHOOT-TUNNEL.md for feeder-side diagnostics.
+
+---
 ## v2.59.42 — 2026-03-15
 
 ### Changed
