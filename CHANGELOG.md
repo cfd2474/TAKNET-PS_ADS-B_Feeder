@@ -1,3 +1,9 @@
+## v2.59.42 — 2026-03-15
+
+### Changed
+- Reboot Device success message shown in a white box for readability.
+
+---
 ## v2.59.41 — 2026-03-15
 
 ### Changed
