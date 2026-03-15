@@ -1,8 +1,8 @@
 #!/bin/bash
-# TAKNET-PS-ADSB-Feeder One-Line Installer v2.59.38
+# TAKNET-PS-ADSB-Feeder One-Line Installer v2.59.39
 # curl -fsSL https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh | sudo bash
 
-INSTALLER_VERSION="2.59.38"
+INSTALLER_VERSION="2.59.39"
 
 set -e
 
@@ -458,6 +458,11 @@ chmod +x /opt/adsb/scripts/updater.sh
 echo "  - run-scheduled-update.sh..."
 wget -q $REPO/scripts/run-scheduled-update.sh -O /opt/adsb/scripts/run-scheduled-update.sh
 chmod +x /opt/adsb/scripts/run-scheduled-update.sh
+
+echo "  - tunnel_client.py..."
+wget -q $REPO/scripts/tunnel_client.py -O /opt/adsb/scripts/tunnel_client.py
+chmod +x /opt/adsb/scripts/tunnel_client.py
+pip3 install -q websocket-client 2>/dev/null || true
 
 echo "  - emergency-ssh-fix.sh..."
 wget -q $REPO/scripts/emergency-ssh-fix.sh -O /opt/adsb/scripts/emergency-ssh-fix.sh
@@ -1222,12 +1227,29 @@ ExecStartPre=-/usr/bin/systemctl stop wpa_supplicant
 WantedBy=multi-user.target
 MONITOREOF
 
+cat > /etc/systemd/system/tunnel-client.service << 'TUNNELEOF'
+[Unit]
+Description=TAKNET-PS Remote access tunnel client
+After=network-online.target adsb-web.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 /opt/adsb/scripts/tunnel_client.py
+Restart=on-failure
+RestartSec=10
+# When TUNNEL_AGGREGATOR_URL is unset, script exits 0 and we do not restart
+
+[Install]
+WantedBy=multi-user.target
+TUNNELEOF
+
 # Disable (but don't mask) wpa_supplicant - network-monitor will manage it
 # Using disable instead of mask allows wpa_supplicant to be started when needed
 systemctl disable wpa_supplicant 2>/dev/null || true
 
 systemctl daemon-reload
-systemctl enable network-monitor captive-portal
+systemctl enable network-monitor captive-portal tunnel-client
 
 echo "✓ WiFi hotspot manager installed"
 

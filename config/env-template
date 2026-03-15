@@ -139,6 +139,17 @@ OPENSKYNETWORK_USERNAME=
 OPENSKYNETWORK_SERIAL=
 
 # ============================================
+# Remote access tunnel (enabled by default)
+# Feeder connects outbound to aggregator (public host); remote users access by web address
+# Uses TAKNET_PS_SERVER_HOST_FALLBACK (public) by default so access works without NetBird
+# Set TUNNEL_AGGREGATOR_URL= (empty) to disable tunnel
+# ============================================
+# Override tunnel host (default: same as TAKNET_PS_SERVER_HOST_FALLBACK)
+# TUNNEL_AGGREGATOR_URL=adsb.tak-solutions.com
+# Feeder id in URL path (default: MLAT_SITE_NAME or hostname)
+# TUNNEL_FEEDER_ID=92882-corona-feeder-1
+
+# ============================================
 # System Configuration
 # Do not modify unless you know what you're doing
 # ============================================
