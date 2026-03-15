@@ -1,3 +1,9 @@
+## v2.59.37 — 2026-03-15
+
+### Added
+- Check GPS status button and modal: detect gpsd running and GPS device present/connected.
+
+---
 ## v2.59.36 — 2026-03-15
 
 ### Added

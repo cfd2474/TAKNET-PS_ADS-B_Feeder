@@ -2416,6 +2416,62 @@ def api_gps_status():
     """Return current GPS acquisition status (for modal polling)."""
     return jsonify(_gps_state_snapshot())
 
+@app.route('/api/gps/check', methods=['GET'])
+def api_gps_check():
+    """Check if gpsd is running and if a GPS device is present/connected. For status modal."""
+    out = {'gpsd_running': False, 'gps_present': False, 'message': '', 'details': {}}
+    try:
+        # Check if gpsd service/process is running
+        try:
+            r = subprocess.run(
+                ['systemctl', 'is-active', 'gpsd'],
+                capture_output=True,
+                text=True,
+                timeout=5
+            )
+            out['gpsd_running'] = r.returncode == 0 and (r.stdout or '').strip() == 'active'
+        except (FileNotFoundError, subprocess.TimeoutExpired):
+            try:
+                r = subprocess.run(['pgrep', '-x', 'gpsd'], capture_output=True, timeout=5)
+                out['gpsd_running'] = r.returncode == 0
+            except (FileNotFoundError, subprocess.TimeoutExpired):
+                pass
+        if not out['gpsd_running']:
+            out['message'] = 'gpsd is not running. Run the installer or start gpsd (e.g. sudo systemctl start gpsd).'
+            return jsonify(out)
+        # Check if gpsd has a device and is producing data (quick read)
+        try:
+            r = subprocess.run(
+                ['timeout', '3', 'gpspipe', '-w', '-n', '5'],
+                capture_output=True,
+                text=True,
+                timeout=5,
+                cwd='/opt/adsb/scripts',
+                env={**os.environ}
+            )
+            lines = [l.strip() for l in (r.stdout or '').strip().splitlines() if l.strip()]
+            for line in lines:
+                try:
+                    obj = json.loads(line)
+                    if obj.get('class') in ('TPV', 'SKY', 'DEVICES'):
+                        out['gps_present'] = True
+                        if obj.get('class') == 'TPV' and obj.get('mode') is not None:
+                            out['details']['mode'] = '3D' if obj.get('mode') == 2 else ('2D' if obj.get('mode') == 1 else 'no fix')
+                        break
+                except json.JSONDecodeError:
+                    continue
+        except FileNotFoundError:
+            out['details']['gpspipe'] = 'gpspipe not found (install gpsd-clients)'
+        except subprocess.TimeoutExpired:
+            out['details']['note'] = 'gpspipe timed out (no data from gpsd in 3s)'
+        if out['gps_present']:
+            out['message'] = 'GPS is present and gpsd is running. You can use "Get coordinates from GPS".'
+        else:
+            out['message'] = 'gpsd is running but no GPS device data received. Check USB connection and device (e.g. /dev/ttyUSB0).'
+    except Exception as e:
+        out['message'] = str(e)
+    return jsonify(out)
+
 @app.route('/api/gps/coordinates', methods=['GET'])
 def api_gps_coordinates():
     """Legacy: single-shot GPS coordinates. Prefer POST /api/gps/start + GET /api/gps/status for modal flow."""

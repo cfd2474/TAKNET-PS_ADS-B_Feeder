@@ -223,6 +223,9 @@
                     </small>
                 </div>
                 <div class="form-group">
+                    <button type="button" class="btn" onclick="openGpsCheckModal()" style="margin-bottom: 6px;">
+                        🔍 Check GPS status
+                    </button>
                     <button type="button" class="btn" id="gps-btn-settings" onclick="openGpsModal()" style="margin-bottom: 8px;">
                         📍 Get coordinates from GPS
                     </button>
@@ -560,6 +563,38 @@
         </div>
 
         <div id="status"></div>
+    </div>
+
+    <!-- GPS status check modal -->
+    <div id="gpsCheckModal" class="modal">
+        <div class="modal-content" style="max-width: 440px;">
+            <h2 class="modal-header">🔍 GPS status</h2>
+            <div class="modal-body">
+                <div id="gps-check-loading" style="padding: 15px; text-align: center;">
+                    <div class="status-spinner" style="margin: 0 auto 12px;"></div>
+                    <div style="color: #6b7280;">Checking...</div>
+                </div>
+                <div id="gps-check-result" style="display: none;">
+                    <div id="gps-check-message" style="margin-bottom: 12px; color: #374151;"></div>
+                    <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 12px;">
+                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                            <span id="gps-check-gpsd-icon" style="font-size: 1.2em;"></span>
+                            <strong>gpsd:</strong>
+                            <span id="gps-check-gpsd-text"></span>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <span id="gps-check-device-icon" style="font-size: 1.2em;"></span>
+                            <strong>GPS device:</strong>
+                            <span id="gps-check-device-text"></span>
+                        </div>
+                    </div>
+                    <div id="gps-check-details" style="margin-top: 10px; font-size: 0.9em; color: #6b7280;"></div>
+                </div>
+            </div>
+            <div class="modal-buttons" style="padding: 0 20px 20px; justify-content: center;">
+                <button type="button" class="btn" onclick="closeGpsCheckModal()">Close</button>
+            </div>
+        </div>
     </div>
 
     <!-- GPS coordinates modal -->
@@ -1007,6 +1042,39 @@
         }
         
         let gpsPollInterval = null;
+
+        function openGpsCheckModal() {
+            document.getElementById('gpsCheckModal').style.display = 'block';
+            document.getElementById('gps-check-loading').style.display = 'block';
+            document.getElementById('gps-check-result').style.display = 'none';
+            fetch('/api/gps/check')
+                .then(r => r.json())
+                .then(data => {
+                    document.getElementById('gps-check-loading').style.display = 'none';
+                    document.getElementById('gps-check-result').style.display = 'block';
+                    document.getElementById('gps-check-message').textContent = data.message || '';
+                    document.getElementById('gps-check-gpsd-icon').textContent = data.gpsd_running ? '✓' : '✗';
+                    document.getElementById('gps-check-gpsd-icon').style.color = data.gpsd_running ? '#059669' : '#dc2626';
+                    document.getElementById('gps-check-gpsd-text').textContent = data.gpsd_running ? 'Running' : 'Not running';
+                    document.getElementById('gps-check-device-icon').textContent = data.gps_present ? '✓' : '✗';
+                    document.getElementById('gps-check-device-icon').style.color = data.gps_present ? '#059669' : '#dc2626';
+                    document.getElementById('gps-check-device-text').textContent = data.gps_present ? 'Present and connected' : 'Not detected';
+                    const details = data.details || {};
+                    const detailLines = Object.entries(details).map(([k, v]) => k + ': ' + v);
+                    document.getElementById('gps-check-details').textContent = detailLines.length ? detailLines.join(' • ') : '';
+                })
+                .catch(() => {
+                    document.getElementById('gps-check-loading').style.display = 'none';
+                    document.getElementById('gps-check-result').style.display = 'block';
+                    document.getElementById('gps-check-message').textContent = 'Could not check GPS status.';
+                    document.getElementById('gps-check-gpsd-text').textContent = '—';
+                    document.getElementById('gps-check-device-text').textContent = '—';
+                });
+        }
+
+        function closeGpsCheckModal() {
+            document.getElementById('gpsCheckModal').style.display = 'none';
+        }
 
         function openGpsModal() {
             document.getElementById('gpsModal').style.display = 'block';
