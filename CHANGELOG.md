@@ -1,3 +1,9 @@
+## v2.59.48 — 2026-03-16
+
+### Changed
+- Map and Statistics nav links use / and /graphs1090/?timeframe=24h so they work through aggregator tunnel (Host: feeder:8080).
+
+---
 ## v2.59.47 — 2026-03-15
 
 ### Changed

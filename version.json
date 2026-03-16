@@ -1,11 +1,11 @@
 {
-  "version": "2.59.47",
-  "release_date": "2026-03-15",
-  "release_name": "Tunnel register host for map/stats",
+  "version": "2.59.48",
+  "release_date": "2026-03-16",
+  "release_name": "Map/Stats links origin-relative",
   "download_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh",
   "changelog_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/CHANGELOG.md",
   "minimum_version": "2.40.0",
   "breaking_changes": false,
-  "release_notes": "Tunnel registration sends host:port so aggregator can set Host header and proxy map/stats (tar1090, graphs1090) correctly.",
+  "release_notes": "Map and Statistics nav links use / and /graphs1090/?timeframe=24h so they work through aggregator tunnel (Host: feeder:8080).",
   "update_priority": 3
 }
