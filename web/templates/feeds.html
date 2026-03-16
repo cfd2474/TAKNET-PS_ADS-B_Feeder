@@ -254,10 +254,9 @@
         </header>
         
         <script>
-        // Set map link dynamically
-        document.getElementById('map-link').href = 'http://' + window.location.hostname + ':8080';
-        // Set statistics link dynamically
-        document.getElementById('statistics-link').href = 'http://' + window.location.hostname + ':8080/graphs1090/?timeframe=24h';
+        // Map and Statistics use origin-relative URLs so they work behind proxies/tunnels.
+        document.getElementById('map-link').href = '/';
+        document.getElementById('statistics-link').href = '/graphs1090/?timeframe=24h';
         </script>
 
         <div class="dashboard">
