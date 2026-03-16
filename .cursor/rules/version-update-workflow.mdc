@@ -1,0 +1,14 @@
+---
+description: Version updates go through review; user commits and pushes
+alwaysApply: true
+---
+
+# Version update workflow
+
+**All version updates must go through review changes.** Do not commit or push version bumps.
+
+1. Run the version-bump script (or update version files manually) so the new version is reflected everywhere and the archive is built.
+2. Leave the changes unstaged/uncommitted so the user can **review the diff**.
+3. The **user** will commit and push when ready.
+
+Do not run `git add`, `git commit`, or `git push` for version updates.
