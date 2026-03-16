@@ -1,3 +1,21 @@
+## v2.59.47 — 2026-03-15
+
+### Changed
+- Tunnel registration sends host:port so aggregator can set Host header and proxy map/stats (tar1090, graphs1090) correctly.
+
+---
+## v2.59.46 — 2026-03-15
+
+### Changed
+- Tunnel registration sends host:port so aggregator can set Host header and proxy map/stats (tar1090, graphs1090) correctly.
+
+---
+## v2.59.45 — 2026-03-15
+
+### Changed
+- Tunnel registration includes host:port so aggregator proxy can set Host header for map/stats.
+
+---
 ## v2.59.44 — 2026-03-15
 
 ### Changed
