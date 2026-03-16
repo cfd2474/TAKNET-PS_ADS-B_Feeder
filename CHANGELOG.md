@@ -1,3 +1,9 @@
+## v2.59.50 — 2026-03-16
+
+### Changed
+- Reverted Map and Statistics links to use direct http://<host>:8080 URLs (no origin-relative paths).
+
+---
 ## v2.59.49 — 2026-03-16
 
 ### Changed

@@ -1,11 +1,11 @@
 {
-  "version": "2.59.49",
+  "version": "2.59.50",
   "release_date": "2026-03-16",
-  "release_name": "Version update workflow",
+  "release_name": "Revert Map/Stats links",
   "download_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh",
   "changelog_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/CHANGELOG.md",
   "minimum_version": "2.40.0",
   "breaking_changes": false,
-  "release_notes": "Cursor rule: version updates go through review; user commits and pushes.",
+  "release_notes": "Reverted Map and Statistics links to use direct http://<host>:8080 URLs (no origin-relative paths).",
   "update_priority": 3
 }
