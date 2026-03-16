@@ -107,8 +107,8 @@
                 <a href="/dashboard">Dashboard</a>
                 <a href="/feeds">Feed Selection</a>
                 <a href="/settings">Settings</a>
-                <a href="/" target="_blank">Map</a>
-                <a href="/graphs1090/?timeframe=24h" target="_blank">Statistics</a>
+                <a href="http://{{ request.host.split(':')[0] }}:8080" target="_blank">Map</a>
+                <a href="http://{{ request.host.split(':')[0] }}:8080/graphs1090/?timeframe=24h" target="_blank">Statistics</a>
                 <a href="/about" class="active">About</a>
             </nav>
         </header>
