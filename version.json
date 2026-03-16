@@ -1,11 +1,11 @@
 {
-  "version": "2.59.48",
+  "version": "2.59.49",
   "release_date": "2026-03-16",
-  "release_name": "Map/Stats links origin-relative",
+  "release_name": "Version update workflow",
   "download_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh",
   "changelog_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/CHANGELOG.md",
   "minimum_version": "2.40.0",
   "breaking_changes": false,
-  "release_notes": "Map and Statistics nav links use / and /graphs1090/?timeframe=24h so they work through aggregator tunnel (Host: feeder:8080).",
+  "release_notes": "Cursor rule: version updates go through review; user commits and pushes.",
   "update_priority": 3
 }

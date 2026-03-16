@@ -1,3 +1,9 @@
+## v2.59.49 — 2026-03-16
+
+### Changed
+- Cursor rule: version updates go through review; user commits and pushes.
+
+---
 ## v2.59.48 — 2026-03-16
 
 ### Changed
