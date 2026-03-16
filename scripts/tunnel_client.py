@@ -7,12 +7,17 @@ Enables remote access by web address without router port forwarding.
 
 import json
 import base64
+import shutil
 import socket
+import subprocess
 import sys
 import time
 import urllib.request
 import urllib.error
 from pathlib import Path
+
+# Port where map (tar1090) and stats (graphs1090) are served; aggregator uses Host header for proxy
+WEB_UI_PORT = 8080
 
 # Optional: websocket-client. Fail with clear message if not installed.
 try:
@@ -84,6 +89,72 @@ def get_config():
     # Sanitize for URL path: replace spaces with dashes
     feeder_id = feeder_id.replace(" ", "-").lower()
     return url, feeder_id
+
+
+def get_web_host():
+    """Return host:port for this device's web UI (map/stats on 8080). Prefer NetBird IP so
+    aggregator proxy works over VPN; else primary interface IP. No scheme, no path.
+    """
+    # Prefer NetBird IP when connected (same address used for Map/Stats on VPN)
+    try:
+        if shutil.which("netbird"):
+            r = subprocess.run(
+                ["netbird", "status", "--json"],
+                capture_output=True, text=True, timeout=5,
+            )
+            if r.returncode == 0 and r.stdout.strip():
+                info = json.loads(r.stdout)
+                nb_ip = (
+                    info.get("netbirdIp")
+                    or (info.get("localPeerState") or {}).get("ip")
+                    or info.get("ip")
+                )
+                if nb_ip:
+                    nb_ip = nb_ip.split("/")[0].strip()
+                    mgmt = info.get("managementState", info.get("management", {}))
+                    connected = (
+                        mgmt.get("connected", False)
+                        if isinstance(mgmt, dict)
+                        else (isinstance(mgmt, str) and mgmt.lower() == "connected")
+                    )
+                    if connected and nb_ip:
+                        return f"{nb_ip}:{WEB_UI_PORT}"
+            # Plain-text fallback
+            r = subprocess.run(["netbird", "status"], capture_output=True, text=True, timeout=5)
+            if r.returncode == 0 and "Management: Connected" in (r.stdout or ""):
+                for line in (r.stdout or "").splitlines():
+                    if "NetBird IP:" in line:
+                        nb_ip = line.split("NetBird IP:")[-1].strip().split("/")[0]
+                        if nb_ip:
+                            return f"{nb_ip}:{WEB_UI_PORT}"
+                        break
+            # Interface wt0 as fallback for NetBird
+            r = subprocess.run(
+                ["ip", "addr", "show", "wt0"],
+                capture_output=True, text=True, timeout=3,
+            )
+            if r.returncode == 0 and "inet " in (r.stdout or ""):
+                for line in (r.stdout or "").splitlines():
+                    line = line.strip()
+                    if line.startswith("inet "):
+                        nb_ip = line.split()[1].split("/")[0]
+                        if nb_ip:
+                            return f"{nb_ip}:{WEB_UI_PORT}"
+                        break
+    except Exception:
+        pass
+    # Primary IP (route to internet)
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.settimeout(2)
+        s.connect(("8.8.8.8", 80))
+        ip = s.getsockname()[0]
+        s.close()
+        if ip and ip != "127.0.0.1":
+            return f"{ip}:{WEB_UI_PORT}"
+    except Exception:
+        pass
+    return f"127.0.0.1:{WEB_UI_PORT}"
 
 
 def log(msg):
@@ -170,8 +241,10 @@ def run_once(ws_url, feeder_id):
         write_status(False, error=str(e))
         return True
     try:
-        ws.send(json.dumps({"type": "register", "feeder_id": feeder_id}))
-        log("Registered; connected and waiting for requests")
+        host_value = get_web_host()
+        register_msg = {"type": "register", "feeder_id": feeder_id, "host": host_value}
+        ws.send(json.dumps(register_msg))
+        log(f"Registered; connected and waiting for requests (host={host_value})")
         write_status(True, feeder_id=feeder_id)
         while True:
             raw = ws.recv()
