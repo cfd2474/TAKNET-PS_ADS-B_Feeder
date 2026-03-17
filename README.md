@@ -28,6 +28,7 @@ TAKNET-PS is an independently developed project focused on delivering free, low-
 - **🔄 Auto-Updates** - One-click updates from web interface
 - **🔗 Remote access tunnel** - Optional outbound WebSocket to the TAKNET-PS aggregator for dashboard/map via the web (no router port forwarding)
 - **📡 Universal SDR Detection** - SoapySDR-based detection supports RTL-SDR and compatible hardware
+- **🛰️ USB GPS (optional)** - Built-in support to read position from a USB GPS receiver for setup wizard and **Settings → Location** (no manual coordinate entry required when GPS is available)
 
 ---
 
@@ -53,6 +54,9 @@ TAKNET-PS is an independently developed project focused on delivering free, low-
 - Second RTL-SDR dongle
 - **OR** FTDI-based Stratux UATRadio
 - 978 MHz antenna
+
+**Optional location (USB GPS):**
+- USB GPS receiver (e.g. u-blox or common NMEA USB dongles) — used from the web UI to set latitude, longitude, and altitude during setup or in Settings
 
 ### Software
 
@@ -96,7 +100,7 @@ After installation:
 1. Navigate to `http://taknet-ps.local` or `http://[raspberry-pi-ip]`
 2. Follow the setup wizard:
    - **SDR Configuration** — Auto-detect dongles via SoapySDR and assign functions (1090 MHz, 978 MHz)
-   - **Location & Name** — Latitude, longitude, altitude, timezone, and feeder name
+   - **Location & Name** — Enter coordinates manually, or use **USB GPS** to capture position from a connected receiver
 3. After wizard completes:
    - **Feed Selection** — Enable/disable aggregators
    - **Settings → NetBird VPN** — Connect to TAKNET-PS private network (recommended)
@@ -250,8 +254,8 @@ Automatically formatted for VPN/MLAT registration:
 ## 📍 Location Configuration
 
 **Via Web Interface:**
-1. **Settings → Location**
-2. Enter latitude, longitude, altitude (meters), timezone, feeder name
+1. **Settings → Location** (same options exist in the **setup wizard** for first-time configuration)
+2. Set latitude, longitude, altitude (meters), timezone, and feeder name — **or** plug in a **USB GPS** and use the built-in GPS actions to fill coordinates from the receiver (when gpsd sees the device)
 3. Click **Apply Changes & Restart Ultrafeeder**
 
 Accurate location is critical for MLAT, coverage analysis, and data attribution.
@@ -582,6 +586,17 @@ See **[CHANGELOG.md](CHANGELOG.md)** for the full release list. Highlights of re
 | Primary VPN | NetBird |
 | Reserve VPN | Tailscale (optional) |
 | Frontend | HTML, CSS, JavaScript |
+
+---
+
+## 🔮 Future enhancements (proposed)
+
+Roadmap ideas — not committed features; timing and scope TBD.
+
+| Enhancement | Summary |
+|-------------|---------|
+| **AIS detection** | Maritime AIS (Automatic Identification System) reception and tracking alongside ADS-B, for coastal and vessel-mounted use cases |
+| **Mobile mode** | Vehicle-mounted operation: periodically update feeder location from GPS while moving so maps, MLAT, and aggregators stay aligned with the current position |
 
 ---
 
