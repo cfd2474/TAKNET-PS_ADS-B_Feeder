@@ -1,3 +1,9 @@
+## v2.59.55 — 2026-03-17
+
+### Changed
+- Connection quality no longer blocks bootstrap; /api/dashboard/bootstrap returns fast; quality via separate /api/network-quality after paint.
+
+---
 ## v2.59.54 — 2026-03-17
 
 ### Changed
