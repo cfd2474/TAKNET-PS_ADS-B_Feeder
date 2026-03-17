@@ -1,3 +1,9 @@
+## v2.59.53 — 2026-03-17
+
+### Changed
+- Fix dashboard JS syntax and ensure widgets update via /api/dashboard/bootstrap; keep tunnel and polling improvements.
+
+---
 ## v2.59.52 — 2026-03-17
 
 ### Changed
