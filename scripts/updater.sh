@@ -168,11 +168,13 @@ CLEANUP_EOF
         echo "   ⚠ Failed to restart web interface"
     fi
 
-    # Restart tunnel client (picks up new tunnel_client.py after update)
-    if systemctl restart tunnel-client 2>/dev/null; then
+    # Tunnel: enable unit and start if configured (.env)
+    if [ -x /opt/adsb/scripts/ensure-tunnel-client.sh ]; then
+        bash /opt/adsb/scripts/ensure-tunnel-client.sh 2>/dev/null && echo "   ✓ Tunnel client enabled/started (if configured)" || true
+    elif systemctl restart tunnel-client 2>/dev/null; then
         echo "   ✓ Tunnel client restarted"
     else
-        echo "   ⚠ Tunnel client not restarted (service may not be enabled)"
+        echo "   ⚠ Tunnel client not restarted (run update again or Settings → restart tunnel)"
     fi
 
     # Update NetBird if installed

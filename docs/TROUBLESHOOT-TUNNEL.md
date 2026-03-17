@@ -60,7 +60,11 @@ If this fails, the feeder cannot reach the aggregator (firewall, DNS, or wrong h
 
 ---
 
-## 5. Restart and re-check
+## 5. Auto-start after update
+
+Install/update runs `ensure-tunnel-client.sh`: if `TAKNET_PS_SERVER_HOST_FALLBACK` is set (or `TUNNEL_AGGREGATOR_URL` is non-empty), the tunnel unit is enabled and started. Empty `TUNNEL_AGGREGATOR_URL=` disables tunnel.
+
+## 6. Restart and re-check
 
 After changing `.env` or fixing network:
 
@@ -70,6 +74,8 @@ sleep 5
 sudo journalctl -u tunnel-client -n 30 --no-pager
 cat /opt/adsb/var/tunnel-status.json
 ```
+
+**Settings:** Dashboard → Settings → **Restart tunnel service** (or batch restart with “Remote access tunnel”).
 
 ---
 

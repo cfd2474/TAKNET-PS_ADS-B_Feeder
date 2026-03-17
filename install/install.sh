@@ -1,8 +1,8 @@
 #!/bin/bash
-# TAKNET-PS-ADSB-Feeder One-Line Installer v2.59.57
+# TAKNET-PS-ADSB-Feeder One-Line Installer v2.59.58
 # curl -fsSL https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh | sudo bash
 
-INSTALLER_VERSION="2.59.57"
+INSTALLER_VERSION="2.59.58"
 
 set -e
 
@@ -462,6 +462,9 @@ chmod +x /opt/adsb/scripts/run-scheduled-update.sh
 echo "  - tunnel_client.py..."
 wget -q $REPO/scripts/tunnel_client.py -O /opt/adsb/scripts/tunnel_client.py
 chmod +x /opt/adsb/scripts/tunnel_client.py
+echo "  - ensure-tunnel-client.sh..."
+wget -q $REPO/scripts/ensure-tunnel-client.sh -O /opt/adsb/scripts/ensure-tunnel-client.sh
+chmod +x /opt/adsb/scripts/ensure-tunnel-client.sh
 python3 -m pip install -q websocket-client 2>/dev/null || pip3 install -q websocket-client 2>/dev/null || echo "    ⚠ Install websocket-client if tunnel fails: sudo pip3 install websocket-client"
 
 echo "  - emergency-ssh-fix.sh..."
@@ -1252,6 +1255,8 @@ systemctl disable wpa_supplicant 2>/dev/null || true
 
 systemctl daemon-reload
 systemctl enable network-monitor captive-portal tunnel-client
+# Start tunnel when .env has aggregator URL (fixes feeders updated from pre-tunnel versions)
+bash /opt/adsb/scripts/ensure-tunnel-client.sh 2>/dev/null || true
 
 echo "✓ WiFi hotspot manager installed"
 
@@ -1351,6 +1356,7 @@ if [ "$UPDATE_MODE" = true ]; then
     echo "   • Services will restart automatically"
     echo "   • Return to dashboard: http://taknet-ps.local"
     echo ""
+    bash /opt/adsb/scripts/ensure-tunnel-client.sh 2>/dev/null || true
     
     # Remove update lock file
     rm -f /tmp/taknet_update.lock

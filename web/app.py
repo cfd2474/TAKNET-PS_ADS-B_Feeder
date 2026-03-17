@@ -3531,7 +3531,7 @@ def api_service_state(service_name):
 def api_restart_individual_service(service_name):
     """Restart an individual service (ultrafeeder, fr24, piaware, netbird, or tailscale)"""
     try:
-        valid_services = ['ultrafeeder', 'fr24', 'piaware', 'netbird', 'tailscale']
+        valid_services = ['ultrafeeder', 'fr24', 'piaware', 'netbird', 'tailscale', 'tunnel-client']
         if service_name not in valid_services:
             return jsonify({
                 'success': False,
@@ -3585,7 +3585,7 @@ def api_restart_individual_service(service_name):
 def api_service_status(service_name):
     """Check if a service is running"""
     try:
-        valid_services = ['ultrafeeder', 'fr24', 'piaware', 'tailscale']
+        valid_services = ['ultrafeeder', 'fr24', 'piaware', 'tailscale', 'tunnel-client']
         if service_name not in valid_services:
             return jsonify({
                 'success': False,

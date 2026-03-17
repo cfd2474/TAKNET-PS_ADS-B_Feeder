@@ -556,6 +556,19 @@
                 </p>
             </div>
 
+            <!-- Remote access tunnel -->
+            <div class="section">
+                <h2>🔗 Remote access tunnel</h2>
+                <p style="color: #6b7280; font-size: 0.95em; margin-bottom: 12px;">
+                    Connects this feeder to the TAKNET-PS aggregator for remote dashboard/map access.
+                    After an update, use this if the dashboard shows tunnel stopped.
+                </p>
+                <button type="button" class="btn btn-primary" id="restart-tunnel-btn" onclick="restartTunnelService()">
+                    🔄 Restart tunnel service
+                </button>
+                <span id="restart-tunnel-msg" style="margin-left: 12px; font-size: 0.9em; color: #6b7280;"></span>
+            </div>
+
             <div class="actions">
                 <button class="btn btn-primary" onclick="showRestartServicesModal()">🔄 Restart Services</button>
                 <button class="btn" onclick="rebootDevice()" style="margin-left: 8px;">🔌 Reboot Device</button>
@@ -2252,12 +2265,21 @@
                     </div>
                 </label>
                 
-                <label style="display: flex; align-items: center; padding: 12px; border: 1px solid #e5e7eb; border-radius: 8px; cursor: pointer;">
+                <label style="display: flex; align-items: center; padding: 12px; border: 1px solid #e5e7eb; border-radius: 8px; margin-bottom: 8px; cursor: pointer;">
                     <input type="checkbox" class="service-checkbox" value="tailscale" 
                            style="width: 20px; height: 20px; margin-right: 12px; cursor: pointer;">
                     <div style="flex: 1;">
                         <div style="font-weight: 600;">Tailscale</div>
                         <div style="font-size: 0.85em; color: #6b7280;">VPN connection service</div>
+                    </div>
+                </label>
+                
+                <label style="display: flex; align-items: center; padding: 12px; border: 1px solid #e5e7eb; border-radius: 8px; cursor: pointer;">
+                    <input type="checkbox" class="service-checkbox" value="tunnel-client" 
+                           style="width: 20px; height: 20px; margin-right: 12px; cursor: pointer;">
+                    <div style="flex: 1;">
+                        <div style="font-weight: 600;">Remote access tunnel</div>
+                        <div style="font-size: 0.85em; color: #6b7280;">Aggregator WebSocket tunnel (tunnel-client)</div>
                     </div>
                 </label>
             </div>
@@ -2972,6 +2994,25 @@
             }
         }
 
+        async function restartTunnelService() {
+            const btn = document.getElementById('restart-tunnel-btn');
+            const msg = document.getElementById('restart-tunnel-msg');
+            if (btn) btn.disabled = true;
+            if (msg) msg.textContent = 'Restarting…';
+            try {
+                const response = await fetch('/api/service/tunnel-client/restart', { method: 'POST' });
+                const data = await response.json().catch(() => ({}));
+                if (response.ok && data.success) {
+                    if (msg) msg.textContent = '✓ Tunnel service restarted. Check dashboard in a few seconds.';
+                } else {
+                    if (msg) msg.textContent = '✗ ' + (data.message || 'Restart failed. SSH: sudo systemctl restart tunnel-client');
+                }
+            } catch (e) {
+                if (msg) msg.textContent = '✗ ' + e.message;
+            }
+            if (btn) btn.disabled = false;
+        }
+
         // ========== Restart Services Functions ==========
         
         function showRestartServicesModal() {
@@ -3029,7 +3070,8 @@
                     'fr24': 'FlightRadar24',
                     'piaware': 'PiAware',
                     'netbird': 'NetBird',
-                    'tailscale': 'Tailscale'
+                    'tailscale': 'Tailscale',
+                    'tunnel-client': 'Remote access tunnel'
                 };
                 return `
                     <div id="restart-status-${service}" style="display: flex; align-items: center; padding: 12px; border: 1px solid #e5e7eb; border-radius: 8px; margin-bottom: 8px;">
