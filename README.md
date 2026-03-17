@@ -26,6 +26,7 @@ TAKNET-PS is an independently developed project focused on delivering free, low-
 - **🔒 Dual VPN** - NetBird (primary aggregator connection) + Tailscale (optional personal remote access)
 - **📶 WiFi Hotspot** - Captive portal for easy initial configuration
 - **🔄 Auto-Updates** - One-click updates from web interface
+- **🔗 Remote access tunnel** - Optional outbound WebSocket to the TAKNET-PS aggregator for dashboard/map via the web (no router port forwarding)
 - **📡 Universal SDR Detection** - SoapySDR-based detection supports RTL-SDR and compatible hardware
 
 ---
@@ -85,8 +86,8 @@ The installer handles:
 - Web interface and Nginx reverse proxy
 - Service registration (systemd)
 - WiFi hotspot manager
+- Remote access tunnel client (`tunnel-client` systemd service when aggregator URL is configured)
 - Aircraft data retention (24-hour limit)
-- SSH access configuration for remote user
 
 ### First-Time Setup
 
@@ -133,8 +134,7 @@ After installation:
 - VPN management (NetBird + Tailscale)
 
 **NetBird** — Primary VPN (systemd service)
-- Encrypted peer-to-peer tunnel to TAKNET-PS aggregator
-- SSH access for remote user restricted to VPN addresses
+- Encrypted connection to the TAKNET-PS aggregator (Beast/MLAT over VPN when connected)
 
 ---
 
@@ -155,7 +155,8 @@ Access at `http://taknet-ps.local` or `http://[feeder-ip]`
 
 **Network section:**
 - Hostname, machine name, connection type (Ethernet/WiFi), internet status
-- **Connection Quality** — Good / Moderate / Poor with avg latency and packet loss (measured on page load)
+- **Connection quality** — On-demand only: click **Measure connection quality** to run a short ping test in a modal (not a background metric)
+- **Remote access tunnel** — Running / Stopped / Disabled and feeder ID (when tunnel is configured in `.env`)
 
 **Location section:**
 - Latitude, longitude, altitude, timezone
@@ -202,8 +203,8 @@ Access at `http://taknet-ps.local` or `http://[feeder-ip]`
 
 | VPN | Role | Purpose |
 |-----|------|---------|
-| **NetBird** | Primary | Encrypted aggregator connection + SSH access |
-| **Tailscale** | Optional | Personal remote management |
+| **NetBird** | Primary | Encrypted link to TAKNET-PS aggregator (VPN host when connected) |
+| **Tailscale** | Optional | Personal remote access to your devices (optional) |
 
 ### Aggregator Routing
 
@@ -243,24 +244,6 @@ Michael Leckliter — [mike@tak-solutions.com](mailto:mike@tak-solutions.com)
 
 Automatically formatted for VPN/MLAT registration:
 - `"Corona Feeder #1"` → `"92882-corona-feeder-1"`
-
----
-
-## 🔐 Remote SSH Access
-
-| Setting | Value |
-|---|---|
-| Username | `remote` |
-| Password | `adsb` |
-| Network requirement | NetBird or Tailscale (100.x.x.x) |
-| Permissions | Limited sudo for ADSB services |
-
-```bash
-# Connect via NetBird or Tailscale, then:
-ssh remote@<vpn-ip>
-```
-
-SSH is blocked from the public internet. Only connections originating from `100.x.x.x` are accepted. This is configured automatically during install and verified on every update.
 
 ---
 
@@ -360,6 +343,12 @@ journalctl -u netbird --no-pager | tail -50
 - Check firewall not blocking UDP 41641
 - Verify system time is accurate
 
+### Remote access tunnel (aggregator)
+
+- **Settings → Restart tunnel service** or include **Remote access tunnel** in **Restart Services**
+- Feeder-side guide: `docs/TROUBLESHOOT-TUNNEL.md`
+- After updates, install runs `ensure-tunnel-client.sh` when `TAKNET_PS_SERVER_HOST_FALLBACK` (or non-empty `TUNNEL_AGGREGATOR_URL`) is set
+
 ### Update Failures
 
 ```bash
@@ -394,6 +383,10 @@ TAKNET_PS_SERVER_HOST_FALLBACK=adsb.tak-solutions.com
 TAKNET_PS_SERVER_PORT=30004
 TAKNET_PS_MLAT_PORT=30105
 
+# Remote access tunnel (optional). Empty TUNNEL_AGGREGATOR_URL= disables tunnel.
+# TUNNEL_AGGREGATOR_URL=wss://your-aggregator.example/tunnel
+# TUNNEL_FEEDER_ID=my-feeder-id   # optional; defaults from MLAT_SITE_NAME or hostname
+
 # SDR
 SDR_1090_SERIAL=10901090
 SDR_1090_GAIN=autogain
@@ -412,7 +405,7 @@ After manual edits: `cd /opt/adsb/config && sudo docker compose up -d`
 
 ### Service Restarts
 
-**Settings → Restart Services** — Available: Ultrafeeder, FlightRadar24, PiAware, NetBird, Tailscale
+**Settings → Restart Services** — Ultrafeeder, FlightRadar24, PiAware, NetBird, Tailscale, remote access tunnel (`tunnel-client`). There is also a dedicated **Restart tunnel service** control under **Remote access tunnel** when you use aggregator remote access.
 
 ### WiFi Hotspot
 
@@ -430,6 +423,8 @@ SSID: `TAKNET-PS-Setup` | Portal: `http://192.168.50.1`
 ├── scripts/
 │   ├── config_builder.py
 │   ├── updater.sh
+│   ├── tunnel_client.py
+│   ├── ensure-tunnel-client.sh
 │   └── cleanup-aircraft-data.sh
 ├── web/
 │   ├── app.py
@@ -472,10 +467,10 @@ Feeders send their software version to the aggregator via the **MLAT client name
 
 ## 🔐 Security
 
-- Web interface runs on local network, no authentication by default
-- SSH access for `remote` user restricted to VPN (100.x.x.x) — blocked from public internet
-- Keep feeder updated for latest security patches
-- Use strong WiFi password if hotspot is active
+- Web interface runs on your local network; protect network access appropriately
+- Keep the feeder updated for latest security patches
+- Use a strong WiFi password if the setup hotspot is active
+- VPNs (NetBird / Tailscale) are optional layers for how you reach the device
 
 ---
 
@@ -500,9 +495,15 @@ Michael Leckliter — [mike@tak-solutions.com](mailto:mike@tak-solutions.com)
 
 ## 📝 Version History
 
-**Current Version:** 2.59.58
-**Release Date:** March 15, 2026
-**Minimum Supported Version:** 2.40.0
+**Current Version:** 2.59.58  
+**Release Date:** 2026-03-17  
+**Minimum Supported Version:** 2.40.0  
+
+See **[CHANGELOG.md](CHANGELOG.md)** for the full release list. Highlights of recent behavior:
+
+- **Dashboard** — Loads status via a single aggregate API (`/api/dashboard/bootstrap`); connection quality is on-demand (button + modal), not a live poll.
+- **Remote tunnel** — Routes dashboard vs map stack via `X-Tunnel-Target` on the aggregator; feeder registers with `host` for proxying.
+- **Tunnel service** — `ensure-tunnel-client.sh` enables/starts the client when aggregator URL is configured; **Settings** can restart the tunnel.
 
 ### v2.59.44 — Tunnel log visibility
 - **Tunnel client** — Flushes stderr after each log; service sets `PYTHONUNBUFFERED=1` so journalctl shows output immediately.
@@ -540,19 +541,17 @@ Michael Leckliter — [mike@tak-solutions.com](mailto:mike@tak-solutions.com)
 - **Contact email** — Setup key contact updated to mike@tak-solutions.com in Settings and README
 
 ### v2.59.30 — Tailscale universal tailnet; version SOP & tar.gz
-- **Tailscale any tailnet** — Status shows Connected for any tailnet; SSH from any device on that tailnet (no longer tied to tail4d77be.ts.net)
+- **Tailscale any tailnet** — Status shows Connected for any tailnet; use your tailnet for optional remote access to the feeder (no longer tied to a single shared tailnet)
 - **Version bump script** — `scripts/version-bump.sh` updates all version locations per SOP and builds a complete tar.gz every release
 
 ### v2.59.x — NetBird Integration & Dashboard Enhancements
 
 - **NetBird as Primary VPN** — Aggregator routes via NetBird (`vpn.tak-solutions.com`) or falls back to public endpoint. Tailscale removed from aggregator routing entirely.
 - **NetBird Self-Service** — Users register at `netbird.tak-solutions.com` without contacting admin
-- **NetBird SSH Flags** — `--allow-server-ssh --enable-ssh-root` applied on install, verified on every update
-- **SSH VPN-Only Access** — `remote` user (password: adsb) restricted to NetBird/Tailscale (`100.x.x.x`), blocked from public internet
 - **Beast_out Feed** — TAKNET-PS feed changed from `beast_reduce_plus_out` to `beast_out` (full position data)
 - **SoapySDR Detection** — SDR detection migrated from `rtl_test` to `SoapySDRUtil --find`
 - **SDR Status on Dashboard** — System Status card shows detected SDR devices (Type, Serial, Use For, Gain, Bias Tee)
-- **Connection Quality Indicator** — Dashboard shows Good/Moderate/Poor with latency and packet loss
+- **Connection quality** — On-demand ping test from the dashboard (modal)
 - **Feed Checkmark Colors** — Green (good), Amber (MLAT down), Red (feed down), Gray (unknown)
 - **24-Hour Data Retention** — Hourly cron purges aircraft data, heatmap disabled
 - **NetBird in Restart Services** — NetBird added to service restart modal
