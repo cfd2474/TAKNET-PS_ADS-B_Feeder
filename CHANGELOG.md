@@ -1,3 +1,9 @@
+## v2.59.52 — 2026-03-17
+
+### Changed
+- Dashboard loads via single /api/dashboard/bootstrap; parallel backend checks; consolidated polling. Updater restarts tunnel-client.
+
+---
 ## v2.59.51 — 2026-03-17
 
 ### Changed

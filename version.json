@@ -1,11 +1,11 @@
 {
-  "version": "2.59.51",
+  "version": "2.59.52",
   "release_date": "2026-03-17",
-  "release_name": "Tunnel route by X-Tunnel-Target",
+  "release_name": "Dashboard bootstrap and tunnel restart",
   "download_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh",
   "changelog_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/CHANGELOG.md",
   "minimum_version": "2.40.0",
   "breaking_changes": false,
-  "release_notes": "Feeder tunnel client routes requests by X-Tunnel-Target (dashboard vs tar1090) with path fallback; tar1090 to :8080, dashboard to app backend.",
+  "release_notes": "Dashboard loads via single /api/dashboard/bootstrap; parallel backend checks; consolidated polling. Updater restarts tunnel-client.",
   "update_priority": 3
 }
