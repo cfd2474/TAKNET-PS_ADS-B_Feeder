@@ -11,6 +11,7 @@ import re
 import shutil
 from pathlib import Path
 import json
+import concurrent.futures
 import threading
 import time
 import uuid
@@ -3405,6 +3406,126 @@ def api_status():
         'configured': env.get('FEEDER_LAT', '0.0') != '0.0',
         'service_states': service_states
     })
+
+
+@app.route('/api/dashboard/bootstrap', methods=['GET'])
+def api_dashboard_bootstrap():
+    """Aggregate dashboard data into a single response for fast initial load and polling."""
+    include_network_quality = request.args.get('include_network_quality') in ('1', 'true', 'yes')
+
+    def build_status():
+        docker_status = get_docker_status()
+        env = read_env()
+        config_str = env.get('ULTRAFEEDER_CONFIG', '')
+        feeds = []
+        if config_str:
+            for part in config_str.split(';'):
+                if part.startswith('adsb,'):
+                    parts = part.split(',')
+                    if len(parts) >= 2:
+                        feeds.append(parts[1])
+        service_states = {
+            'ultrafeeder': get_service_state('ultrafeeder'),
+            'fr24': get_service_state('fr24') if env.get('FR24_ENABLED') == 'true' else None,
+            'piaware': get_service_state('piaware') if env.get('PIAWARE_ENABLED') == 'true' else None,
+            'adsbx': get_service_state('adsbx') if env.get('ADSBX_ENABLED') == 'true' else None,
+            'adsblol': get_service_state('adsblol') if env.get('ADSBLOL_ENABLED') == 'true' else None,
+        }
+        return {
+            'docker': docker_status,
+            'feeds': feeds,
+            'configured': env.get('FEEDER_LAT', '0.0') != '0.0',
+            'service_states': service_states,
+        }
+
+    def build_network_status():
+        import socket
+
+        def check_internet():
+            try:
+                socket.create_connection(("8.8.8.8", 53), timeout=3)
+                return True
+            except Exception:
+                return False
+
+        def get_primary_ip():
+            s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            try:
+                s.connect(('8.8.8.8', 80))
+                ip = s.getsockname()[0]
+            except Exception:
+                ip = '127.0.0.1'
+            finally:
+                s.close()
+            return ip
+
+        return {
+            'internet': check_internet(),
+            'ip_address': get_primary_ip(),
+            'hostname': socket.gethostname(),
+        }
+
+    def build_power_status():
+        try:
+            return get_power_status()
+        except Exception as e:
+            return {
+                'current_issue': False,
+                'past_issue': False,
+                'message': '',
+                'error': str(e),
+            }
+
+    def build_sdr_status():
+        # Reuse the existing API implementation but return JSON instead of a Flask Response
+        from flask import Response
+        resp = api_sdr_status()
+        if isinstance(resp, Response):
+            return resp.get_json()
+        return resp
+
+    def build_taknet_stats():
+        from flask import Response
+        try:
+            resp = api_taknet_ps_stats()
+            if isinstance(resp, Response):
+                return resp.get_json()
+            return resp
+        except Exception:
+            return {'success': False}
+
+    def build_network_quality():
+        if not include_network_quality:
+            return None
+        from flask import Response
+        try:
+            resp = api_network_quality()
+            if isinstance(resp, Response):
+                return resp.get_json()
+            return resp
+        except Exception:
+            return {'success': False}
+
+    results = {}
+    # Run independent checks concurrently for faster responses
+    with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
+        futures = {
+            'status': executor.submit(build_status),
+            'network_status': executor.submit(build_network_status),
+            'power_status': executor.submit(build_power_status),
+            'sdr_status': executor.submit(build_sdr_status),
+            'taknet_stats': executor.submit(build_taknet_stats),
+        }
+        if include_network_quality:
+            futures['network_quality'] = executor.submit(build_network_quality)
+
+        for key, fut in futures.items():
+            try:
+                results[key] = fut.result()
+            except Exception as e:
+                results[key] = {'error': str(e)}
+
+    return jsonify(results)
 
 @app.route('/api/service/<service_name>/state', methods=['GET'])
 def api_service_state(service_name):
