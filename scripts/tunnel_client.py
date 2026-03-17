@@ -30,6 +30,9 @@ ENV_FILE = Path("/opt/adsb/config/.env")
 STATUS_FILE = Path("/opt/adsb/var/tunnel-status.json")
 LOCAL_HOST = "127.0.0.1"
 LOCAL_PORT = 80
+# Local tar1090/graphs1090 stack (map/stats) served on 8080
+TAR1090_HOST = "127.0.0.1"
+TAR1090_PORT = WEB_UI_PORT
 # Hop-by-hop headers we should not forward to localhost
 SKIP_HEADERS = frozenset(
     k.lower()
@@ -39,6 +42,7 @@ SKIP_HEADERS = frozenset(
         "proxy-authenticate",
         "proxy-authorization",
         "te",
+        "trailer",
         "trailers",
         "transfer-encoding",
         "upgrade",
@@ -191,18 +195,54 @@ def write_status(connected, feeder_id=None, error=None):
         log(f"Could not write status file: {e}")
 
 
-def forward_request(method, path, headers, body_b64):
-    """Forward request to local web app; return (status, headers_dict, body_base64)."""
-    body = base64.b64decode(body_b64) if body_b64 else b""
-    url = f"http://{LOCAL_HOST}:{LOCAL_PORT}{path}"
-    req_headers = {}
+def infer_target(path, headers):
+    """Infer which local backend should receive a tunneled request."""
+    hdrs = headers or {}
+    target = (hdrs.get("X-Tunnel-Target") or hdrs.get("x-tunnel-target") or "").strip().lower()
+    if target in ("tar1090", "dashboard"):
+        return target
+    p = (path or "/").split("?", 1)[0] or "/"
+    if (
+        p == "/"
+        or p.startswith("/graphs1090")
+        or p.startswith("/data/")
+        or p.startswith("/db2/")
+        or p.startswith("/tracks/")
+        or p.startswith("/tar1090/")
+    ):
+        return "tar1090"
+    return "dashboard"
+
+
+def _strip_outbound_headers(headers):
+    out = {}
     for k, v in (headers or {}).items():
-        if k.lower() in SKIP_HEADERS:
+        kl = k.lower()
+        if kl in SKIP_HEADERS:
             continue
-        req_headers[k] = v
-    # Avoid urllib default headers that might override
+        # Never forward a potentially stale content-length; urllib will compute as needed.
+        if kl == "content-length":
+            continue
+        out[k] = v
+    return out
+
+
+def forward_request(method, path, headers, body_b64):
+    """Forward request to local backend; return (status, headers_dict, body_base64, target, upstream_base)."""
+    body = base64.b64decode(body_b64) if body_b64 else b""
+    target = infer_target(path, headers)
+    if target == "tar1090":
+        upstream_host, upstream_port = TAR1090_HOST, TAR1090_PORT
+    else:
+        upstream_host, upstream_port = LOCAL_HOST, LOCAL_PORT
+    upstream_base = f"http://{upstream_host}:{upstream_port}"
+    url = f"{upstream_base}{path}"
+
+    req_headers = _strip_outbound_headers(headers)
+    # Preserve Host from aggregator if present; otherwise set a sane default.
     if "Host" not in req_headers:
-        req_headers["Host"] = f"{LOCAL_HOST}:{LOCAL_PORT}"
+        req_headers["Host"] = f"{upstream_host}:{upstream_port}"
+
     req = urllib.request.Request(url, data=body if method in ("POST", "PUT", "PATCH") else None, method=method, headers=req_headers)
     try:
         with urllib.request.urlopen(req, timeout=30) as resp:
@@ -223,11 +263,12 @@ def forward_request(method, path, headers, body_b64):
     # Drop hop-by-hop and normalize
     out_headers = {}
     for k, v in resp_headers.items():
-        if k.lower() in SKIP_HEADERS:
+        kl = k.lower()
+        if kl in SKIP_HEADERS or kl == "content-length":
             continue
         out_headers[k] = v
     body_b64_out = base64.b64encode(resp_body).decode("ascii") if resp_body else ""
-    return status, out_headers, body_b64_out
+    return status, out_headers, body_b64_out, target, upstream_base
 
 
 def run_once(ws_url, feeder_id):
@@ -264,7 +305,8 @@ def run_once(ws_url, feeder_id):
                 path = msg.get("path", "/")
                 headers = msg.get("headers") or {}
                 body_b64 = msg.get("body") or ""
-                status, resp_headers, resp_b64 = forward_request(method, path, headers, body_b64)
+                status, resp_headers, resp_b64, target, upstream_base = forward_request(method, path, headers, body_b64)
+                log(f"[tunnel-proxy] id={req_id} path={path} target={target} upstream={upstream_base} status={status}")
                 ws.send(
                     json.dumps(
                         {
