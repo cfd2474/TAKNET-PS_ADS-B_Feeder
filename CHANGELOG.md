@@ -1,3 +1,9 @@
+## v2.59.56 — 2026-03-17
+
+### Changed
+- Dashboard: connection quality removed as live metric; use Measure button and modal with on-demand ping.
+
+---
 ## v2.59.55 — 2026-03-17
 
 ### Changed

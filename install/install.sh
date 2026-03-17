@@ -1,8 +1,8 @@
 #!/bin/bash
-# TAKNET-PS-ADSB-Feeder One-Line Installer v2.59.55
+# TAKNET-PS-ADSB-Feeder One-Line Installer v2.59.56
 # curl -fsSL https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh | sudo bash
 
-INSTALLER_VERSION="2.59.55"
+INSTALLER_VERSION="2.59.56"
 
 set -e
 

@@ -1,11 +1,11 @@
 {
-  "version": "2.59.55",
+  "version": "2.59.56",
   "release_date": "2026-03-17",
-  "release_name": "Dashboard quality async",
+  "release_name": "Connection quality on demand",
   "download_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh",
   "changelog_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/CHANGELOG.md",
   "minimum_version": "2.40.0",
   "breaking_changes": false,
-  "release_notes": "Connection quality no longer blocks bootstrap; /api/dashboard/bootstrap returns fast; quality via separate /api/network-quality after paint.",
+  "release_notes": "Dashboard: connection quality removed as live metric; use Measure button and modal with on-demand ping.",
   "update_priority": 3
 }
