@@ -1,0 +1,20 @@
+---
+description: Bump version whenever feeder-shipped code changes; never commit version bumps.
+alwaysApply: true
+---
+
+# Version bump with code changes
+
+Whenever you change **code that ships on the feeder** (e.g. `web/`, `install/`, `scripts/` that are deployed, systemd units, tunnel client), **include a version update in the same work session** before finishing.
+
+1. Run the version-bump script from repo root (set priority if the user asked for priority 1/2/3):
+
+   ```bash
+   ./scripts/version-bump.sh NEW_VERSION "Release name" "Release notes." [PRIORITY]
+   ```
+
+2. **Do not** `git commit` or `git push` the version bump (see **version-update-workflow** rule). Leave changes unstaged for user review.
+
+**Exempt (no version bump unless the user asks):** typo-only docs, `.cursor/` rules, pure README wording with no installer/web impact.
+
+If the user says **priority X update**, follow **priority-update-version-bump** (version + `update_priority` in `version.json`).
