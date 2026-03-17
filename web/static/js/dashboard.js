@@ -1,7 +1,6 @@
 // Dashboard bootstrap + polling optimized for fewer, parallel requests.
 const DASHBOARD_DEBUG = false;
 let dashboardPollInterval = null;
-let networkQualityInterval = null;
 let lastUpdateTime = new Date();
 let pollInFlight = false;
 
@@ -291,12 +290,12 @@ function applyPowerStatus(powerStatus) {
     }
 }
 
-function applyNetworkQuality(networkQuality) {
-    const badge = document.getElementById('network-quality-badge');
-    const detail = document.getElementById('network-quality-detail');
-    if (!badge || !networkQuality) return;
-    if (!networkQuality.success) {
-        badge.textContent = '❓ Unknown';
+function renderConnectionQualityInModal(networkQuality) {
+    const body = document.getElementById('connection-quality-modal-body');
+    if (!body) return;
+    if (!networkQuality || !networkQuality.success) {
+        body.innerHTML =
+            '<p style="margin:0;color:#6b7280;">Could not measure connection quality. Try again.</p>';
         return;
     }
     const styles = {
@@ -306,14 +305,80 @@ function applyNetworkQuality(networkQuality) {
         unknown: { bg: '#f3f4f6', color: '#6b7280', icon: '❓', label: 'Unknown' },
     };
     const s = styles[networkQuality.quality] || styles.unknown;
-    badge.style.background = s.bg;
-    badge.style.color = s.color;
-    badge.textContent = `${s.icon} ${s.label}`;
-    if (networkQuality.avg_rtt_ms !== null && networkQuality.avg_rtt_ms !== undefined) {
-        detail.textContent = `${networkQuality.avg_rtt_ms}ms avg · ${networkQuality.packet_loss}% loss`;
-    } else {
-        detail.textContent = '';
+    const rtt =
+        networkQuality.avg_rtt_ms !== null && networkQuality.avg_rtt_ms !== undefined
+            ? `${networkQuality.avg_rtt_ms} ms average RTT`
+            : 'RTT not available';
+    const loss = `${networkQuality.packet_loss ?? '—'}% packet loss`;
+    body.innerHTML = `
+        <div style="display:inline-flex;align-items:center;gap:8px;padding:10px 16px;border-radius:10px;font-weight:600;background:${s.bg};color:${s.color};margin-bottom:16px;">
+            ${s.icon} ${s.label}
+        </div>
+        <p style="margin:0 0 8px 0;"><strong>Latency:</strong> ${rtt}</p>
+        <p style="margin:0 0 16px 0;"><strong>Packet loss:</strong> ${loss}</p>
+        <p style="margin:0;font-size:0.85em;color:#9ca3af;">Based on ping to 8.8.8.8 (may take ~20 seconds).</p>
+    `;
+}
+
+function closeConnectionQualityModal() {
+    const modal = document.getElementById('connection-quality-modal');
+    if (modal) {
+        modal.style.display = 'none';
+        modal.setAttribute('aria-hidden', 'true');
     }
+}
+
+function openConnectionQualityModal() {
+    const modal = document.getElementById('connection-quality-modal');
+    const body = document.getElementById('connection-quality-modal-body');
+    const btn = document.getElementById('btn-connection-quality');
+    if (!modal || !body) return;
+    modal.style.display = 'flex';
+    modal.setAttribute('aria-hidden', 'false');
+    body.innerHTML =
+        '<p style="margin:0;color:#6b7280;">Running ping test… This usually takes about 20 seconds.</p>';
+    if (btn) {
+        btn.disabled = true;
+        btn.textContent = '⏳ Testing…';
+    }
+    fetchWithTimeout('/api/network-quality', {}, 30000)
+        .then((resp) => {
+            if (!resp.ok) throw new Error(String(resp.status));
+            return resp.json();
+        })
+        .then((data) => renderConnectionQualityInModal(data))
+        .catch(() => {
+            body.innerHTML =
+                '<p style="margin:0;color:#dc2626;">Request failed or timed out. Check network and try again.</p>';
+        })
+        .finally(() => {
+            if (btn) {
+                btn.disabled = false;
+                btn.textContent = '📶 Measure connection quality';
+            }
+        });
+}
+
+function wireConnectionQualityModal() {
+    const btn = document.getElementById('btn-connection-quality');
+    const modal = document.getElementById('connection-quality-modal');
+    const closeBtn = document.getElementById('connection-quality-modal-close');
+    const panel = document.getElementById('connection-quality-modal-panel');
+    if (btn) btn.addEventListener('click', () => openConnectionQualityModal());
+    if (closeBtn) closeBtn.addEventListener('click', closeConnectionQualityModal);
+    if (modal) {
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) closeConnectionQualityModal();
+        });
+    }
+    if (panel) {
+        panel.addEventListener('click', (e) => e.stopPropagation());
+    }
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && modal && modal.style.display === 'flex') {
+            closeConnectionQualityModal();
+        }
+    });
 }
 
 function applySdrStatus(sdrStatus) {
@@ -352,9 +417,6 @@ function applyBootstrap(data) {
     applyServiceStates(data.status ? data.status.service_states : null);
     applyTaknetStats(data.taknet_stats);
     applyPowerStatus(data.power_status);
-    if (data.network_quality) {
-        applyNetworkQuality(data.network_quality);
-    }
     applySdrStatus(data.sdr_status);
     lastUpdateTime = new Date();
 }
@@ -370,25 +432,9 @@ async function pollDashboard() {
     pollInFlight = false;
 }
 
-async function refreshNetworkQualityPeriodically() {
-    try {
-        const resp = await fetchWithTimeout('/api/network-quality', {}, 25000);
-        if (!resp.ok) {
-            throw new Error(`network-quality ${resp.status}`);
-        }
-        const data = await resp.json();
-        applyNetworkQuality(data);
-    } catch (e) {
-        debugLog('network-quality refresh failed', e);
-    }
-}
-
 function initPolling() {
     if (!dashboardPollInterval) {
         dashboardPollInterval = setInterval(pollDashboard, 15000);
-    }
-    if (!networkQualityInterval) {
-        networkQualityInterval = setInterval(refreshNetworkQualityPeriodically, 60000);
     }
     setInterval(updateLastUpdateTime, 1000);
 }
@@ -400,12 +446,7 @@ async function initDashboard() {
     const t1 = performance.now();
     debugLog(`initial render completed in ${(t1 - t0).toFixed(0)}ms`);
     initPolling();
-    // Connection quality is slow (ping); load after main UI without blocking
-    requestAnimationFrame(() => {
-        setTimeout(() => {
-            void refreshNetworkQualityPeriodically();
-        }, 100);
-    });
+    wireConnectionQualityModal();
 }
 
 window.initDashboard = initDashboard;

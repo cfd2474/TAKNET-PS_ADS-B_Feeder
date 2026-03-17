@@ -137,10 +137,10 @@
                         <tr>
                             <td style="padding: 6px 12px; color: #6b7280;">Connection Quality</td>
                             <td colspan="3" style="padding: 6px 12px;">
-                                <span id="network-quality-badge" style="display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 12px; font-size: 0.85em; font-weight: 600; background: #f3f4f6; color: #6b7280;">
-                                    ⏳ Measuring...
-                                </span>
-                                <span id="network-quality-detail" style="font-size: 0.8em; color: #9ca3af; margin-left: 8px;"></span>
+                                <button type="button" id="btn-connection-quality" class="btn btn-sm" style="background: #6366f1;">
+                                    📶 Measure connection quality
+                                </button>
+                                <span style="font-size: 0.8em; color: #9ca3af; margin-left: 10px;">Runs a short ping test when you click</span>
                             </td>
                         </tr>
 
@@ -429,6 +429,18 @@
 
     <div class="last-updated" id="lastUpdated">
         Last updated: <span id="updateTime">Just now</span>
+    </div>
+
+    <!-- Connection quality modal (on-demand ping) -->
+    <div id="connection-quality-modal" style="display: none; position: fixed; inset: 0; z-index: 2000; background: rgba(0,0,0,0.45); align-items: center; justify-content: center; padding: 20px;" aria-hidden="true">
+        <div id="connection-quality-modal-panel" style="background: #fff; border-radius: 12px; max-width: 420px; width: 100%; box-shadow: 0 20px 50px rgba(0,0,0,0.25); overflow: hidden;">
+            <div style="padding: 16px 20px; border-bottom: 1px solid #e5e7eb; display: flex; align-items: center; justify-content: space-between;">
+                <h3 style="margin: 0; font-size: 1.1em; color: #1f2937;">Connection quality</h3>
+                <button type="button" id="connection-quality-modal-close" style="background: none; border: none; font-size: 1.5rem; line-height: 1; color: #6b7280; cursor: pointer; padding: 4px 8px;" aria-label="Close">&times;</button>
+            </div>
+            <div id="connection-quality-modal-body" style="padding: 20px; min-height: 100px; color: #374151; font-size: 0.95em;">
+            </div>
+        </div>
     </div>
 
     <script src="/static/js/dashboard.js"></script>
