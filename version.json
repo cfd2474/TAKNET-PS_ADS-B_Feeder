@@ -1,11 +1,11 @@
 {
-  "version": "2.59.53",
+  "version": "2.59.54",
   "release_date": "2026-03-17",
-  "release_name": "Dashboard bootstrap bugfixes",
+  "release_name": "Dashboard bootstrap request context",
   "download_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh",
   "changelog_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/CHANGELOG.md",
   "minimum_version": "2.40.0",
   "breaking_changes": false,
-  "release_notes": "Fix dashboard JS syntax and ensure widgets update via /api/dashboard/bootstrap; keep tunnel and polling improvements.",
+  "release_notes": "Fix /api/dashboard/bootstrap: run SDR, TAKNET-PS stats, and network quality on main thread so Flask context works; widgets update correctly.",
   "update_priority": 3
 }

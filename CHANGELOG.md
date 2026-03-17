@@ -1,3 +1,9 @@
+## v2.59.54 — 2026-03-17
+
+### Changed
+- Fix /api/dashboard/bootstrap: run SDR, TAKNET-PS stats, and network quality on main thread so Flask context works; widgets update correctly.
+
+---
 ## v2.59.53 — 2026-03-17
 
 ### Changed
