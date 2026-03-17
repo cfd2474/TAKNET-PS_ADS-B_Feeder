@@ -168,6 +168,13 @@ CLEANUP_EOF
         echo "   ⚠ Failed to restart web interface"
     fi
 
+    # Restart tunnel client (picks up new tunnel_client.py after update)
+    if systemctl restart tunnel-client 2>/dev/null; then
+        echo "   ✓ Tunnel client restarted"
+    else
+        echo "   ⚠ Tunnel client not restarted (service may not be enabled)"
+    fi
+
     # Update NetBird if installed
     if command -v netbird &> /dev/null; then
         echo "   • Updating NetBird..."
