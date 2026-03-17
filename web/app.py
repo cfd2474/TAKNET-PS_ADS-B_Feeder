@@ -3507,23 +3507,33 @@ def api_dashboard_bootstrap():
             return {'success': False}
 
     results = {}
-    # Run independent checks concurrently for faster responses
-    with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
+    # Run only request-context-free checks in threads (Flask views need main thread)
+    with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
         futures = {
             'status': executor.submit(build_status),
             'network_status': executor.submit(build_network_status),
             'power_status': executor.submit(build_power_status),
-            'sdr_status': executor.submit(build_sdr_status),
-            'taknet_stats': executor.submit(build_taknet_stats),
         }
-        if include_network_quality:
-            futures['network_quality'] = executor.submit(build_network_quality)
-
         for key, fut in futures.items():
             try:
                 results[key] = fut.result()
             except Exception as e:
                 results[key] = {'error': str(e)}
+
+    # Build SDR, TAKNET-PS, and network quality in main request context (they call Flask views)
+    try:
+        results['sdr_status'] = build_sdr_status()
+    except Exception as e:
+        results['sdr_status'] = {'error': str(e)}
+    try:
+        results['taknet_stats'] = build_taknet_stats()
+    except Exception as e:
+        results['taknet_stats'] = {'success': False, 'error': str(e)}
+    if include_network_quality:
+        try:
+            results['network_quality'] = build_network_quality()
+        except Exception as e:
+            results['network_quality'] = {'success': False, 'error': str(e)}
 
     return jsonify(results)
 
