@@ -1,11 +1,11 @@
 {
-  "version": "2.59.57",
+  "version": "2.59.58",
   "release_date": "2026-03-17",
-  "release_name": "Dashboard bootstrap timeout",
+  "release_name": "Tunnel auto-start and settings restart",
   "download_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh",
   "changelog_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/CHANGELOG.md",
   "minimum_version": "2.40.0",
   "breaking_changes": false,
-  "release_notes": "Longer bootstrap fetch timeout (90s) and one retry on abort; fixes AbortError on slow Pi/tunnel.",
+  "release_notes": "ensure-tunnel-client.sh enables/starts tunnel when .env has aggregator URL; updater runs it; Settings restart tunnel + batch restart option.",
   "update_priority": 3
 }

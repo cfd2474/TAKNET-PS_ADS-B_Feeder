@@ -1,3 +1,9 @@
+## v2.59.58 — 2026-03-17
+
+### Changed
+- ensure-tunnel-client.sh enables/starts tunnel when .env has aggregator URL; updater runs it; Settings restart tunnel + batch restart option.
+
+---
 ## v2.59.57 — 2026-03-17
 
 ### Changed
