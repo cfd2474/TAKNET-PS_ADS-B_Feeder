@@ -24,17 +24,16 @@ async function fetchWithTimeout(url, options = {}, timeoutMs = 8000) {
     }
 }
 
-async function fetchBootstrap(includeNetworkQuality = false) {
-    const qs = includeNetworkQuality ? '?include_network_quality=1' : '';
+async function fetchBootstrap() {
     const t0 = performance.now();
     try {
-        const resp = await fetchWithTimeout(`/api/dashboard/bootstrap${qs}`, {}, includeNetworkQuality ? 25000 : 8000);
+        const resp = await fetchWithTimeout('/api/dashboard/bootstrap', {}, 12000);
         if (!resp.ok) {
             throw new Error(`bootstrap ${resp.status}`);
         }
         const data = await resp.json();
         const t1 = performance.now();
-        debugLog(`bootstrap${includeNetworkQuality ? ' (with quality)' : ''} fetched in ${(t1 - t0).toFixed(0)}ms`);
+        debugLog(`bootstrap fetched in ${(t1 - t0).toFixed(0)}ms`);
         return data;
     } catch (e) {
         console.error('Error fetching dashboard bootstrap:', e);
@@ -366,7 +365,7 @@ async function pollDashboard() {
         return;
     }
     pollInFlight = true;
-    const data = await fetchBootstrap(false);
+    const data = await fetchBootstrap();
     applyBootstrap(data);
     pollInFlight = false;
 }
@@ -396,11 +395,17 @@ function initPolling() {
 
 async function initDashboard() {
     const t0 = performance.now();
-    const bootstrap = await fetchBootstrap(true);
+    const bootstrap = await fetchBootstrap();
     applyBootstrap(bootstrap);
     const t1 = performance.now();
     debugLog(`initial render completed in ${(t1 - t0).toFixed(0)}ms`);
     initPolling();
+    // Connection quality is slow (ping); load after main UI without blocking
+    requestAnimationFrame(() => {
+        setTimeout(() => {
+            void refreshNetworkQualityPeriodically();
+        }, 100);
+    });
 }
 
 window.initDashboard = initDashboard;

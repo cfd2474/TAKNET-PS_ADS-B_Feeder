@@ -3410,9 +3410,7 @@ def api_status():
 
 @app.route('/api/dashboard/bootstrap', methods=['GET'])
 def api_dashboard_bootstrap():
-    """Aggregate dashboard data into a single response for fast initial load and polling."""
-    include_network_quality = request.args.get('include_network_quality') in ('1', 'true', 'yes')
-
+    """Aggregate dashboard data for fast load. Connection quality is NOT included — use GET /api/network-quality separately (slow ping)."""
     def build_status():
         docker_status = get_docker_status()
         env = read_env()
@@ -3494,18 +3492,6 @@ def api_dashboard_bootstrap():
         except Exception:
             return {'success': False}
 
-    def build_network_quality():
-        if not include_network_quality:
-            return None
-        from flask import Response
-        try:
-            resp = api_network_quality()
-            if isinstance(resp, Response):
-                return resp.get_json()
-            return resp
-        except Exception:
-            return {'success': False}
-
     results = {}
     # Run only request-context-free checks in threads (Flask views need main thread)
     with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
@@ -3529,11 +3515,6 @@ def api_dashboard_bootstrap():
         results['taknet_stats'] = build_taknet_stats()
     except Exception as e:
         results['taknet_stats'] = {'success': False, 'error': str(e)}
-    if include_network_quality:
-        try:
-            results['network_quality'] = build_network_quality()
-        except Exception as e:
-            results['network_quality'] = {'success': False, 'error': str(e)}
 
     return jsonify(results)
 
