@@ -1,3 +1,9 @@
+## v2.59.51 — 2026-03-17
+
+### Changed
+- Feeder tunnel client routes requests by X-Tunnel-Target (dashboard vs tar1090) with path fallback; tar1090 to :8080, dashboard to app backend.
+
+---
 ## v2.59.50 — 2026-03-16
 
 ### Changed
