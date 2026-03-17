@@ -438,7 +438,7 @@
             const hostname = window.location.hostname;
             let url;
             
-            switch(feedType) {
+            switch (feedType) {
                 case 'fr24':
                     url = `http://${hostname}:8754/`;
                     break;
@@ -451,7 +451,9 @@
             }
             
             window.open(url, '_blank');
-        // Start auto-refresh when page loads
+        }
+
+        // Initialize dashboard on load
         window.addEventListener('DOMContentLoaded', () => {
             initDashboard();
         });
