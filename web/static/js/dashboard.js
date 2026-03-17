@@ -23,18 +23,35 @@ async function fetchWithTimeout(url, options = {}, timeoutMs = 8000) {
     }
 }
 
+// Bootstrap runs SDR scan + docker/TAKNET checks; slow on Pi or via tunnel — allow long wait
+const BOOTSTRAP_FETCH_MS = 90000;
+
 async function fetchBootstrap() {
     const t0 = performance.now();
-    try {
-        const resp = await fetchWithTimeout('/api/dashboard/bootstrap', {}, 12000);
+    const attempt = async () => {
+        const resp = await fetchWithTimeout('/api/dashboard/bootstrap', {}, BOOTSTRAP_FETCH_MS);
         if (!resp.ok) {
             throw new Error(`bootstrap ${resp.status}`);
         }
-        const data = await resp.json();
-        const t1 = performance.now();
-        debugLog(`bootstrap fetched in ${(t1 - t0).toFixed(0)}ms`);
+        return resp.json();
+    };
+    try {
+        const data = await attempt();
+        debugLog(`bootstrap fetched in ${(performance.now() - t0).toFixed(0)}ms`);
         return data;
     } catch (e) {
+        const aborted = e && (e.name === 'AbortError' || e.message === 'signal is aborted without reason');
+        if (aborted) {
+            debugLog('bootstrap timed out, retrying once…');
+            try {
+                const data = await attempt();
+                debugLog(`bootstrap OK after retry in ${(performance.now() - t0).toFixed(0)}ms`);
+                return data;
+            } catch (e2) {
+                console.warn('Dashboard bootstrap failed after retry (slow link or feeder busy). Refresh the page.');
+                return null;
+            }
+        }
         console.error('Error fetching dashboard bootstrap:', e);
         return null;
     }
