@@ -1,3 +1,9 @@
+## v2.59.57 — 2026-03-17
+
+### Changed
+- Longer bootstrap fetch timeout (90s) and one retry on abort; fixes AbortError on slow Pi/tunnel.
+
+---
 ## v2.59.56 — 2026-03-17
 
 ### Changed
