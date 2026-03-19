@@ -150,6 +150,19 @@ OPENSKYNETWORK_SERIAL=
 # TUNNEL_FEEDER_ID=92882-corona-feeder-1
 
 # ============================================
+# Periodic Reboot (optional)
+# Disabled by default. When enabled, the feeder will reboot on a schedule
+# to help keep services stable.
+# ============================================
+PERIODIC_REBOOT_ENABLED=false
+# hourly | daily | weekly
+PERIODIC_REBOOT_INTERVAL_UNIT=daily
+# How many hours/days/weeks between reboots
+PERIODIC_REBOOT_INTERVAL_COUNT=1
+# Time of day when the schedule "hits" (HH:MM, 24-hour local time)
+PERIODIC_REBOOT_TIME=02:00
+
+# ============================================
 # System Configuration
 # Do not modify unless you know what you're doing
 # ============================================

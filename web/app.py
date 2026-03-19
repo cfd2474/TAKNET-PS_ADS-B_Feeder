@@ -4402,6 +4402,56 @@ def scheduled_update_status():
         'scheduled': SCHEDULED_UPDATE_FLAG.exists()
     })
 
+@app.route('/api/system/periodic-reboot/settings', methods=['POST'])
+def periodic_reboot_settings():
+    """
+    Save periodic reboot settings (Priority 3).
+    The reboot itself is triggered by a cron checker script, not by this request.
+    """
+    try:
+        data = request.json or {}
+
+        enabled_raw = data.get('enabled', False)
+        enabled = str(enabled_raw).strip().lower() in ('1', 'true', 'yes', 'on', 'enabled')
+
+        unit = (data.get('interval_unit') or 'daily').strip().lower()
+        if unit not in ('hourly', 'daily', 'weekly'):
+            unit = 'daily'
+
+        try:
+            count = int(data.get('interval_count', 1))
+        except Exception:
+            count = 1
+        count = max(1, min(count, 3650))
+
+        time_str = (data.get('reboot_time') or '02:00').strip()
+        hh = mm = None
+        if ':' in time_str:
+            parts = time_str.split(':', 1)
+            if len(parts) == 2:
+                try:
+                    hh = int(parts[0])
+                    mm = int(parts[1])
+                except Exception:
+                    hh = mm = None
+        if hh is None or mm is None or not (0 <= hh <= 23 and 0 <= mm <= 59):
+            hh, mm = 2, 0
+        time_str = f"{hh:02d}:{mm:02d}"
+
+        env = read_env()
+        env['PERIODIC_REBOOT_ENABLED'] = 'true' if enabled else 'false'
+        env['PERIODIC_REBOOT_INTERVAL_UNIT'] = unit
+        env['PERIODIC_REBOOT_INTERVAL_COUNT'] = str(count)
+        env['PERIODIC_REBOOT_TIME'] = time_str
+        write_env(env)
+
+        return jsonify({
+            'success': True,
+            'message': 'Periodic reboot settings saved'
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 @app.route('/api/system/update', methods=['POST'])
 def trigger_system_update():
     """Trigger system update process"""

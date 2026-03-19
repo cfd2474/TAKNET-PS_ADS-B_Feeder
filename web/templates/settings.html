@@ -140,6 +140,50 @@
             color: #374151;
             font-weight: 500;
         }
+
+        /* Toggle switch */
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 48px;
+            height: 28px;
+        }
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .toggle-switch .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #d1d5db;
+            transition: 0.2s;
+            border-radius: 999px;
+        }
+        .toggle-switch .slider:before {
+            position: absolute;
+            content: "";
+            height: 22px;
+            width: 22px;
+            left: 3px;
+            top: 3px;
+            background-color: white;
+            transition: 0.2s;
+            border-radius: 50%;
+        }
+        .toggle-switch input:checked + .slider {
+            background-color: #10b981;
+        }
+        .toggle-switch input:checked + .slider:before {
+            transform: translateX(20px);
+        }
+        .toggle-switch input:focus + .slider {
+            box-shadow: 0 0 1px #10b981;
+        }
     </style>
 </head>
 <body>
@@ -554,6 +598,62 @@
                     <strong>Note:</strong> Updates preserve your current configuration (aggregator keys, feed selections, etc.).
                     Your feeder will restart automatically after the update completes.
                 </p>
+            </div>
+
+            <!-- Periodic reboot -->
+            <div class="section">
+                <h2>🔁 Periodic Reboot</h2>
+                <p style="color: #6b7280; font-size: 0.95em; margin-bottom: 12px;">
+                    Reboots the feeder automatically on a repeating schedule.
+                    Default is disabled.
+                    Uses your feeder timezone setting.
+                </p>
+
+                <div class="form-group" style="margin-bottom: 15px;">
+                    <label style="display:flex; align-items:center; gap:12px; cursor:pointer;">
+                        <span style="font-weight: 600;">Enable periodic reboot</span>
+                        <label class="toggle-switch" style="margin-left:auto;">
+                            <input type="checkbox" id="periodic-reboot-enabled"
+                                {{ 'checked' if config.get('PERIODIC_REBOOT_ENABLED', 'false').lower() == 'true' else '' }}
+                                onchange="updatePeriodicRebootUI()">
+                            <span class="slider"></span>
+                        </label>
+                    </label>
+                </div>
+
+                <div id="periodic-reboot-options">
+                    <div class="form-group">
+                        <label>Timeframe</label>
+                        <select id="periodic-reboot-unit">
+                            <option value="hourly" {{ 'selected' if config.get('PERIODIC_REBOOT_INTERVAL_UNIT', 'daily').lower() == 'hourly' else '' }}>Hourly</option>
+                            <option value="daily" {{ 'selected' if config.get('PERIODIC_REBOOT_INTERVAL_UNIT', 'daily').lower() == 'daily' else '' }}>Daily</option>
+                            <option value="weekly" {{ 'selected' if config.get('PERIODIC_REBOOT_INTERVAL_UNIT', 'daily').lower() == 'weekly' else '' }}>Weekly</option>
+                        </select>
+                    </div>
+
+                    <div style="display:flex; gap:12px; align-items:flex-end;">
+                        <div style="flex:1;">
+                            <label>Every</label>
+                            <input type="number" id="periodic-reboot-count" min="1" max="3650"
+                                value="{{ config.get('PERIODIC_REBOOT_INTERVAL_COUNT', '1') }}">
+                            <small class="help-text" id="periodic-reboot-count-suffix"></small>
+                        </div>
+
+                        <div style="flex:1;">
+                            <label>Time</label>
+                            <input type="time" id="periodic-reboot-time" step="60"
+                                value="{{ config.get('PERIODIC_REBOOT_TIME', '02:00') }}">
+                        </div>
+                    </div>
+
+                    <p id="periodic-reboot-summary" style="margin-top: 12px; color:#6b7280; font-size:0.95em;"></p>
+                </div>
+
+                <div style="margin-top: 15px;">
+                    <button class="btn btn-primary" onclick="savePeriodicRebootSettings()" id="periodic-reboot-save-btn" style="width: 100%;">
+                        💾 Save periodic reboot
+                    </button>
+                </div>
             </div>
 
             <!-- Remote access tunnel -->
@@ -3704,6 +3804,102 @@
             }
         }
     
+        // ============================================================================
+        // PERIODIC REBOOT UI
+        // ============================================================================
+
+        function updatePeriodicRebootUI() {
+            const enabledEl = document.getElementById('periodic-reboot-enabled');
+            const optionsEl = document.getElementById('periodic-reboot-options');
+            const unitEl = document.getElementById('periodic-reboot-unit');
+            const countEl = document.getElementById('periodic-reboot-count');
+            const timeEl = document.getElementById('periodic-reboot-time');
+            const summaryEl = document.getElementById('periodic-reboot-summary');
+            const suffixEl = document.getElementById('periodic-reboot-count-suffix');
+
+            if (!enabledEl || !optionsEl || !unitEl || !countEl || !timeEl || !summaryEl) return;
+
+            const enabled = enabledEl.checked;
+            unitEl.disabled = !enabled;
+            countEl.disabled = !enabled;
+            timeEl.disabled = !enabled;
+
+            if (!enabled) {
+                optionsEl.style.opacity = '0.6';
+                summaryEl.textContent = 'Periodic reboot is currently disabled.';
+                if (suffixEl) suffixEl.textContent = '';
+                return;
+            }
+
+            optionsEl.style.opacity = '1';
+
+            const unit = unitEl.value;
+            let count = parseInt(countEl.value || '1', 10);
+            if (isNaN(count) || count < 1) count = 1;
+
+            const time = timeEl.value || '02:00';
+            const unitBase = (unit === 'hourly') ? 'hour' : (unit === 'daily') ? 'day' : 'week';
+            const unitWord = (count === 1) ? unitBase : (unitBase + 's');
+
+            if (suffixEl) suffixEl.textContent = `Every ${count} ${unitWord}`;
+            summaryEl.textContent = `Enabled: every ${count} ${unitWord} at ${time}.`;
+        }
+
+        async function savePeriodicRebootSettings() {
+            const btn = document.getElementById('periodic-reboot-save-btn');
+            const enabled = document.getElementById('periodic-reboot-enabled').checked;
+            const unit = document.getElementById('periodic-reboot-unit').value;
+            let count = parseInt(document.getElementById('periodic-reboot-count').value || '1', 10);
+            const time = document.getElementById('periodic-reboot-time').value;
+
+            if (!/^\\d{2}:\\d{2}$/.test(time)) {
+                showStatus('Invalid time. Use HH:MM.', 'error');
+                return;
+            }
+            if (isNaN(count) || count < 1) count = 1;
+
+            if (btn) btn.disabled = true;
+            showStatus('Saving periodic reboot settings...', 'info');
+
+            try {
+                const response = await fetch('/api/system/periodic-reboot/settings', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        enabled: enabled,
+                        interval_unit: unit,
+                        interval_count: count,
+                        reboot_time: time
+                    })
+                });
+
+                const data = await response.json().catch(() => ({}));
+                if (!response.ok || !data.success) {
+                    throw new Error(data.error || data.message || 'Failed to save periodic reboot settings');
+                }
+
+                showStatus(data.message || 'Periodic reboot settings saved', 'success');
+                updatePeriodicRebootUI();
+            } catch (e) {
+                showStatus('Error: ' + e.message, 'error');
+            } finally {
+                if (btn) btn.disabled = false;
+            }
+        }
+
+        window.addEventListener('DOMContentLoaded', function() {
+            updatePeriodicRebootUI();
+            const enabledEl = document.getElementById('periodic-reboot-enabled');
+            const unitEl = document.getElementById('periodic-reboot-unit');
+            const countEl = document.getElementById('periodic-reboot-count');
+            const timeEl = document.getElementById('periodic-reboot-time');
+
+            if (enabledEl) enabledEl.addEventListener('change', updatePeriodicRebootUI);
+            if (unitEl) unitEl.addEventListener('change', updatePeriodicRebootUI);
+            if (countEl) countEl.addEventListener('input', updatePeriodicRebootUI);
+            if (timeEl) timeEl.addEventListener('change', updatePeriodicRebootUI);
+        });
+
     </script>
 </body>
 </html>
