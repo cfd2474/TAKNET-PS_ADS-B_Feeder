@@ -1,3 +1,9 @@
+## v2.59.62 — 2026-03-19
+
+### Changed
+- Expose Update Now for priority 2 updates and clear scheduled flag when updating immediately.
+
+---
 ## v2.59.61 — 2026-03-18
 
 ### Changed
