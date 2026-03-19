@@ -3366,7 +3366,8 @@
                             return;
                         }
                         if (priority === 2) {
-                            updateBtn.style.display = 'none';
+                            // Priority 2: schedule overnight update, but also allow user-initiated "Update Now"
+                            updateBtn.style.display = 'inline-block';
                             fetch('/api/system/update/schedule', { method: 'POST' })
                                 .then(r => r.json())
                                 .then(d => {

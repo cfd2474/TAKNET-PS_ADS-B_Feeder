@@ -4468,6 +4468,14 @@ def periodic_reboot_settings():
 def trigger_system_update():
     """Trigger system update process"""
     try:
+        # If a priority-2 scheduled update has been queued for 02:00,
+        # clear it so "Update Now" doesn't trigger a second run.
+        try:
+            if SCHEDULED_UPDATE_FLAG.exists():
+                SCHEDULED_UPDATE_FLAG.unlink()
+        except Exception:
+            pass
+
         # Check if update is already running
         update_lock = Path('/tmp/taknet_update.lock')
         if update_lock.exists():
