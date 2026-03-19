@@ -159,6 +159,8 @@ PERIODIC_REBOOT_ENABLED=false
 PERIODIC_REBOOT_INTERVAL_UNIT=daily
 # How many hours/days/weeks between reboots
 PERIODIC_REBOOT_INTERVAL_COUNT=1
+# Weekly: day of week (0=Monday..6=Sunday)
+PERIODIC_REBOOT_WEEKDAY=2
 # Time of day when the schedule "hits" (HH:MM, 24-hour local time)
 PERIODIC_REBOOT_TIME=02:00
 

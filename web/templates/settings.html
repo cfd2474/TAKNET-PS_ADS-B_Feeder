@@ -631,6 +631,19 @@
                         </select>
                     </div>
 
+                    <div class="form-group" id="periodic-reboot-weekday-group" style="display:none;">
+                        <label>Day of week</label>
+                        <select id="periodic-reboot-weekday">
+                            <option value="0" {{ 'selected' if config.get('PERIODIC_REBOOT_WEEKDAY', '2') == '0' else '' }}>Monday</option>
+                            <option value="1" {{ 'selected' if config.get('PERIODIC_REBOOT_WEEKDAY', '2') == '1' else '' }}>Tuesday</option>
+                            <option value="2" {{ 'selected' if config.get('PERIODIC_REBOOT_WEEKDAY', '2') == '2' else '' }}>Wednesday</option>
+                            <option value="3" {{ 'selected' if config.get('PERIODIC_REBOOT_WEEKDAY', '2') == '3' else '' }}>Thursday</option>
+                            <option value="4" {{ 'selected' if config.get('PERIODIC_REBOOT_WEEKDAY', '2') == '4' else '' }}>Friday</option>
+                            <option value="5" {{ 'selected' if config.get('PERIODIC_REBOOT_WEEKDAY', '2') == '5' else '' }}>Saturday</option>
+                            <option value="6" {{ 'selected' if config.get('PERIODIC_REBOOT_WEEKDAY', '2') == '6' else '' }}>Sunday</option>
+                        </select>
+                    </div>
+
                     <div style="display:flex; gap:12px; align-items:flex-end;">
                         <div style="flex:1;">
                             <label>Every</label>
@@ -643,6 +656,9 @@
                             <label>Time</label>
                             <input type="time" id="periodic-reboot-time" step="60"
                                 value="{{ config.get('PERIODIC_REBOOT_TIME', '02:00') }}">
+                            <small class="help-text" id="periodic-reboot-hourly-note" style="display:none;">
+                                Hourly reboots happen on the hour (minutes are forced to `00`).
+                            </small>
                         </div>
                     </div>
 
@@ -3816,33 +3832,48 @@
             const timeEl = document.getElementById('periodic-reboot-time');
             const summaryEl = document.getElementById('periodic-reboot-summary');
             const suffixEl = document.getElementById('periodic-reboot-count-suffix');
+            const weekdayGroupEl = document.getElementById('periodic-reboot-weekday-group');
+            const weekdayEl = document.getElementById('periodic-reboot-weekday');
+            const hourlyNoteEl = document.getElementById('periodic-reboot-hourly-note');
 
             if (!enabledEl || !optionsEl || !unitEl || !countEl || !timeEl || !summaryEl) return;
 
             const enabled = enabledEl.checked;
-            unitEl.disabled = !enabled;
-            countEl.disabled = !enabled;
-            timeEl.disabled = !enabled;
-
-            if (!enabled) {
-                optionsEl.style.opacity = '0.6';
-                summaryEl.textContent = 'Periodic reboot is currently disabled.';
-                if (suffixEl) suffixEl.textContent = '';
-                return;
-            }
-
-            optionsEl.style.opacity = '1';
+            optionsEl.style.opacity = enabled ? '1' : '0.6';
 
             const unit = unitEl.value;
             let count = parseInt(countEl.value || '1', 10);
             if (isNaN(count) || count < 1) count = 1;
 
-            const time = timeEl.value || '02:00';
+            // For hourly schedules, enforce minute=00.
+            let time = timeEl.value || '02:00';
+            if (unit === 'hourly') {
+                if (!/^\\d{2}:\\d{2}$/.test(time)) time = '02:00';
+                time = time.split(':')[0] + ':00';
+                timeEl.value = time;
+                timeEl.step = '3600'; // seconds
+                if (hourlyNoteEl) hourlyNoteEl.style.display = 'block';
+            } else {
+                timeEl.step = '60';
+                if (hourlyNoteEl) hourlyNoteEl.style.display = 'none';
+            }
+
+            // Weekly day-of-week UI only for weekly.
+            if (weekdayGroupEl) weekdayGroupEl.style.display = (unit === 'weekly') ? 'block' : 'none';
+
+            const weekdayVal = weekdayEl ? parseInt(weekdayEl.value || '2', 10) : 2;
+            const weekdayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+            const weekdayName = weekdayNames[Math.max(0, Math.min(6, weekdayVal))] || 'Wednesday';
+
             const unitBase = (unit === 'hourly') ? 'hour' : (unit === 'daily') ? 'day' : 'week';
             const unitWord = (count === 1) ? unitBase : (unitBase + 's');
 
             if (suffixEl) suffixEl.textContent = `Every ${count} ${unitWord}`;
-            summaryEl.textContent = `Enabled: every ${count} ${unitWord} at ${time}.`;
+            if (!enabled) {
+                summaryEl.textContent = `Disabled. Configured for every ${count} ${unitWord}${unit === 'weekly' ? ` on ${weekdayName}` : ''} at ${time}.`;
+            } else {
+                summaryEl.textContent = `Enabled: every ${count} ${unitWord}${unit === 'weekly' ? ` on ${weekdayName}` : ''} at ${time}.`;
+            }
         }
 
         async function savePeriodicRebootSettings() {
@@ -3851,8 +3882,9 @@
             const unit = document.getElementById('periodic-reboot-unit').value;
             let count = parseInt(document.getElementById('periodic-reboot-count').value || '1', 10);
             const time = document.getElementById('periodic-reboot-time').value;
+            let timeFinal = time;
 
-            if (!/^\\d{2}:\\d{2}$/.test(time)) {
+            if (!/^\\d{2}:\\d{2}$/.test(timeFinal)) {
                 showStatus('Invalid time. Use HH:MM.', 'error');
                 return;
             }
@@ -3862,6 +3894,19 @@
             showStatus('Saving periodic reboot settings...', 'info');
 
             try {
+                if (unit === 'hourly') {
+                    // Ensure minute=00.
+                    timeFinal = timeFinal.split(':')[0] + ':00';
+                }
+
+                let weekday = 2;
+                if (unit === 'weekly') {
+                    const weekdayEl = document.getElementById('periodic-reboot-weekday');
+                    weekday = weekdayEl ? parseInt(weekdayEl.value || '2', 10) : 2;
+                    if (isNaN(weekday)) weekday = 2;
+                    weekday = Math.max(0, Math.min(6, weekday));
+                }
+
                 const response = await fetch('/api/system/periodic-reboot/settings', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -3869,7 +3914,8 @@
                         enabled: enabled,
                         interval_unit: unit,
                         interval_count: count,
-                        reboot_time: time
+                        reboot_time: timeFinal,
+                        interval_weekday: weekday
                     })
                 });
 

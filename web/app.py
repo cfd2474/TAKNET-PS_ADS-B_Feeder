@@ -4436,13 +4436,25 @@ def periodic_reboot_settings():
                     hh = mm = None
         if hh is None or mm is None or not (0 <= hh <= 23 and 0 <= mm <= 59):
             hh, mm = 2, 0
+
+        # Hourly schedule must occur on the hour.
+        if unit == 'hourly':
+            mm = 0
         time_str = f"{hh:02d}:{mm:02d}"
+
+        weekday = data.get('interval_weekday', 2)
+        try:
+            weekday = int(weekday)
+        except Exception:
+            weekday = 2
+        weekday = max(0, min(6, weekday))
 
         env = read_env()
         env['PERIODIC_REBOOT_ENABLED'] = 'true' if enabled else 'false'
         env['PERIODIC_REBOOT_INTERVAL_UNIT'] = unit
         env['PERIODIC_REBOOT_INTERVAL_COUNT'] = str(count)
         env['PERIODIC_REBOOT_TIME'] = time_str
+        env['PERIODIC_REBOOT_WEEKDAY'] = str(weekday)
         write_env(env)
 
         return jsonify({

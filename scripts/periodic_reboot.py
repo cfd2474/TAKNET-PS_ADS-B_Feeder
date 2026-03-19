@@ -5,7 +5,7 @@ TAKNET-PS Periodic Reboot
 Cron-friendly checker:
 - Runs frequently (typically every minute).
 - Reads periodic reboot settings from /opt/adsb/config/.env.
-- Computes the next scheduled reboot time based on an anchored start time.
+- Computes the next scheduled reboot time based on a stable anchor in state.
 - Reboots once when the schedule hits (prevents repeated reboots via state file).
 """
 
@@ -79,6 +79,44 @@ def parse_hhmm(s: str, default: str = "02:00") -> tuple[int, int]:
     return hh, mm
 
 
+def parse_weekday(s: str | None, default: int = 2) -> int:
+    """
+    Return weekday index with Monday=0..Sunday=6.
+    Accepts numeric strings or common names.
+    """
+    if s is None:
+        return default
+    v = str(s).strip().lower()
+    if re.fullmatch(r"\d{1,2}", v):
+        try:
+            idx = int(v)
+            return max(0, min(6, idx))
+        except Exception:
+            return default
+
+    names = {
+        "mon": 0,
+        "monday": 0,
+        "tue": 1,
+        "tues": 1,
+        "tuesday": 1,
+        "wed": 2,
+        "weds": 2,
+        "wednesday": 2,
+        "thu": 3,
+        "thur": 3,
+        "thurs": 3,
+        "thursday": 3,
+        "fri": 4,
+        "friday": 4,
+        "sat": 5,
+        "saturday": 5,
+        "sun": 6,
+        "sunday": 6,
+    }
+    return names.get(v, default)
+
+
 def get_timezone(tz_name: str | None):
     tz_name = (tz_name or "").strip()
     if not tz_name:
@@ -105,10 +143,13 @@ class Schedule:
     unit: str  # hourly|daily|weekly
     count: int  # N
     hhmm: str
+    weekday: int  # 0..6 (Mon..Sun)
     tz_name: str | None
 
     def signature(self) -> str:
-        payload = "|".join([self.unit, str(self.count), self.hhmm, self.tz_name or ""]).encode("utf-8")
+        payload = "|".join(
+            [self.unit, str(self.count), self.hhmm, str(self.weekday), self.tz_name or ""]
+        ).encode("utf-8")
         return hashlib.sha256(payload).hexdigest()
 
     def interval_delta(self) -> timedelta:
@@ -119,25 +160,6 @@ class Schedule:
         if self.unit == "weekly":
             return timedelta(weeks=self.count)
         return timedelta(days=self.count)
-
-
-def compute_next_anchor(now: datetime, unit: str, hh: int, mm: int) -> datetime:
-    """
-    Anchor is the next occurrence of the selected time-of-day.
-
-    - hourly: repeats every N hours anchored to that time-of-day
-    - daily: repeats every N days anchored to that time-of-day
-    - weekly: repeats every N weeks anchored to that weekday determined by anchor time
-    """
-    candidate = now.replace(hour=hh, minute=mm, second=0, microsecond=0)
-    if now <= candidate:
-        return candidate
-
-    # Time already passed today -> next anchor based on unit.
-    if unit == "weekly":
-        return candidate + timedelta(weeks=1)
-    # For hourly/daily we go to tomorrow at the selected time.
-    return candidate + timedelta(days=1)
 
 
 def load_state() -> dict:
@@ -193,13 +215,26 @@ def parse_schedule_from_env(env: dict[str, str]) -> Schedule:
     hhmm = (env.get("PERIODIC_REBOOT_TIME") or "02:00").strip()
     # Validate/normalize time string
     hh, mm = parse_hhmm(hhmm)
+    weekday = parse_weekday(env.get("PERIODIC_REBOOT_WEEKDAY"), default=2)
+
+    # Hourly schedules are always on the hour.
+    if unit == "hourly":
+        mm = 0
+
     hhmm = f"{hh:02d}:{mm:02d}"
 
     tz_name = env.get("FEEDER_TZ")
     if not tz_name:
         tz_name = None
 
-    return Schedule(enabled=enabled, unit=unit, count=count, hhmm=hhmm, tz_name=tz_name)
+    return Schedule(
+        enabled=enabled,
+        unit=unit,
+        count=count,
+        hhmm=hhmm,
+        weekday=weekday,
+        tz_name=tz_name,
+    )
 
 
 def parse_dt(iso: str | None) -> datetime | None:
@@ -210,6 +245,39 @@ def parse_dt(iso: str | None) -> datetime | None:
         return datetime.fromisoformat(iso)
     except Exception:
         return None
+
+
+def compute_next_anchor(now: datetime, schedule: Schedule, hh: int, mm: int) -> datetime:
+    """
+    Compute the next scheduled datetime >= now, aligned to the schedule's count.
+    """
+    interval = schedule.interval_delta()
+    if interval.total_seconds() <= 0:
+        return now
+
+    if schedule.unit == "hourly":
+        # Base is today at HH:00.
+        base = now.replace(hour=hh, minute=0, second=0, microsecond=0)
+        if now <= base:
+            return base
+        k = int(((now - base).total_seconds()) // interval.total_seconds()) + 1
+        return base + (k * interval)
+
+    if schedule.unit == "daily":
+        base = now.replace(hour=hh, minute=mm, second=0, microsecond=0)
+        if now <= base:
+            return base
+        k = int(((now - base).total_seconds()) // interval.total_seconds()) + 1
+        return base + (k * interval)
+
+    # weekly
+    # Base is the selected weekday/time within the current week containing `now`.
+    offset_days = schedule.weekday - now.weekday()
+    base = (now + timedelta(days=offset_days)).replace(hour=hh, minute=mm, second=0, microsecond=0)
+    if now <= base:
+        return base
+    k = int(((now - base).total_seconds()) // interval.total_seconds()) + 1
+    return base + (k * interval)
 
 
 def main() -> int:
@@ -236,16 +304,17 @@ def main() -> int:
         prev_sig = str(state.get("signature", ""))
         sig = schedule.signature()
 
-        reset_anchor = (not state.get("anchor_iso")) or (prev_enabled is False) or (prev_sig != sig)
+        reset_anchor = (prev_enabled is False) or (prev_sig != sig) or (not state.get("anchor_iso"))
 
         if reset_anchor:
-            anchor = compute_next_anchor(now, schedule.unit, hh, mm)
+            anchor = compute_next_anchor(now, schedule, hh, mm)
             state = {
                 "enabled": True,
                 "signature": sig,
                 "unit": schedule.unit,
                 "count": schedule.count,
                 "hhmm": schedule.hhmm,
+                "weekday": schedule.weekday,
                 "tz_name": schedule.tz_name,
                 "anchor_iso": anchor.isoformat(),
                 "last_fired_iso": None,
@@ -266,18 +335,16 @@ def main() -> int:
         last_fired_dt = parse_dt(last_fired_iso)
 
         interval = schedule.interval_delta()
-        if now < anchor_dt:
-            return 0
-
-        # Compute the latest scheduled time <= now.
-        delta = now - anchor_dt
         if interval.total_seconds() <= 0:
             return 0
 
-        k = int(delta.total_seconds() // interval.total_seconds())
-        scheduled_dt = anchor_dt + (k * interval)
+        # Compute the next scheduled time >= now.
+        if now <= anchor_dt:
+            scheduled_dt = anchor_dt
+        else:
+            k = int(((now - anchor_dt).total_seconds()) // interval.total_seconds()) + 1
+            scheduled_dt = anchor_dt + (k * interval)
 
-        # If we landed exactly on a scheduled time, fire.
         # Allow a small execution delay window (<= 2 minutes).
         scheduled_epoch = scheduled_dt.timestamp()
         now_epoch = now.timestamp()
@@ -293,7 +360,11 @@ def main() -> int:
         if last_fired_epoch is not None and abs(last_fired_epoch - scheduled_epoch) < 1:
             return 0
 
-        _log(f"Periodic reboot due. unit={schedule.unit} count={schedule.count} time={schedule.hhmm} tz={schedule.tz_name} anchor={anchor_dt.isoformat()} scheduled={scheduled_dt.isoformat()}")
+        _log(
+            "Periodic reboot due. "
+            f"unit={schedule.unit} count={schedule.count} weekday={schedule.weekday} time={schedule.hhmm} "
+            f"tz={schedule.tz_name} anchor={anchor_dt.isoformat()} scheduled={scheduled_dt.isoformat()}"
+        )
 
         # Update state BEFORE reboot so repeated runs don't re-trigger.
         state["last_fired_iso"] = scheduled_dt.isoformat()
