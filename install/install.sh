@@ -1,8 +1,8 @@
 #!/bin/bash
-# TAKNET-PS-ADSB-Feeder One-Line Installer v2.59.58
+# TAKNET-PS-ADSB-Feeder One-Line Installer v2.59.59
 # curl -fsSL https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh | sudo bash
 
-INSTALLER_VERSION="2.59.58"
+INSTALLER_VERSION="2.59.59"
 
 set -e
 
@@ -358,6 +358,14 @@ if ! grep -q "run-scheduled-update" /etc/crontab 2>/dev/null; then
 fi
 echo "✓ Overnight update slot configured (02:00 when scheduled)"
 
+# Periodic reboot checker (Priority 3 feature): script decides whether to reboot.
+# Cron runs frequently; reboot only happens when PERIODIC_REBOOT_ENABLED=true
+CRON_PERIODIC_REBOOT="* * * * * root /opt/adsb/scripts/run-periodic-reboot.sh"
+if ! grep -q "run-periodic-reboot.sh" /etc/crontab 2>/dev/null; then
+    echo "$CRON_PERIODIC_REBOOT" >> /etc/crontab
+fi
+echo "✓ Periodic reboot checker configured (every minute)"
+
 # Create remote user with sudo privileges (Tailscale-only access)
 echo "Creating remote user..."
 if ! id "remote" &>/dev/null; then
@@ -458,6 +466,14 @@ chmod +x /opt/adsb/scripts/updater.sh
 echo "  - run-scheduled-update.sh..."
 wget -q $REPO/scripts/run-scheduled-update.sh -O /opt/adsb/scripts/run-scheduled-update.sh
 chmod +x /opt/adsb/scripts/run-scheduled-update.sh
+
+echo "  - periodic_reboot.py..."
+wget -q $REPO/scripts/periodic_reboot.py -O /opt/adsb/scripts/periodic_reboot.py
+chmod +x /opt/adsb/scripts/periodic_reboot.py
+
+echo "  - run-periodic-reboot.sh..."
+wget -q $REPO/scripts/run-periodic-reboot.sh -O /opt/adsb/scripts/run-periodic-reboot.sh
+chmod +x /opt/adsb/scripts/run-periodic-reboot.sh
 
 echo "  - tunnel_client.py..."
 wget -q $REPO/scripts/tunnel_client.py -O /opt/adsb/scripts/tunnel_client.py
