@@ -1,3 +1,9 @@
+## v2.59.61 — 2026-03-18
+
+### Changed
+- Show dismissal-required modal when saving periodic reboot; extend scheduler modifiers with weekly weekday + hourly on-the-hour.
+
+---
 ## v2.59.60 — 2026-03-18
 
 ### Changed

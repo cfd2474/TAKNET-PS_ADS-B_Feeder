@@ -1,11 +1,11 @@
 {
-  "version": "2.59.60",
+  "version": "2.59.61",
   "release_date": "2026-03-18",
-  "release_name": "Periodic reboot enhancements",
+  "release_name": "Periodic reboot UI improvements",
   "download_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh",
   "changelog_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/CHANGELOG.md",
   "minimum_version": "2.40.0",
   "breaking_changes": false,
-  "release_notes": "Add weekly day-of-week selector, enforce hourly on-the-hour, and allow editing the schedule while disabled.",
-  "update_priority": 3
+  "release_notes": "Show dismissal-required modal when saving periodic reboot; extend scheduler modifiers with weekly weekday + hourly on-the-hour.",
+  "update_priority": 2
 }
