@@ -1,3 +1,9 @@
+## v2.59.60 — 2026-03-18
+
+### Changed
+- Add weekly day-of-week selector, enforce hourly on-the-hour, and allow editing the schedule while disabled.
+
+---
 ## v2.59.59 — 2026-03-18
 
 ### Changed
