@@ -2151,6 +2151,19 @@
             </div>
         </div>
     </div>
+
+    <!-- Periodic Reboot Saved Modal -->
+    <div id="periodicRebootSavedModal" class="modal">
+        <div class="modal-content" style="max-width: 500px;">
+            <h2>✓ Periodic Reboot Saved</h2>
+            <p id="periodicRebootSavedText" style="color:#374151; margin-top: 12px; line-height: 1.5;"></p>
+            <div style="display:flex; gap: 10px; justify-content: flex-end; margin-top: 24px;">
+                <button class="btn btn-primary" onclick="closePeriodicRebootSavedModal()">
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
     
     <!-- SDR Configuration Modal -->
     <div id="sdrConfigModal" class="modal" style="display: none;">
@@ -3824,6 +3837,20 @@
         // PERIODIC REBOOT UI
         // ============================================================================
 
+        function closePeriodicRebootSavedModal() {
+            const modal = document.getElementById('periodicRebootSavedModal');
+            if (!modal) return;
+            modal.style.display = 'none';
+        }
+
+        function showPeriodicRebootSavedModal(message) {
+            const modal = document.getElementById('periodicRebootSavedModal');
+            const textEl = document.getElementById('periodicRebootSavedText');
+            if (!modal || !textEl) return;
+            textEl.textContent = message || '';
+            modal.style.display = 'flex';
+        }
+
         function updatePeriodicRebootUI() {
             const enabledEl = document.getElementById('periodic-reboot-enabled');
             const optionsEl = document.getElementById('periodic-reboot-options');
@@ -3890,7 +3917,11 @@
             }
             if (isNaN(count) || count < 1) count = 1;
 
-            if (btn) btn.disabled = true;
+            const prevBtnText = btn ? btn.textContent : '';
+            if (btn) {
+                btn.disabled = true;
+                btn.textContent = 'Saving...';
+            }
             showStatus('Saving periodic reboot settings...', 'info');
 
             try {
@@ -3926,10 +3957,24 @@
 
                 showStatus(data.message || 'Periodic reboot settings saved', 'success');
                 updatePeriodicRebootUI();
+
+                const weekdayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+                const weekdayName = weekdayNames[Math.max(0, Math.min(6, weekday))] || 'Wednesday';
+                const unitBase = (unit === 'hourly') ? 'hour' : (unit === 'daily') ? 'day' : 'week';
+                const unitWord = (count === 1) ? unitBase : (unitBase + 's');
+                const weeklyPart = (unit === 'weekly') ? ` on ${weekdayName}` : '';
+                const scheduleText = `every ${count} ${unitWord}${weeklyPart} at ${timeFinal}`;
+
+                if (enabled) {
+                    showPeriodicRebootSavedModal(`Enabled: ${scheduleText}.`);
+                } else {
+                    showPeriodicRebootSavedModal(`Disabled. Saved schedule: ${scheduleText}.`);
+                }
             } catch (e) {
                 showStatus('Error: ' + e.message, 'error');
             } finally {
                 if (btn) btn.disabled = false;
+                if (btn) btn.textContent = prevBtnText;
             }
         }
 
