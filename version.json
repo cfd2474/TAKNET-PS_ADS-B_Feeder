@@ -1,11 +1,11 @@
 {
-  "version": "2.59.58",
-  "release_date": "2026-03-17",
-  "release_name": "Tunnel auto-start and settings restart",
+  "version": "2.59.59",
+  "release_date": "2026-03-18",
+  "release_name": "Periodic reboot scheduler",
   "download_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh",
   "changelog_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/CHANGELOG.md",
   "minimum_version": "2.40.0",
   "breaking_changes": false,
-  "release_notes": "ensure-tunnel-client.sh enables/starts tunnel when .env has aggregator URL; updater runs it; Settings restart tunnel + batch restart option.",
+  "release_notes": "Add periodic reboot scheduling controls (disabled by default) with hourly/daily/weekly intervals and a selected time.",
   "update_priority": 3
 }

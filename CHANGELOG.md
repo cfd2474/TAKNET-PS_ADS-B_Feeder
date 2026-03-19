@@ -1,3 +1,9 @@
+## v2.59.59 — 2026-03-18
+
+### Changed
+- Add periodic reboot scheduling controls (disabled by default) with hourly/daily/weekly intervals and a selected time.
+
+---
 ## v2.59.58 — 2026-03-17
 
 ### Changed
