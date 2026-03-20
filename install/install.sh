@@ -1,8 +1,8 @@
 #!/bin/bash
-# TAKNET-PS-ADSB-Feeder One-Line Installer v2.59.62
+# TAKNET-PS-ADSB-Feeder One-Line Installer v2.59.65
 # curl -fsSL https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh | sudo bash
 
-INSTALLER_VERSION="2.59.62"
+INSTALLER_VERSION="2.59.65"
 
 set -e
 
@@ -450,6 +450,10 @@ fi
 echo "  - config_builder.py..."
 wget -q $REPO/scripts/config_builder.py -O /opt/adsb/scripts/config_builder.py
 chmod +x /opt/adsb/scripts/config_builder.py
+
+echo "  - beast_claim_proxy.py..."
+wget -q $REPO/scripts/beast_claim_proxy.py -O /opt/adsb/scripts/beast_claim_proxy.py
+chmod +x /opt/adsb/scripts/beast_claim_proxy.py
 
 echo "  - detect-all-sdrs.sh..."
 wget -q $REPO/scripts/detect-all-sdrs.sh -O /opt/adsb/scripts/detect-all-sdrs.sh
@@ -1291,7 +1295,7 @@ RemainAfterExit=yes
 WorkingDirectory=/opt/adsb/config
 EnvironmentFile=/opt/adsb/config/.env
 ExecStartPre=/usr/bin/python3 /opt/adsb/scripts/config_builder.py
-ExecStart=/usr/bin/docker compose up -d --no-color
+ExecStart=/usr/bin/docker compose up -d --no-color --remove-orphans
 ExecStartPost=/bin/bash -c 'echo "Waiting for containers to be ready..." >&2; \
     max_attempts=60; \
     attempt=0; \
