@@ -327,10 +327,15 @@
                             Register feeder
                         </button>
                     </div>
+                    <div id="claim-submitted-indicator"
+                        style="display: none; margin-top: 8px; color: #059669; font-weight: 600; font-size: 0.95em;">
+                        ✓ Claim submitted
+                    </div>
                     <small class="help-text">
                         From the TAKNET-PS web UI: <strong>Account details</strong> → Feeder claim key.
                         When set, this feeder sends a one-line claim before the Beast data on each connection so the dashboard can set feeder owners automatically.
-                        Leave blank for legacy behavior. Use <strong>Apply Changes &amp; Restart Ultrafeeder</strong> after changing this.
+                        Leave blank for legacy behavior. Click <strong>Register feeder</strong> to submit this key.
+                        If you're associating a different account, paste the new key and click <strong>Register feeder</strong> again.
                     </small>
                 </div>
                 
@@ -1531,14 +1536,35 @@
             return /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(value);
         }
 
+        function getLastSubmittedClaimKey() {
+            try {
+                return (localStorage.getItem('taknet_last_feeder_claim_key') || '').trim().toLowerCase();
+            } catch (e) {
+                return '';
+            }
+        }
+
         function updateRegisterFeederButtonState() {
             const claimEl = document.getElementById('taknet_feeder_claim_key');
             const btn = document.getElementById('register-feeder-btn');
+            const indicator = document.getElementById('claim-submitted-indicator');
             if (!claimEl || !btn) return;
             const valid = isValidFeederClaimKey(claimEl.value);
             btn.disabled = !valid;
             btn.style.opacity = valid ? '1' : '0.6';
             btn.style.cursor = valid ? 'pointer' : 'not-allowed';
+
+            if (indicator) {
+                const lastKey = getLastSubmittedClaimKey();
+                const currentKey = (claimEl.value || '').trim().toLowerCase();
+                const submitted = Boolean(valid && lastKey && currentKey === lastKey);
+                indicator.style.display = submitted ? 'block' : 'none';
+                if (submitted) {
+                    btn.textContent = 'Registered ✓';
+                } else {
+                    btn.textContent = 'Register feeder';
+                }
+            }
         }
 
         async function registerFeeder() {
@@ -1728,6 +1754,18 @@
                 
                 if (!restartResponse.ok) {
                     throw new Error('Failed to restart Ultrafeeder');
+                }
+                
+                // Remember that this claim key was submitted so the UI can persist a confirmation badge.
+                // Aggregator owner assignment may take a moment; reconnection is triggered by the restart.
+                if (claimRaw2) {
+                    try {
+                        localStorage.setItem('taknet_last_feeder_claim_key', claimRaw2.trim().toLowerCase());
+                        localStorage.setItem('taknet_last_feeder_claim_submitted_at', String(Date.now()));
+                    } catch (e) {
+                        // Non-fatal: localStorage may be blocked.
+                    }
+                    updateRegisterFeederButtonState();
                 }
                 
                 // Poll for progress
