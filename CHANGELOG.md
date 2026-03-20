@@ -1,3 +1,9 @@
+## v2.59.67 — 2026-03-19
+
+### Changed
+- Claim key Register feeder flow with persistent submitted indicator; overnight rollout (update_priority 2).
+
+---
 ## v2.59.66 — 2026-03-19
 
 ### Changed
