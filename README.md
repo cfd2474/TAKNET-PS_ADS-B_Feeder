@@ -655,4 +655,4 @@ cat /opt/adsb/VERSION
 
 ---
 
-*TAKNET-PS ADS-B Feeder — Tactical Awareness Kit Network, Public Safety*
+*TAKNET-PS ADS-B Feeder — Team Awareness Kit Network, Public Safety*
