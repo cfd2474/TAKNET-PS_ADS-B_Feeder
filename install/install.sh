@@ -1,19 +1,54 @@
 #!/bin/bash
 # TAKNET-PS-ADSB-Feeder One-Line Installer v2.59.67
-# curl -fsSL https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh | sudo bash
+# Default (main):
+#   curl -fsSL https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh | sudo bash
+# Branch (e.g. mobile-deploy):
+#   curl -fsSL https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/mobile-deploy/install/install.sh | sudo bash
+# Or: TAKNET_INSTALL_BRANCH=mobile-deploy curl .../main/install/install.sh | sudo -E bash
 
 INSTALLER_VERSION="2.59.67"
 
 set -e
 
-# Check for update mode flag
+# --- Args: --update | --branch <name> (order-independent) ---
 UPDATE_MODE=false
-if [ "$1" == "--update" ]; then
-    UPDATE_MODE=true
+INSTALL_BRANCH_ARG=""
+while [ $# -gt 0 ]; do
+    case "$1" in
+        --update|-u) UPDATE_MODE=true; shift ;;
+        --branch)
+            shift
+            INSTALL_BRANCH_ARG="${1:-main}"
+            shift
+            ;;
+        *) shift ;;
+    esac
+done
+
+# Resolve Git branch for raw.githubusercontent.com (all file downloads use this)
+if [ -n "${TAKNET_INSTALL_BRANCH:-}" ]; then
+    INSTALL_BRANCH="$TAKNET_INSTALL_BRANCH"
+elif [ -n "$INSTALL_BRANCH_ARG" ]; then
+    INSTALL_BRANCH="$INSTALL_BRANCH_ARG"
+elif [ "$UPDATE_MODE" = true ] && [ -f /opt/adsb/REPO_BRANCH ]; then
+    INSTALL_BRANCH=$(tr -d '\n\r' < /opt/adsb/REPO_BRANCH)
+else
+    INSTALL_BRANCH="main"
+fi
+# Allow branch names like mobile-deploy or feature/foo
+if ! echo "$INSTALL_BRANCH" | grep -qE '^[a-zA-Z0-9._/+-]+$'; then
+    echo "⚠ Invalid branch name (allowed: letters, numbers, . _ / + -); using main"
+    INSTALL_BRANCH="main"
+fi
+
+REPO="https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/${INSTALL_BRANCH}"
+
+if [ "$UPDATE_MODE" = true ]; then
     echo ""
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo "  TAKNET-PS UPDATE MODE"
     echo "  Preserving existing configuration"
+    echo "  Git branch: ${INSTALL_BRANCH}"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo ""
 fi
@@ -33,6 +68,7 @@ if [ "$EUID" -ne 0 ]; then
     echo "Please run with sudo:"
     echo ""
     echo "  curl -fsSL https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh | sudo bash"
+    echo "  Branch: curl -fsSL https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/<branch>/install/install.sh | sudo bash"
     echo ""
     echo "Or if you downloaded the script:"
     echo ""
@@ -46,6 +82,7 @@ if [ "$UPDATE_MODE" != true ]; then
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo "  TAKNET-PS-ADSB-Feeder Installer v${INSTALLER_VERSION}"
     echo "  Ultrafeeder + TAKNET-PS + Web UI"
+    echo "  Git branch: ${INSTALL_BRANCH}"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo ""
 fi
@@ -435,9 +472,8 @@ fi
 echo "Creating directories..."
 mkdir -p /opt/adsb/{config,scripts,ultrafeeder,web/{templates,static/{css,js}}}
 
-# Download files
-echo "Downloading configuration files..."
-REPO="https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main"
+# Download files (REPO set at top from INSTALL_BRANCH)
+echo "Downloading configuration files from branch: ${INSTALL_BRANCH}"
 
 # Config files
 echo "  - env-template..."
@@ -1392,6 +1428,9 @@ systemctl start adsb-web
 if [ "$SUDO_USER" ]; then
     chown -R $SUDO_USER:$SUDO_USER /opt/adsb
 fi
+
+# Persist Git branch for future updates (scripts/updater.sh reads this)
+echo -n "$INSTALL_BRANCH" > /opt/adsb/REPO_BRANCH
 
 # Get IP address
 IP=$(hostname -I | awk '{print $1}')

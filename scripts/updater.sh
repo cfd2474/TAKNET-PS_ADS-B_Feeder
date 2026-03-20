@@ -1,10 +1,24 @@
 #!/bin/bash
 # TAKNET-PS Update Script
 # Handles backing up config, updating system, and restoring config
+# Uses the same Git branch as install: /opt/adsb/REPO_BRANCH (written by install.sh),
+# or override with: TAKNET_INSTALL_BRANCH=my-branch sudo -E bash /opt/adsb/scripts/updater.sh
 
 set -e
 
-REPO_URL="https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main"
+# Match install.sh branch resolution
+if [ -n "${TAKNET_INSTALL_BRANCH:-}" ]; then
+    INSTALL_BRANCH="$TAKNET_INSTALL_BRANCH"
+elif [ -f /opt/adsb/REPO_BRANCH ]; then
+    INSTALL_BRANCH=$(tr -d '\n\r' < /opt/adsb/REPO_BRANCH)
+else
+    INSTALL_BRANCH="main"
+fi
+if ! echo "$INSTALL_BRANCH" | grep -qE '^[a-zA-Z0-9._/+-]+$'; then
+    INSTALL_BRANCH="main"
+fi
+
+REPO_URL="https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/${INSTALL_BRANCH}"
 BACKUP_DIR="/opt/adsb/backup"
 CONFIG_FILE="/opt/adsb/config/.env"
 VERSION_FILE="/opt/adsb/VERSION"
@@ -12,6 +26,7 @@ VERSION_FILE="/opt/adsb/VERSION"
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo "  TAKNET-PS System Update"
+echo "  Git branch: ${INSTALL_BRANCH}"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
 
@@ -96,8 +111,8 @@ run_update() {
     echo "🔄 Running update (this may take a few minutes)..."
     echo ""
     
-    # Run installer in update mode
-    if bash "$TEMP_INSTALLER" --update; then
+    # Run installer in update mode (pass branch so REPO matches)
+    if bash "$TEMP_INSTALLER" --update --branch "$INSTALL_BRANCH"; then
         echo ""
         echo "   ✓ Update completed successfully"
         rm -f "$TEMP_INSTALLER"
