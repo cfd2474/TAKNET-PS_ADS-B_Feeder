@@ -1,3 +1,9 @@
+## v2.59.66 — 2026-03-19
+
+### Changed
+- Persist a 'Claim submitted' indicator after Register feeder submission (localStorage) and remove old save/restart wording.
+
+---
 ## v2.59.65 — 2026-03-19
 
 ### Changed

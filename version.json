@@ -1,11 +1,11 @@
 {
-  "version": "2.59.65",
+  "version": "2.59.66",
   "release_date": "2026-03-19",
-  "release_name": "Register feeder button",
+  "release_name": "Claim submitted confirmation badge",
   "download_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh",
   "changelog_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/CHANGELOG.md",
   "minimum_version": "2.40.0",
   "breaking_changes": false,
-  "release_notes": "Add Settings Register feeder button with strict claim key validation and wizard-style restart/redirect flow.",
+  "release_notes": "Persist a 'Claim submitted' indicator after Register feeder submission (localStorage) and remove old save/restart wording.",
   "update_priority": 3
 }
