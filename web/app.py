@@ -199,6 +199,23 @@ def read_env():
                     env_vars[key.strip()] = value.strip()
     return env_vars
 
+
+def taknet_ps_beast_status_port(env):
+    """
+    TCP port ultrafeeder uses for the TAKNET-PS Beast outbound connection.
+    When a valid feeder claim key is set, traffic goes through taknet-beast-claim
+    on the internal port (see config_builder.BEAST_CLAIM_PROXY_PORT).
+    """
+    try:
+        import sys
+        sys.path.insert(0, '/opt/adsb/scripts')
+        from config_builder import BEAST_CLAIM_PROXY_PORT, taknet_beast_uses_claim_proxy
+        if taknet_beast_uses_claim_proxy(env):
+            return str(BEAST_CLAIM_PROXY_PORT)
+    except Exception as ex:
+        print(f"taknet_ps_beast_status_port: {ex}")
+    return env.get('TAKNET_PS_SERVER_PORT', '30004')
+
 def get_taknet_connection_status(env_vars):
     """
     Get current TAKNET-PS connection status (NetBird only; Tailscale does not affect routing).
@@ -482,7 +499,7 @@ def monitor_docker_progress(service_name='ultrafeeder'):
         
         # Run docker compose with streaming output
         process = subprocess.Popen(
-            ['docker', 'compose', 'up', '-d'],
+            ['docker', 'compose', 'up', '-d', '--remove-orphans'],
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,  # Merge stderr to stdout
             text=True,
@@ -3700,8 +3717,10 @@ def api_taknet_ps_stats():
         except:
             pass
         
-        # Get ports
-        beast_port = env.get('TAKNET_PS_SERVER_PORT', '30004')
+        # Aggregator Beast port (always 30004 by default); ultrafeeder may connect via
+        # internal claim proxy on BEAST_CLAIM_PROXY_PORT when a claim key is set.
+        aggregator_beast_port = env.get('TAKNET_PS_SERVER_PORT', '30004')
+        beast_check_port = taknet_ps_beast_status_port(env)
         mlat_port = env.get('TAKNET_PS_MLAT_PORT', '30105')
         mlat_enabled = env.get('TAKNET_PS_MLAT_ENABLED') == 'true'
         
@@ -3750,7 +3769,7 @@ def api_taknet_ps_stats():
                 return False
         
         # Check BEAST connection (data feed)
-        data_feed_active = check_container_connection(beast_port)
+        data_feed_active = check_container_connection(beast_check_port)
         
         # Check MLAT connection (only if enabled)
         mlat_active = False
@@ -3763,7 +3782,7 @@ def api_taknet_ps_stats():
             'mlat_active': mlat_active,
             'mlat_enabled': mlat_enabled,
             'connection_host': connection_host,
-            'beast_port': beast_port,
+            'beast_port': aggregator_beast_port,
             'mlat_port': mlat_port
         })
         

@@ -1,3 +1,21 @@
+## v2.59.65 — 2026-03-19
+
+### Changed
+- Add Settings Register feeder button with strict claim key validation and wizard-style restart/redirect flow.
+
+---
+## v2.59.64 — 2026-03-19
+
+### Changed
+- docker compose up uses --remove-orphans so removed services (e.g. claim proxy) are cleaned up.
+
+---
+## v2.59.63 — 2026-03-19
+
+### Changed
+- Optional TAKNET_FEEDER_CLAIM line on Beast TCP when claim key is set (local proxy + Settings).
+
+---
 ## v2.59.62 — 2026-03-19
 
 ### Changed

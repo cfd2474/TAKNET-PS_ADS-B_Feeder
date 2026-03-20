@@ -1,11 +1,11 @@
 {
-  "version": "2.59.62",
+  "version": "2.59.65",
   "release_date": "2026-03-19",
-  "release_name": "Priority 2 update now",
+  "release_name": "Register feeder button",
   "download_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh",
   "changelog_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/CHANGELOG.md",
   "minimum_version": "2.40.0",
   "breaking_changes": false,
-  "release_notes": "Expose Update Now for priority 2 updates and clear scheduled flag when updating immediately.",
+  "release_notes": "Add Settings Register feeder button with strict claim key validation and wizard-style restart/redirect flow.",
   "update_priority": 3
 }

@@ -7,7 +7,7 @@
 **Team Awareness Kit Network - Public Safety**  
 **For Enhanced Tracking**
 
-**Current Version: 2.59.62**
+**Current Version: 2.59.65**
 
 A comprehensive ADS-B aircraft tracking solution designed for distributed deployment with centralized aggregation. Built for public safety, emergency services, and aviation tracking networks.
 
@@ -467,6 +467,10 @@ Only port 80 needs to be accessible on your local network for normal operation.
 
 Feeders send their software version to the aggregator via the **MLAT client name**: the value is `{MLAT_SITE_NAME} | v{VERSION}` (e.g. `92882-corona-feeder-1 | v2.59.33`). The aggregator can split on ` | v` to show feeder name and software version separately in its feeder list. Version is read from `/opt/adsb/VERSION` on the feeder (or `FEEDER_SOFTWARE_VERSION` in `.env` to override).
 
+### Feeder claim key (optional owner assignment)
+
+If you set **Aggregator feeder claim key** in Settings (UUID from the TAKNET-PS dashboard → Account details), the Beast feed to the aggregator is sent through a small local proxy that prepends `TAKNET_FEEDER_CLAIM <uuid>` on **each new TCP connection**, then forwards normal Beast binary data. Leave the field empty for legacy behavior (no claim line). Details: `docs/FEEDER_CLAIM_PROTOCOL.md`.
+
 ---
 
 ## 🔐 Security
@@ -499,7 +503,7 @@ Michael Leckliter — [mike@tak-solutions.com](mailto:mike@tak-solutions.com)
 
 ## 📝 Version History
 
-**Current Version:** 2.59.62  
+**Current Version:** 2.59.65  
 **Release Date:** 2026-03-17  
 **Minimum Supported Version:** 2.40.0  
 

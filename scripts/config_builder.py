@@ -6,9 +6,40 @@ Builds ULTRAFEEDER_CONFIG with TAKNET-PS Server as hardcoded priority
 Supports primary/fallback connection modes with automatic configuration repair
 """
 
+import re
 import sys
 import socket
 from pathlib import Path
+
+# Internal Beast listener when TAKNET claim proxy is used (ultrafeeder → this → aggregator)
+BEAST_CLAIM_PROXY_PORT = 39904
+BEAST_CLAIM_PROXY_HOST = "taknet-beast-claim"
+_FEEDER_CLAIM_UUID_RE = re.compile(
+    r"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+)
+
+
+def normalize_feeder_claim_uuid(raw):
+    """
+    Return canonical lowercase UUID if string matches 8-4-4-4-12 hex, else None.
+    """
+    s = (raw or "").strip()
+    if not s or not _FEEDER_CLAIM_UUID_RE.match(s):
+        return None
+    return s.lower()
+
+
+def taknet_beast_uses_claim_proxy(env_vars):
+    """
+    True when the TAKNET-PS Beast feed should use the local claim proxy
+    (valid claim key + TAKNET enabled + resolvable upstream host).
+    """
+    if env_vars.get("TAKNET_PS_ENABLED", "true").lower() != "true":
+        return False
+    if normalize_feeder_claim_uuid(env_vars.get("TAKNET_PS_FEEDER_CLAIM_KEY", "")) is None:
+        return False
+    host, _ctype = select_taknet_host(env_vars)
+    return bool(host)
 
 # Phase B: Valid gain values per driver type
 VALID_GAINS = {
@@ -318,8 +349,17 @@ def build_config(env_vars):
         
         if taknet_host:
             # Beast feed - raw Beast (full position data required for track rendering)
-            config_parts.append(f"adsb,{taknet_host},{port},beast_out")
-            print(f"✓ TAKNET-PS Beast: {taknet_host}:{port} ({connection_type})")
+            if taknet_beast_uses_claim_proxy(env_vars):
+                config_parts.append(
+                    f"adsb,{BEAST_CLAIM_PROXY_HOST},{BEAST_CLAIM_PROXY_PORT},beast_out"
+                )
+                print(
+                    f"✓ TAKNET-PS Beast: via {BEAST_CLAIM_PROXY_HOST}:{BEAST_CLAIM_PROXY_PORT} "
+                    f"→ {taknet_host}:{port} ({connection_type}, feeder claim)"
+                )
+            else:
+                config_parts.append(f"adsb,{taknet_host},{port},beast_out")
+                print(f"✓ TAKNET-PS Beast: {taknet_host}:{port} ({connection_type})")
             
             # MLAT feed (if enabled)
             if env_vars.get('TAKNET_PS_MLAT_ENABLED', 'true').lower() == 'true':
@@ -583,49 +623,77 @@ def build_docker_compose(env_vars):
     
     # Phase B: Smart SDR configuration
     sdr_config = build_sdr_configuration(env_vars)
-    
+
+    ultrafeeder_service = {
+        'image': 'ghcr.io/sdr-enthusiasts/docker-adsb-ultrafeeder:latest',
+        'container_name': 'ultrafeeder',
+        'hostname': 'ultrafeeder',
+        'restart': 'unless-stopped',
+        'networks': ['adsb_net'],
+        'ports': ['8080:80', '9273-9274:9273-9274'],
+        'environment': [
+            f'TZ={feeder_tz}',
+            f'LAT={feeder_lat}',
+            f'LONG={feeder_long}',
+            f'ALT={feeder_alt_m}m',
+            f'UUID={feeder_uuid}',
+            # Phase B: Dynamic SDR configuration from build_sdr_configuration()
+            *sdr_config['environment'],
+            'READSB_RX_LOCATION_ACCURACY=2',
+            'READSB_STATS_RANGE=true',
+            f'MLAT_USER={mlat_user}',
+            'UPDATE_TAR1090=true',
+            'TAR1090_ENABLE_AC_DB=true',
+            'TAR1090_FLIGHTAWARELINKS=true',
+            'TAR1090_SITESHOW=true',
+            f'ULTRAFEEDER_CONFIG={ultrafeeder_config}',
+            'PROMETHEUS_ENABLE=true'
+        ],
+        'devices': ['/dev/bus/usb:/dev/bus/usb'],
+        'volumes': [
+            '/opt/adsb/ultrafeeder:/opt/adsb',
+            '/run/readsb:/run/readsb',
+            '/proc/diskstats:/proc/diskstats:ro'
+        ],
+        'tmpfs': [
+            '/run:exec,size=256M',
+            '/tmp:size=128M'
+        ]
+    }
+
+    services = {'ultrafeeder': ultrafeeder_service}
+
+    if taknet_beast_uses_claim_proxy(env_vars):
+        claim_uuid = normalize_feeder_claim_uuid(
+            env_vars.get('TAKNET_PS_FEEDER_CLAIM_KEY', '')
+        )
+        taknet_upstream, _ = select_taknet_host(env_vars)
+        beast_port = env_vars.get('TAKNET_PS_SERVER_PORT', '30004').strip()
+        services['taknet-beast-claim'] = {
+            'image': 'python:3.12-alpine',
+            'container_name': 'taknet-beast-claim',
+            'hostname': BEAST_CLAIM_PROXY_HOST,
+            'restart': 'unless-stopped',
+            'networks': ['adsb_net'],
+            'volumes': [
+                '/opt/adsb/scripts/beast_claim_proxy.py:/app/beast_claim_proxy.py:ro'
+            ],
+            'environment': [
+                'LISTEN_HOST=0.0.0.0',
+                f'LISTEN_PORT={BEAST_CLAIM_PROXY_PORT}',
+                f'UPSTREAM_HOST={taknet_upstream}',
+                f'UPSTREAM_PORT={beast_port}',
+                f'FEEDER_CLAIM_UUID={claim_uuid}',
+            ],
+            'command': ['python3', '/app/beast_claim_proxy.py'],
+        }
+        ultrafeeder_service['depends_on'] = ['taknet-beast-claim']
+
     compose = {
         'networks': {
             'adsb_net': {'driver': 'bridge'}
         },
-        'services': {
-            'ultrafeeder': {
-                'image': 'ghcr.io/sdr-enthusiasts/docker-adsb-ultrafeeder:latest',
-                'container_name': 'ultrafeeder',
-                'hostname': 'ultrafeeder',
-                'restart': 'unless-stopped',
-                'networks': ['adsb_net'],
-                'ports': ['8080:80', '9273-9274:9273-9274'],
-                'environment': [
-                    f'TZ={feeder_tz}',
-                    f'LAT={feeder_lat}',
-                    f'LONG={feeder_long}',
-                    f'ALT={feeder_alt_m}m',
-                    f'UUID={feeder_uuid}',
-                    # Phase B: Dynamic SDR configuration from build_sdr_configuration()
-                    *sdr_config['environment'],
-                    'READSB_RX_LOCATION_ACCURACY=2',
-                    'READSB_STATS_RANGE=true',
-                    f'MLAT_USER={mlat_user}',
-                    'UPDATE_TAR1090=true',
-                    'TAR1090_ENABLE_AC_DB=true',
-                    'TAR1090_FLIGHTAWARELINKS=true',
-                    'TAR1090_SITESHOW=true',
-                    f'ULTRAFEEDER_CONFIG={ultrafeeder_config}',
-                    'PROMETHEUS_ENABLE=true'
-                ],
-                'devices': ['/dev/bus/usb:/dev/bus/usb'],
-                'volumes': [
-                    '/opt/adsb/ultrafeeder:/opt/adsb',
-                    '/run/readsb:/run/readsb',
-                    '/proc/diskstats:/proc/diskstats:ro'
-                ],
-                'tmpfs': [
-                    '/run:exec,size=256M',
-                    '/tmp:size=128M'
-                ]
-            }
-        }
+        'services': services
     }
     
     # Always include FR24 service (can be started/stopped via docker compose)

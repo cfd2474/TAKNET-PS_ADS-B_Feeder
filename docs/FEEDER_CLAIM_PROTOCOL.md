@@ -1,0 +1,24 @@
+# Feeder claim protocol (TAKNET-PS aggregator)
+
+This feeder implements the **TAKNET_FEEDER_CLAIM** line on the Beast TCP stream to the aggregator (port 30004 by default), as specified by the TAKNET-PS aggregator.
+
+## Configuration
+
+- **Web UI:** Settings → **Aggregator feeder claim key** (stored as `TAKNET_PS_FEEDER_CLAIM_KEY` in `.env`).
+- **Format:** Standard UUID `8-4-4-4-12` hex. Empty = legacy behavior (no claim line; first byte on the wire is Beast `0x1A`).
+
+## Implementation on this feeder
+
+readsb does not support an ASCII prefix on outbound Beast connections. When a valid claim key is set and TAKNET-PS is enabled, `config_builder.py`:
+
+1. Adds a Docker service **`taknet-beast-claim`** running `scripts/beast_claim_proxy.py` (Python stdlib TCP bridge).
+2. Points the TAKNET-PS **Beast** `ULTRAFEEDER_CONFIG` entry at `taknet-beast-claim:39904` instead of the aggregator host directly.
+3. The proxy connects to the selected aggregator host (VPN or public, same logic as before), sends **one line** `TAKNET_FEEDER_CLAIM <uuid>\n` (UUID lowercase), then forwards bytes **both ways**.
+
+MLAT is unchanged (still connects directly to the aggregator MLAT port).
+
+## References
+
+- Aggregator behavior: first byte `0x1A` → legacy Beast; first byte `T` → read line and parse claim; invalid keys still accept the feed (no TCP error).
+
+See repository `README.md` (network / aggregator section) for operator-facing notes.

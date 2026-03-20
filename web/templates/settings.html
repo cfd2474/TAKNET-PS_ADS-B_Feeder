@@ -317,6 +317,22 @@
                         Zip code will be prepended. Current: {{ config.get('MLAT_SITE_NAME', 'Not set') }}
                     </small>
                 </div>
+                <div class="form-group">
+                    <label>Aggregator feeder claim key (optional)</label>
+                    <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                        <input type="password" id="taknet_feeder_claim_key" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" autocomplete="off"
+                            value="{{ config.get('TAKNET_PS_FEEDER_CLAIM_KEY', '') }}" style="flex: 1; min-width: 260px;">
+                        <button type="button" class="btn btn-primary" id="register-feeder-btn" onclick="registerFeeder()" disabled
+                            style="white-space: nowrap; opacity: 0.6; cursor: not-allowed;">
+                            Register feeder
+                        </button>
+                    </div>
+                    <small class="help-text">
+                        From the TAKNET-PS web UI: <strong>Account details</strong> → Feeder claim key.
+                        When set, this feeder sends a one-line claim before the Beast data on each connection so the dashboard can set feeder owners automatically.
+                        Leave blank for legacy behavior. Use <strong>Apply Changes &amp; Restart Ultrafeeder</strong> after changing this.
+                    </small>
+                </div>
                 
                 <div style="margin-top: 20px; padding-top: 20px; border-top: 2px solid #e5e7eb;">
                     <button class="btn btn-success" onclick="saveAndRestartUltrafeeder()" style="width: 100%;">
@@ -1508,6 +1524,40 @@
             contentDiv.innerHTML = statusHtml;
             statusDiv.style.display = 'block';
         }
+
+        function isValidFeederClaimKey(raw) {
+            const value = (raw || '').trim();
+            if (value.length !== 36) return false;
+            return /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(value);
+        }
+
+        function updateRegisterFeederButtonState() {
+            const claimEl = document.getElementById('taknet_feeder_claim_key');
+            const btn = document.getElementById('register-feeder-btn');
+            if (!claimEl || !btn) return;
+            const valid = isValidFeederClaimKey(claimEl.value);
+            btn.disabled = !valid;
+            btn.style.opacity = valid ? '1' : '0.6';
+            btn.style.cursor = valid ? 'pointer' : 'not-allowed';
+        }
+
+        async function registerFeeder() {
+            const claimEl = document.getElementById('taknet_feeder_claim_key');
+            const claimRaw = claimEl ? claimEl.value.trim() : '';
+            if (!isValidFeederClaimKey(claimRaw)) {
+                showStatus('Feeder claim key must be exactly 36 characters and a UUID (8-4-4-4-12 hex).', 'error');
+                return;
+            }
+            await saveAndRestartUltrafeeder();
+        }
+
+        window.addEventListener('DOMContentLoaded', function () {
+            const claimEl = document.getElementById('taknet_feeder_claim_key');
+            if (!claimEl) return;
+            updateRegisterFeederButtonState();
+            claimEl.addEventListener('input', updateRegisterFeederButtonState);
+            claimEl.addEventListener('change', updateRegisterFeederButtonState);
+        });
         
         async function saveSettings() {
             const lat = document.getElementById('lat').value;
@@ -1552,13 +1602,20 @@
                 finalSiteName = currentFullName;
             }
             
+            const claimEl = document.getElementById('taknet_feeder_claim_key');
+            const claimRaw = claimEl ? claimEl.value.trim() : '';
+            if (claimRaw && !isValidFeederClaimKey(claimRaw)) {
+                showStatus('Feeder claim key must be exactly 36 characters and a UUID (8-4-4-4-12 hex), or left empty.', 'error');
+                return;
+            }
             const config = {
                 FEEDER_LAT: lat,
                 FEEDER_LONG: lon,
                 FEEDER_ALT_M: document.getElementById('alt').value,
                 FEEDER_TZ: document.getElementById('tz').value,
                 MLAT_SITE_NAME: finalSiteName,
-                ZIP_CODE: userZipCode || zipCode || ''
+                ZIP_CODE: userZipCode || zipCode || '',
+                TAKNET_PS_FEEDER_CLAIM_KEY: claimRaw
             };
             
             try {
@@ -1602,15 +1659,12 @@
                 return;
             }
             
-            // Show modal
-            const modal = document.getElementById('saveRestartModal');
-            const statusDiv = document.getElementById('save-restart-status');
-            const logDiv = document.getElementById('save-restart-log');
-            
-            modal.style.display = 'flex';
-            statusDiv.textContent = 'Saving configuration...';
-            logDiv.style.display = 'none';
-            logDiv.innerHTML = '';
+            const claimEl2 = document.getElementById('taknet_feeder_claim_key');
+            const claimRaw2 = claimEl2 ? claimEl2.value.trim() : '';
+            if (claimRaw2 && !isValidFeederClaimKey(claimRaw2)) {
+                showStatus('Feeder claim key must be exactly 36 characters and a UUID (8-4-4-4-12 hex) or left empty.', 'error');
+                return;
+            }
             
             let finalSiteName;
             let zipCode;
@@ -1630,13 +1684,24 @@
                 finalSiteName = currentFullName;
             }
             
+            // Show modal
+            const modal = document.getElementById('saveRestartModal');
+            const statusDiv = document.getElementById('save-restart-status');
+            const logDiv = document.getElementById('save-restart-log');
+            
+            modal.style.display = 'flex';
+            statusDiv.textContent = 'Saving configuration...';
+            logDiv.style.display = 'none';
+            logDiv.innerHTML = '';
+            
             const config = {
                 FEEDER_LAT: lat,
                 FEEDER_LONG: lon,
                 FEEDER_ALT_M: document.getElementById('alt').value,
                 FEEDER_TZ: document.getElementById('tz').value,
                 MLAT_SITE_NAME: finalSiteName,
-                ZIP_CODE: userZipCode || zipCode || ''
+                ZIP_CODE: userZipCode || zipCode || '',
+                TAKNET_PS_FEEDER_CLAIM_KEY: claimRaw2
             };
             
             try {
