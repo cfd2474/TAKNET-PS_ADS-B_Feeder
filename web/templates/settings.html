@@ -228,7 +228,7 @@
                             style="margin-top: 4px;">
                         <div>
                             <strong style="color: #1f2937;">Mobile mode</strong>
-                            <p style="margin: 6px 0 0 0; font-size: 0.9em; color: #6b7280; line-height: 1.45;">For mobile deployment where the receiver moves, such as vehicle-mounted solutions. Location may change constantly; the dashboard shows a <strong>Mobile feeder mode</strong> panel (in motion, MLAT status).</p>
+                            <p style="margin: 6px 0 0 0; font-size: 0.9em; color: #6b7280; line-height: 1.45;">For mobile deployment where the receiver moves, such as vehicle-mounted solutions. The <strong>mobile-mode-gps</strong> service pauses MLAT while moving, then after ~60s stationary (GPS drift–tolerant) syncs coordinates from GPS, resumes MLAT, and restarts ultrafeeder. The dashboard shows live status and stationary hold progress.</p>
                         </div>
                     </label>
                 </div>

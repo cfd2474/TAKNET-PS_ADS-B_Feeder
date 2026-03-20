@@ -2546,8 +2546,35 @@ def api_mobile_status():
         'in_motion_unknown': True,
         'speed_mps': None,
         'mlat_on': env.get('TAKNET_PS_MLAT_ENABLED', 'true').lower() == 'true',
-        'mlat_paused': env.get('TAKNET_PS_MLAT_ENABLED', 'true').lower() != 'true'
+        'mlat_paused': env.get('TAKNET_PS_MLAT_ENABLED', 'true').lower() != 'true',
+        'stationary_seconds': None,
+        'stationary_target_seconds': 60,
+        'awaiting_stationary_sync': False,
+        'daemon_message': None,
     }
+    # Prefer daemon state file (authoritative mobile-mode-gps.py)
+    state_path = Path('/opt/adsb/var/mobile-mode-state.json')
+    if state_path.exists():
+        try:
+            st = json.loads(state_path.read_text())
+            if st.get('active'):
+                im = st.get('in_motion')
+                out['in_motion_unknown'] = im is None
+                if im is True:
+                    out['in_motion'] = True
+                elif im is False:
+                    out['in_motion'] = False
+                if st.get('speed_mps') is not None:
+                    out['speed_mps'] = st.get('speed_mps')
+                out['mlat_paused'] = bool(st.get('mlat_paused', out['mlat_paused']))
+                out['mlat_on'] = not out['mlat_paused']
+                out['stationary_seconds'] = st.get('stationary_seconds')
+                out['stationary_target_seconds'] = st.get('stationary_target_seconds', 60)
+                out['awaiting_stationary_sync'] = bool(st.get('awaiting_stationary_sync'))
+                out['daemon_message'] = st.get('message')
+            return jsonify(out)
+        except (json.JSONDecodeError, OSError):
+            pass
     try:
         r = subprocess.run(
             ['timeout', '3', 'gpspipe', '-w', '-n', '15'],

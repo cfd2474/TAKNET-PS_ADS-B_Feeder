@@ -475,6 +475,9 @@ function initMobileFeederPolling() {
     const elMotion = document.getElementById('mobile-in-motion');
     const elMlat = document.getElementById('mobile-mlat-status');
     const elSpeed = document.getElementById('mobile-speed-hint');
+    const elHoldRow = document.getElementById('mobile-hold-row');
+    const elHold = document.getElementById('mobile-stationary-hold');
+    const elMsg = document.getElementById('mobile-daemon-msg');
     if (!elMotion || !elMlat) return;
 
     async function poll() {
@@ -499,6 +502,20 @@ function initMobileFeederPolling() {
                 elMlat.innerHTML = '<span style="color: #dc2626;">Paused</span>';
             } else {
                 elMlat.innerHTML = '<span style="color: #059669;">On</span>';
+            }
+
+            if (elHoldRow && elHold && data.awaiting_stationary_sync && data.stationary_seconds != null && data.stationary_target_seconds != null) {
+                elHold.textContent = `${Math.round(data.stationary_seconds)} / ${data.stationary_target_seconds} s`;
+                elHoldRow.style.display = 'table-row';
+            } else if (elHoldRow) {
+                elHoldRow.style.display = 'none';
+            }
+
+            if (elMsg && data.daemon_message) {
+                elMsg.textContent = data.daemon_message;
+                elMsg.style.display = 'block';
+            } else if (elMsg) {
+                elMsg.style.display = 'none';
             }
 
             if (elSpeed && data.speed_mps != null && !data.in_motion_unknown) {

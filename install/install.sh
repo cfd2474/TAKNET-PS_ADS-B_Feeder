@@ -499,6 +499,34 @@ echo "  - get-gps-coordinates.sh..."
 wget -q $REPO/scripts/get-gps-coordinates.sh -O /opt/adsb/scripts/get-gps-coordinates.sh
 chmod +x /opt/adsb/scripts/get-gps-coordinates.sh
 
+echo "  - mobile-mode-gps.py..."
+wget -q $REPO/scripts/mobile-mode-gps.py -O /opt/adsb/scripts/mobile-mode-gps.py
+chmod +x /opt/adsb/scripts/mobile-mode-gps.py
+mkdir -p /opt/adsb/var
+
+# Mobile mode GPS daemon (MLAT pause while moving; GPS sync after stationary hold)
+cat > /etc/systemd/system/mobile-mode-gps.service << 'MOBILEEOF'
+[Unit]
+Description=TAKNET-PS Mobile mode GPS (MLAT + location sync)
+After=network-online.target gpsd.service docker.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 /opt/adsb/scripts/mobile-mode-gps.py
+Restart=always
+RestartSec=10
+WorkingDirectory=/opt/adsb/scripts
+
+[Install]
+WantedBy=multi-user.target
+MOBILEEOF
+
+systemctl daemon-reload
+systemctl enable mobile-mode-gps
+systemctl restart mobile-mode-gps 2>/dev/null || systemctl start mobile-mode-gps 2>/dev/null || true
+echo "✓ mobile-mode-gps service installed"
+
 # Generate initial docker-compose.yml from .env configuration
 echo "  - Generating docker-compose.yml..."
 if [ -f /opt/adsb/config/.env ]; then
