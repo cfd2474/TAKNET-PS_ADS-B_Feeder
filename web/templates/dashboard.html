@@ -92,6 +92,26 @@
                 </div>
             </div>
 
+            {% if config.get('FEEDER_DEPLOYMENT_MODE', 'stationary') == 'mobile' %}
+            <!-- Mobile feeder mode (only when deployment mode is mobile) -->
+            <div class="card" id="mobile-feeder-card" style="margin-bottom: 20px; border-left: 4px solid #6366f1;">
+                <h3 style="margin-bottom: 12px; font-size: 1.3em; color: #1f2937; border-bottom: 2px solid #e5e7eb; padding-bottom: 10px;">🚐 Mobile feeder mode</h3>
+                <table style="width: 100%; border-collapse: collapse; font-size: 0.95em;">
+                    <tbody>
+                        <tr>
+                            <td style="padding: 10px 12px; color: #6b7280; width: 40%;">In motion</td>
+                            <td style="padding: 10px 12px; font-weight: 600;" id="mobile-in-motion">—</td>
+                        </tr>
+                        <tr style="background: #f9fafb;">
+                            <td style="padding: 10px 12px; color: #6b7280;">MLAT</td>
+                            <td style="padding: 10px 12px; font-weight: 600;" id="mobile-mlat-status">—</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <p style="margin: 10px 0 0 0; font-size: 0.85em; color: #6b7280; display: none;" id="mobile-speed-hint"></p>
+            </div>
+            {% endif %}
+
             <!-- System Status (Compact Dashboard Table) -->
             <div class="card" style="margin-bottom: 20px;">
                 <h3 style="margin-bottom: 15px; font-size: 1.3em; color: #1f2937; border-bottom: 2px solid #e5e7eb; padding-bottom: 10px;">📊 System Status</h3>

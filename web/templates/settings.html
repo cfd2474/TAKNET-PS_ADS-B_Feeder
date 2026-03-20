@@ -208,6 +208,32 @@
             <h2>Configuration</h2>
             <p class="text-muted">Edit your feeder configuration</p>
             
+            <!-- Deployment mode (stationary vs mobile) -->
+            <div class="card" style="border-left: 4px solid #6366f1;">
+                <h3>🚐 Deployment mode</h3>
+                <p style="color: #6b7280; margin-bottom: 16px;">Choose how this feeder is used. Mobile mode shows an extra dashboard panel for vehicle-mounted deployments.</p>
+                <div style="display: flex; flex-direction: column; gap: 14px;">
+                    <label style="display: flex; align-items: flex-start; gap: 12px; cursor: pointer; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; background: #fafafa;">
+                        <input type="radio" name="feeder_deployment_mode" value="stationary"
+                            {% if config.get('FEEDER_DEPLOYMENT_MODE', 'stationary') != 'mobile' %}checked{% endif %}
+                            style="margin-top: 4px;">
+                        <div>
+                            <strong style="color: #1f2937;">Stationary mode</strong>
+                            <p style="margin: 6px 0 0 0; font-size: 0.9em; color: #6b7280; line-height: 1.45;">For fixed facility use, or occasional relocations. Default for most feeders.</p>
+                        </div>
+                    </label>
+                    <label style="display: flex; align-items: flex-start; gap: 12px; cursor: pointer; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; background: #fafafa;">
+                        <input type="radio" name="feeder_deployment_mode" value="mobile"
+                            {% if config.get('FEEDER_DEPLOYMENT_MODE', 'stationary') == 'mobile' %}checked{% endif %}
+                            style="margin-top: 4px;">
+                        <div>
+                            <strong style="color: #1f2937;">Mobile mode</strong>
+                            <p style="margin: 6px 0 0 0; font-size: 0.9em; color: #6b7280; line-height: 1.45;">For mobile deployment where the receiver moves, such as vehicle-mounted solutions. Location may change constantly; the dashboard shows a <strong>Mobile feeder mode</strong> panel (in motion, MLAT status).</p>
+                        </div>
+                    </label>
+                </div>
+            </div>
+            
             <!-- SDR Devices Section -->
             <div class="card">
                 <h3>📡 SDR Devices</h3>
@@ -1635,6 +1661,7 @@
                 return;
             }
             const config = {
+                FEEDER_DEPLOYMENT_MODE: (document.querySelector('input[name="feeder_deployment_mode"]:checked') || {}).value || 'stationary',
                 FEEDER_LAT: lat,
                 FEEDER_LONG: lon,
                 FEEDER_ALT_M: document.getElementById('alt').value,
@@ -1721,6 +1748,7 @@
             logDiv.innerHTML = '';
             
             const config = {
+                FEEDER_DEPLOYMENT_MODE: (document.querySelector('input[name="feeder_deployment_mode"]:checked') || {}).value || 'stationary',
                 FEEDER_LAT: lat,
                 FEEDER_LONG: lon,
                 FEEDER_ALT_M: document.getElementById('alt').value,

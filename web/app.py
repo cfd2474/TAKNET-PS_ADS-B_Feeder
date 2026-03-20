@@ -2527,6 +2527,56 @@ def api_gps_check():
         out['message'] = str(e)
     return jsonify(out)
 
+@app.route('/api/mobile/status', methods=['GET'])
+def api_mobile_status():
+    """Mobile feeder mode: in-motion (GPS speed) and MLAT on/paused. Used by dashboard when FEEDER_DEPLOYMENT_MODE=mobile."""
+    env = read_env()
+    deployment = (env.get('FEEDER_DEPLOYMENT_MODE') or 'stationary').strip().lower()
+    if deployment != 'mobile':
+        return jsonify({
+            'success': True,
+            'mobile_mode_enabled': False,
+            'deployment_mode': deployment or 'stationary'
+        })
+    out = {
+        'success': True,
+        'mobile_mode_enabled': True,
+        'deployment_mode': 'mobile',
+        'in_motion': False,
+        'in_motion_unknown': True,
+        'speed_mps': None,
+        'mlat_on': env.get('TAKNET_PS_MLAT_ENABLED', 'true').lower() == 'true',
+        'mlat_paused': env.get('TAKNET_PS_MLAT_ENABLED', 'true').lower() != 'true'
+    }
+    try:
+        r = subprocess.run(
+            ['timeout', '3', 'gpspipe', '-w', '-n', '15'],
+            capture_output=True,
+            text=True,
+            timeout=5,
+            cwd='/opt/adsb/scripts',
+            env={**os.environ}
+        )
+        for line in (r.stdout or '').strip().splitlines():
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                obj = json.loads(line)
+                if obj.get('class') == 'TPV' and obj.get('speed') is not None:
+                    out['in_motion_unknown'] = False
+                    speed = float(obj['speed'])
+                    out['speed_mps'] = round(speed, 2)
+                    out['in_motion'] = abs(speed) > 0.5
+                    break
+            except (json.JSONDecodeError, TypeError, ValueError):
+                continue
+    except (FileNotFoundError, subprocess.TimeoutExpired):
+        pass
+    except Exception:
+        pass
+    return jsonify(out)
+
 @app.route('/api/gps/coordinates', methods=['GET'])
 def api_gps_coordinates():
     """Legacy: single-shot GPS coordinates. Prefer POST /api/gps/start + GET /api/gps/status for modal flow."""
@@ -2574,6 +2624,11 @@ def save_config():
         for key in tak_protected_keys:
             if key in data:
                 del data[key]
+        
+        # Sanitize deployment mode (stationary | mobile)
+        if 'FEEDER_DEPLOYMENT_MODE' in data:
+            v = str(data['FEEDER_DEPLOYMENT_MODE']).strip().lower()
+            data['FEEDER_DEPLOYMENT_MODE'] = v if v in ('stationary', 'mobile') else 'stationary'
         
         # Update env with user data (protected TAK settings excluded)
         for key, value in data.items():

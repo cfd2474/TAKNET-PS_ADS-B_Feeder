@@ -1346,6 +1346,12 @@ if [ -f /opt/adsb/config/.env ] && [ -f /opt/adsb/scripts/migrate-phase-b.py ]; 
     echo "✓ Configuration migrated to Phase B format"
 fi
 
+# Default deployment mode (stationary vs mobile) if missing
+if [ -f /opt/adsb/config/.env ] && ! grep -q '^FEEDER_DEPLOYMENT_MODE=' /opt/adsb/config/.env 2>/dev/null; then
+    echo "FEEDER_DEPLOYMENT_MODE=stationary" >> /opt/adsb/config/.env
+    echo "✓ FEEDER_DEPLOYMENT_MODE defaulted to stationary"
+fi
+
 # Enable services
 systemctl daemon-reload
 systemctl enable ultrafeeder
