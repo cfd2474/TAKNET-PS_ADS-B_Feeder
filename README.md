@@ -4,7 +4,7 @@
   <img src="web/static/taknetlogo.png" alt="TAKNET-PS Logo" width="600">
 </p>
 
-**Tactical Awareness Kit Network - Public Safety**  
+**Team Awareness Kit Network - Public Safety**  
 **For Enhanced Tracking**
 
 **Current Version: 2.59.62**
