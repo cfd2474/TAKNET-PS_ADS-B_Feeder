@@ -701,9 +701,12 @@ def build_docker_compose(env_vars):
     fr24_key = env_vars.get('FR24_KEY', '').strip()
     
     # Build environment array
+    # BIND_INTERFACE: FR24 web UI only allows RFC1918 by default; VPN (e.g. NetBird 100.x) is not
+    # treated as private — set 0.0.0.0 so LAN + VPN + tunnel access to :8754 works (see docker-flightradar24 README).
     fr24_env = [
         'BEASTHOST=ultrafeeder',
         'BEASTPORT=30005',
+        'BIND_INTERFACE=0.0.0.0',
         'MLAT=yes'
     ]
     
