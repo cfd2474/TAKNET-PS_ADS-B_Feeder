@@ -1,12 +1,12 @@
 #!/bin/bash
-# TAKNET-PS-ADSB-Feeder One-Line Installer v2.59.67
+# TAKNET-PS-ADSB-Feeder One-Line Installer v2.59.68
 # Default (main):
 #   curl -fsSL https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh | sudo bash
 # Branch (e.g. mobile-deploy):
 #   curl -fsSL https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/mobile-deploy/install/install.sh | sudo bash
 # Or: TAKNET_INSTALL_BRANCH=mobile-deploy curl .../main/install/install.sh | sudo -E bash
 
-INSTALLER_VERSION="2.59.67"
+INSTALLER_VERSION="2.59.68"
 
 set -e
 

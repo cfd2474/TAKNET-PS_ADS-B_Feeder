@@ -1,11 +1,11 @@
 {
-  "version": "2.59.67",
-  "release_date": "2026-03-19",
-  "release_name": "Claim submitted UI (priority 2)",
+  "version": "2.59.68",
+  "release_date": "2026-03-21",
+  "release_name": "FR24 web UI VPN bind",
   "download_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh",
   "changelog_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/CHANGELOG.md",
   "minimum_version": "2.40.0",
   "breaking_changes": false,
-  "release_notes": "Claim key Register feeder flow with persistent submitted indicator; overnight rollout (update_priority 2).",
-  "update_priority": 2
+  "release_notes": "Set BIND_INTERFACE=0.0.0.0 for FR24 container so web UI works from NetBird/Tailscale (100.x) and other non-RFC1918 ranges.",
+  "update_priority": 3
 }
