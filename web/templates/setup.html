@@ -103,8 +103,8 @@
                 
                 <div class="form-group">
                     <label>Timezone *</label>
-                    <select id="tz" required>
-                        <option value="">-- Select Timezone --</option>
+                    <select id="tz" required autocomplete="off">
+                        <option value="" selected>-- Select Timezone --</option>
                         <optgroup label="US Timezones">
                             <option value="America/New_York">Eastern Time (ET)</option>
                             <option value="America/Chicago">Central Time (CT)</option>
@@ -280,19 +280,31 @@
     <script src="/static/js/setup.js"></script>
     <script>
         // Setup defaults and wizard state
+        function enforceWizardTimezonePlaceholder() {
+            const tzSelect = document.getElementById('tz');
+            if (!tzSelect) return;
+            // Force explicit user choice every wizard run.
+            tzSelect.selectedIndex = 0;
+            tzSelect.value = '';
+            if (typeof updateSetupFinishButtonState === 'function') {
+                updateSetupFinishButtonState();
+            }
+        }
+
         document.addEventListener('DOMContentLoaded', function() {
             // Initialize offline mode detection
             initializeOfflineMode();
             
             const tzSelect = document.getElementById('tz');
-            // Force explicit user choice every wizard run.
-            if (tzSelect) {
-                tzSelect.value = '';
-                if (typeof updateSetupFinishButtonState === 'function') {
-                    updateSetupFinishButtonState();
-                }
-                tzSelect.addEventListener('change', updateSetupFinishButtonState);
-            }
+            enforceWizardTimezonePlaceholder();
+            if (tzSelect) tzSelect.addEventListener('change', updateSetupFinishButtonState);
+            // Some browsers restore form state after DOMContentLoaded/page cache.
+            setTimeout(enforceWizardTimezonePlaceholder, 0);
+            setTimeout(enforceWizardTimezonePlaceholder, 300);
+        });
+
+        window.addEventListener('pageshow', function() {
+            enforceWizardTimezonePlaceholder();
         });
         
         // =============================================================
