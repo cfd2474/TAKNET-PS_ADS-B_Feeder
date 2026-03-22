@@ -508,7 +508,7 @@
                 </div>
                 <div id="dash-gps-buttons" style="display: none; gap: 10px; justify-content: center; padding: 10px 0 0; flex-wrap: wrap;">
                     <button type="button" class="btn" onclick="dashGpsModalTryAgain()">Try again</button>
-                    <button type="button" class="btn btn-success" id="dash-gps-btn-accept" onclick="dashGpsModalAccept()">Accept</button>
+                    <button type="button" class="btn btn-success" id="dash-gps-btn-accept" onclick="return dashGpsModalAccept(event)">Accept</button>
                     <button type="button" class="btn" onclick="dashGpsModalCancel()">Cancel</button>
                 </div>
                 {# In-modal Ultrafeeder restart (same APIs as Settings; stays visible inside this overlay) #}
@@ -825,8 +825,7 @@
                         logDiv.scrollTop = logDiv.scrollHeight;
                     }
                     var completeSignal = data.status === 'complete' || (pct >= 100 && data.service && data.service !== 'idle');
-                    var elapsedMs = Date.now() - dashGpsRestartPollStartedAt;
-                    var allowComplete = dashGpsRestartHasActiveState || elapsedMs > 8000;
+                    var allowComplete = dashGpsRestartHasActiveState;
                     if (completeSignal && allowComplete) {
                         clearInterval(restartPollInterval);
                         restartPollInterval = null;
@@ -837,6 +836,7 @@
                             logDiv.textContent = (logDiv.textContent || '') + '\n\n✅ Complete! Refreshing dashboard…';
                         }
                         setTimeout(function () {
+                            dashGpsRestartInProgress = false;
                             window.location.reload();
                         }, 2000);
                     }
@@ -867,9 +867,18 @@
                 logEl.textContent = '';
             }
             document.getElementById('dash-gps-uf-status').textContent = 'Saving configuration…';
+            var logNow = document.getElementById('dash-gps-uf-log');
+            if (logNow) {
+                logNow.style.display = 'block';
+                logNow.textContent = 'Applying location update and requesting Ultrafeeder restart...';
+            }
         }
 
-        async function dashGpsModalAccept() {
+        async function dashGpsModalAccept(ev) {
+            if (ev) {
+                ev.preventDefault();
+                ev.stopPropagation();
+            }
             var btn = document.getElementById('dash-gps-btn-accept');
             try {
                 var r = await fetch('/api/gps/status');
@@ -899,6 +908,7 @@
             } finally {
                 if (btn) btn.disabled = false;
             }
+            return false;
         }
 
         function dashGpsModalCancel() {
@@ -936,6 +946,18 @@
 
         function wireDashGpsModalBackdrops() {
             var g = document.getElementById('dashGpsModal');
+            var panel = document.getElementById('dash-gps-modal-panel');
+            if (panel) {
+                panel.addEventListener('click', function (e) {
+                    e.stopPropagation();
+                });
+                panel.addEventListener('touchstart', function (e) {
+                    e.stopPropagation();
+                }, { passive: true });
+                panel.addEventListener('touchend', function (e) {
+                    e.stopPropagation();
+                });
+            }
             if (g) {
                 g.addEventListener('click', function (e) {
                     if (e.target === g) hideDashGpsModal();
