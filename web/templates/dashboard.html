@@ -478,7 +478,7 @@
     <div id="dashGpsModal" style="display: none; position: fixed; inset: 0; z-index: 20040; background: rgba(0,0,0,0.55); align-items: center; justify-content: center; padding: 20px; box-sizing: border-box;" aria-hidden="true">
         <div id="dash-gps-modal-panel" style="background: #fff; border-radius: 12px; max-width: 520px; width: 100%; box-shadow: 0 20px 50px rgba(0,0,0,0.25); overflow: hidden;">
             <div style="padding: 16px 20px; border-bottom: 1px solid #e5e7eb;">
-                <h2 style="margin: 0; font-size: 1.25em; color: #1f2937;">📍 Get coordinates from GPS</h2>
+                <h2 id="dash-gps-modal-title" style="margin: 0; font-size: 1.25em; color: #1f2937;">📍 Get coordinates from GPS</h2>
             </div>
             <div style="padding: 0 20px 20px;">
                 <div id="dash-gps-progress" style="padding: 15px 0;">
@@ -500,7 +500,7 @@
                             <div><strong>Altitude:</strong> <span id="dash-gps-result-alt"></span> m</div>
                             <div><strong>Accuracy:</strong> <span id="dash-gps-result-accuracy"></span></div>
                         </div>
-                        <p style="font-size: 0.88em; color: #6b7280; margin: 0;">Accept runs the same <strong>Apply Changes &amp; Restart Ultrafeeder</strong> process as Settings (save config, enable MLAT, restart, progress modal).</p>
+                        <p style="font-size: 0.88em; color: #6b7280; margin: 0;">Accept saves your location, enables MLAT, and restarts Ultrafeeder — progress appears below in this window.</p>
                     </div>
                     <div id="dash-gps-result-error" style="display: none;">
                         <div style="color: #dc2626; font-weight: 500;" id="dash-gps-result-error-msg"></div>
@@ -511,29 +511,29 @@
                     <button type="button" class="btn btn-success" id="dash-gps-btn-accept" onclick="dashGpsModalAccept()">Accept</button>
                     <button type="button" class="btn" onclick="dashGpsModalCancel()">Cancel</button>
                 </div>
-            </div>
-        </div>
-    </div>
-    {% endif %}
-
-    {# Same modal + flow as Settings → "Apply Changes & Restart Ultrafeeder" (saveAndRestartUltrafeeder) #}
-    <div id="saveRestartModal" class="modal">
-        <div class="modal-content" style="max-width: 600px;">
-            <h2 class="modal-header">💾 Applying Changes</h2>
-            <div class="modal-body">
-                <div id="save-restart-progress" style="padding: 20px;">
-                    <div style="text-align: center; margin-bottom: 20px;">
-                        <div class="status-spinner"></div>
+                {# In-modal Ultrafeeder restart (same APIs as Settings; stays visible inside this overlay) #}
+                <div id="dash-gps-phase-restart" style="display: none; padding-top: 16px; border-top: 2px solid #e5e7eb; margin-top: 8px;">
+                    <div style="display: flex; align-items: flex-start; gap: 12px; margin-bottom: 12px;">
+                        <div id="dash-gps-uf-spinner" class="status-spinner" style="flex-shrink: 0; margin-top: 4px;"></div>
+                        <div style="flex: 1; min-width: 0;">
+                            <div style="font-weight: 600; color: #1f2937; font-size: 1em;">🔄 Ultrafeeder restart</div>
+                            <div id="dash-gps-uf-status" style="font-size: 0.95em; color: #374151; margin-top: 6px;">Saving configuration…</div>
+                            <div id="dash-gps-uf-detail" style="font-size: 0.85em; color: #6b7280; margin-top: 4px;"></div>
+                        </div>
                     </div>
-                    <div id="save-restart-status" style="text-align: center; color: #374151;">
-                        Saving configuration...
+                    <div id="dash-gps-uf-progress-wrap" style="height: 10px; background: #e5e7eb; border-radius: 4px; overflow: hidden; margin-bottom: 12px;">
+                        <div id="dash-gps-uf-progress-bar" style="height: 100%; width: 0%; background: linear-gradient(90deg, #6366f1, #8b5cf6); transition: width 0.35s ease;"></div>
                     </div>
-                    <div id="save-restart-log" style="margin-top: 20px; padding: 15px; background: #f3f4f6; border-radius: 6px; font-family: monospace; font-size: 0.9em; max-height: 300px; overflow-y: auto; display: none;">
+                    <div id="dash-gps-uf-log" style="background: #f3f4f6; border-radius: 8px; padding: 10px 12px; max-height: 180px; overflow-y: auto; font-family: ui-monospace, monospace; font-size: 0.8em; color: #1f2937; white-space: pre-wrap; word-break: break-word; display: none;"></div>
+                    <div id="dash-gps-uf-actions" style="display: none; margin-top: 12px; text-align: center;">
+                        <button type="button" class="btn" onclick="dashGpsModalDismissRestart()">Close</button>
                     </div>
+                    <p style="font-size: 0.78em; color: #9ca3af; margin: 12px 0 0 0;">Live status from <code>/api/service/progress</code> while Docker restarts.</p>
                 </div>
             </div>
         </div>
     </div>
+    {% endif %}
 
     <script src="/static/js/dashboard.js"></script>
     <script>
@@ -542,10 +542,22 @@
         let restartPollInterval = null;
 
         function hideDashGpsModal() {
+            if (restartPollInterval) {
+                clearInterval(restartPollInterval);
+                restartPollInterval = null;
+            }
             var gm = document.getElementById('dashGpsModal');
             if (!gm) return;
             gm.style.display = 'none';
             gm.setAttribute('aria-hidden', 'true');
+        }
+
+        function dashGpsModalDismissRestart() {
+            if (restartPollInterval) {
+                clearInterval(restartPollInterval);
+                restartPollInterval = null;
+            }
+            hideDashGpsModal();
         }
 
         function openDashGpsForceResyncModal() {
@@ -553,6 +565,18 @@
             if (!gm) {
                 alert('GPS modal is not available. Set deployment mode to Mobile in Settings and reload.');
                 return;
+            }
+            if (restartPollInterval) {
+                clearInterval(restartPollInterval);
+                restartPollInterval = null;
+            }
+            var titleEl = document.getElementById('dash-gps-modal-title');
+            if (titleEl) titleEl.textContent = '📍 Get coordinates from GPS';
+            var pr = document.getElementById('dash-gps-phase-restart');
+            if (pr) {
+                pr.style.display = 'none';
+                var act = document.getElementById('dash-gps-uf-actions');
+                if (act) act.style.display = 'none';
             }
             gm.style.display = 'flex';
             gm.setAttribute('aria-hidden', 'false');
@@ -639,6 +663,10 @@
         }
 
         function dashGpsModalTryAgain() {
+            var titleEl = document.getElementById('dash-gps-modal-title');
+            if (titleEl) titleEl.textContent = '📍 Get coordinates from GPS';
+            var pr = document.getElementById('dash-gps-phase-restart');
+            if (pr) pr.style.display = 'none';
             document.getElementById('dash-gps-progress').style.display = 'block';
             document.getElementById('dash-gps-result').style.display = 'none';
             document.getElementById('dash-gps-buttons').style.display = 'none';
@@ -649,19 +677,30 @@
         /**
          * Same pipeline as Settings → saveAndRestartUltrafeeder():
          * POST /api/config (full location block + MLAT on), POST /api/service/restart, poll /api/service/progress.
+         * UI: #dash-gps-phase-restart inside #dashGpsModal (must already be visible).
          */
+        function dashGpsUfSetProgress(pct) {
+            var bar = document.getElementById('dash-gps-uf-progress-bar');
+            if (bar) bar.style.width = Math.min(100, Math.max(0, pct)) + '%';
+        }
+
         async function runDashGpsSaveAndRestartUltrafeeder(lat, lon, altFromGps) {
-            var modal = document.getElementById('saveRestartModal');
-            var statusDiv = document.getElementById('save-restart-status');
-            var logDiv = document.getElementById('save-restart-log');
-            if (!modal || !statusDiv || !logDiv) {
-                alert('Apply progress modal is missing. Update dashboard.html on the feeder.');
+            var statusDiv = document.getElementById('dash-gps-uf-status');
+            var detailDiv = document.getElementById('dash-gps-uf-detail');
+            var logDiv = document.getElementById('dash-gps-uf-log');
+            var spin = document.getElementById('dash-gps-uf-spinner');
+            var actions = document.getElementById('dash-gps-uf-actions');
+            if (!statusDiv || !logDiv) {
+                alert('Restart UI is missing. Reload the dashboard.');
                 return;
             }
-            modal.style.display = 'flex';
-            statusDiv.textContent = 'Saving configuration...';
+            if (spin) spin.style.display = 'block';
+            if (actions) actions.style.display = 'none';
+            statusDiv.textContent = 'Saving configuration…';
+            if (detailDiv) detailDiv.textContent = '';
+            dashGpsUfSetProgress(5);
             logDiv.style.display = 'none';
-            logDiv.innerHTML = '';
+            logDiv.textContent = '';
 
             var cfgResp = await fetch('/api/config');
             var cfg = await cfgResp.json();
@@ -700,13 +739,15 @@
                     var errorData = await saveResponse.json().catch(function () { return {}; });
                     throw new Error(errorData.message || 'Failed to save configuration');
                 }
-                statusDiv.textContent = '✓ Configuration saved. Restarting Ultrafeeder...';
+                statusDiv.textContent = '✓ Configuration saved — restarting Ultrafeeder…';
+                dashGpsUfSetProgress(15);
                 logDiv.style.display = 'block';
-                logDiv.innerHTML = 'Starting Ultrafeeder restart...\n';
+                logDiv.textContent = 'Configuration saved.\nStarting Ultrafeeder restart…\n';
 
                 var restartResponse = await fetch('/api/service/restart', { method: 'POST' });
                 if (!restartResponse.ok) {
-                    throw new Error('Failed to restart Ultrafeeder');
+                    var errBody = await restartResponse.json().catch(function () { return {}; });
+                    throw new Error(errBody.message || 'Failed to restart Ultrafeeder');
                 }
                 if (claimRaw) {
                     try {
@@ -714,20 +755,25 @@
                         localStorage.setItem('taknet_last_feeder_claim_submitted_at', String(Date.now()));
                     } catch (e) {}
                 }
+                statusDiv.textContent = 'Restarting Ultrafeeder…';
+                dashGpsUfSetProgress(20);
                 pollDashboardSaveRestartProgress();
             } catch (error) {
+                if (spin) spin.style.display = 'none';
                 statusDiv.textContent = '❌ Error: ' + error.message;
+                if (detailDiv) detailDiv.textContent = '';
                 logDiv.style.display = 'block';
-                logDiv.innerHTML += '\nError: ' + error.message;
-                setTimeout(function () {
-                    modal.style.display = 'none';
-                }, 3000);
+                logDiv.textContent = (logDiv.textContent || '') + '\n\n❌ ' + error.message;
+                dashGpsUfSetProgress(0);
+                if (actions) actions.style.display = 'block';
             }
         }
 
         function pollDashboardSaveRestartProgress() {
-            var statusDiv = document.getElementById('save-restart-status');
-            var logDiv = document.getElementById('save-restart-log');
+            var statusDiv = document.getElementById('dash-gps-uf-status');
+            var detailDiv = document.getElementById('dash-gps-uf-detail');
+            var logDiv = document.getElementById('dash-gps-uf-log');
+            var spin = document.getElementById('dash-gps-uf-spinner');
             if (restartPollInterval) {
                 clearInterval(restartPollInterval);
             }
@@ -735,25 +781,62 @@
                 try {
                     var response = await fetch('/api/service/progress');
                     var data = await response.json();
-                    if (data.success) {
-                        logDiv.innerHTML = data.message || 'Restarting...';
+                    if (data.success === false) {
+                        return;
+                    }
+                    var pct = data.progress != null ? Math.min(100, Math.max(0, Number(data.progress))) : 0;
+                    dashGpsUfSetProgress(pct);
+                    if (detailDiv) {
+                        detailDiv.textContent = data.details || '';
+                    }
+                    if (statusDiv) {
+                        statusDiv.textContent =
+                            data.status === 'complete'
+                                ? '✅ Ultrafeeder ready'
+                                : 'Restarting Ultrafeeder… ' + pct + '% — ' + (data.status || 'in progress');
+                    }
+                    if (logDiv) {
+                        logDiv.style.display = 'block';
+                        logDiv.textContent = data.message || data.status || '…';
                         logDiv.scrollTop = logDiv.scrollHeight;
-                        var pct = data.progress != null ? data.progress : 0;
-                        statusDiv.textContent = 'Restarting Ultrafeeder... ' + pct + '%';
-                        if (data.status === 'complete' || pct >= 100) {
-                            clearInterval(restartPollInterval);
-                            restartPollInterval = null;
-                            statusDiv.textContent = '✅ Ultrafeeder restarted successfully!';
-                            logDiv.innerHTML += '\n\n✅ Complete! Refreshing dashboard...';
-                            setTimeout(function () {
-                                window.location.reload();
-                            }, 2000);
+                    }
+                    if (data.status === 'complete' || (pct >= 100 && data.service && data.service !== 'idle')) {
+                        clearInterval(restartPollInterval);
+                        restartPollInterval = null;
+                        if (spin) spin.style.display = 'none';
+                        if (statusDiv) statusDiv.textContent = '✅ Ultrafeeder restarted successfully!';
+                        if (detailDiv) detailDiv.textContent = data.details || '';
+                        if (logDiv) {
+                            logDiv.textContent = (logDiv.textContent || '') + '\n\n✅ Complete! Refreshing dashboard…';
                         }
+                        setTimeout(function () {
+                            window.location.reload();
+                        }, 2000);
                     }
                 } catch (error) {
                     console.error('Error polling restart progress:', error);
                 }
             }, 1000);
+        }
+
+        function dashGpsShowRestartPhase() {
+            var titleEl = document.getElementById('dash-gps-modal-title');
+            if (titleEl) titleEl.textContent = '📍 Applying location & restarting Ultrafeeder';
+            document.getElementById('dash-gps-progress').style.display = 'none';
+            document.getElementById('dash-gps-result').style.display = 'none';
+            document.getElementById('dash-gps-buttons').style.display = 'none';
+            document.getElementById('dash-gps-phase-restart').style.display = 'block';
+            document.getElementById('dash-gps-uf-actions').style.display = 'none';
+            var spin = document.getElementById('dash-gps-uf-spinner');
+            if (spin) spin.style.display = 'block';
+            dashGpsUfSetProgress(0);
+            document.getElementById('dash-gps-uf-detail').textContent = '';
+            var logEl = document.getElementById('dash-gps-uf-log');
+            if (logEl) {
+                logEl.style.display = 'none';
+                logEl.textContent = '';
+            }
+            document.getElementById('dash-gps-uf-status').textContent = 'Saving configuration…';
         }
 
         async function dashGpsModalAccept() {
@@ -766,23 +849,20 @@
                     return;
                 }
                 if (btn) btn.disabled = true;
-                hideDashGpsModal();
                 if (dashGpsPollInterval) {
                     clearInterval(dashGpsPollInterval);
                     dashGpsPollInterval = null;
                 }
-                await new Promise(function (resolve) {
-                    requestAnimationFrame(function () {
-                        requestAnimationFrame(resolve);
-                    });
-                });
+                dashGpsShowRestartPhase();
                 await runDashGpsSaveAndRestartUltrafeeder(data.lat, data.lon, data.alt);
             } catch (e) {
-                var modal = document.getElementById('saveRestartModal');
-                var statusDiv = document.getElementById('save-restart-status');
-                if (modal && statusDiv) {
-                    modal.style.display = 'flex';
-                    statusDiv.textContent = '❌ Error: ' + (e && e.message ? e.message : String(e));
+                var phase = document.getElementById('dash-gps-phase-restart');
+                if (phase && phase.style.display === 'block') {
+                    var st = document.getElementById('dash-gps-uf-status');
+                    var spin = document.getElementById('dash-gps-uf-spinner');
+                    if (st) st.textContent = '❌ Error: ' + (e && e.message ? e.message : String(e));
+                    if (spin) spin.style.display = 'none';
+                    document.getElementById('dash-gps-uf-actions').style.display = 'block';
                 } else {
                     alert('Error: ' + (e && e.message ? e.message : String(e)));
                 }
@@ -794,6 +874,10 @@
         function dashGpsModalCancel() {
             if (dashGpsPollInterval) clearInterval(dashGpsPollInterval);
             dashGpsPollInterval = null;
+            if (restartPollInterval) {
+                clearInterval(restartPollInterval);
+                restartPollInterval = null;
+            }
             hideDashGpsModal();
         }
 
