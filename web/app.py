@@ -4,7 +4,7 @@ TAKNET-PS-ADSB-Feeder Web Interface v2.1
 Flask app with Tailscale hostname management
 """
 
-from flask import Flask, render_template, request, jsonify, redirect, url_for
+from flask import Flask, render_template, request, jsonify, redirect, url_for, make_response
 import subprocess
 import os
 import re
@@ -1201,7 +1201,12 @@ def setup():
     """Setup wizard - Step 2: Location Configuration"""
     env = read_env()
     feeder_uuid = get_or_create_feeder_uuid()
-    return render_template('setup.html', config=env, feeder_uuid=feeder_uuid)
+    response = make_response(render_template('setup.html', config=env, feeder_uuid=feeder_uuid, version=VERSION))
+    # Prevent stale wizard HTML/js state from reusing previous timezone selections.
+    response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '0'
+    return response
 
 @app.route('/loading')
 def loading():

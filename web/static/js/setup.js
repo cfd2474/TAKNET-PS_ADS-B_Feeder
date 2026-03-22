@@ -95,6 +95,14 @@ function prevStep(step) {
     nextStep(step);
 }
 
+function enforceTimezonePlaceholder() {
+    const tzSelect = document.getElementById('tz');
+    if (!tzSelect) return;
+    tzSelect.selectedIndex = 0;
+    tzSelect.value = '';
+    updateSetupFinishButtonState();
+}
+
 // Get zip code from coordinates using reverse geocoding
 async function getZipCodeFromCoords(lat, lon) {
     try {
@@ -657,6 +665,12 @@ function closeProgressModal() {
 
 // Initialize Tailscale key checking
 document.addEventListener('DOMContentLoaded', function() {
+    // Force explicit timezone selection in wizard, even if browser restores prior form values.
+    enforceTimezonePlaceholder();
+    setTimeout(enforceTimezonePlaceholder, 0);
+    setTimeout(enforceTimezonePlaceholder, 300);
+    setTimeout(enforceTimezonePlaceholder, 1000);
+
     const keyInput = document.getElementById('tailscale_key');
     if (keyInput) {
         keyInput.addEventListener('input', checkTailscaleKey);
@@ -664,4 +678,8 @@ document.addEventListener('DOMContentLoaded', function() {
         checkTailscaleKey();
     }
     updateSetupFinishButtonState();
+});
+
+window.addEventListener('pageshow', function() {
+    enforceTimezonePlaceholder();
 });
