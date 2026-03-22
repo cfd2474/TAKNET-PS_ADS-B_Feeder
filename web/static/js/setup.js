@@ -103,6 +103,28 @@ function enforceTimezonePlaceholder() {
     updateSetupFinishButtonState();
 }
 
+function getSetupFinishButton() {
+    return document.getElementById('setup-finish-btn') ||
+        document.querySelector('button[onclick="saveAndStart()"]');
+}
+
+function ensureRequiredFieldsUi() {
+    const finishBtn = getSetupFinishButton();
+    if (!finishBtn) return;
+    if (!finishBtn.id) finishBtn.id = 'setup-finish-btn';
+
+    let noteEl = document.getElementById('required-fields-note');
+    if (!noteEl) {
+        noteEl = document.createElement('p');
+        noteEl.id = 'required-fields-note';
+        noteEl.style.margin = '0 0 10px 0';
+        noteEl.style.color = '#6b7280';
+        noteEl.style.fontSize = '0.92em';
+        noteEl.textContent = 'Fill all required fields before proceeding';
+        finishBtn.parentNode.insertBefore(noteEl, finishBtn);
+    }
+}
+
 // Get zip code from coordinates using reverse geocoding
 async function getZipCodeFromCoords(lat, lon) {
     try {
@@ -156,7 +178,7 @@ function updateSetupFinishButtonState() {
     const altInput = document.getElementById('alt');
     const tzSelect = document.getElementById('tz');
     const siteNameInput = document.getElementById('site_name');
-    const finishBtn = document.getElementById('setup-finish-btn');
+    const finishBtn = getSetupFinishButton();
     const noteEl = document.getElementById('required-fields-note');
     if (!finishBtn || !tzSelect || !latInput || !lonInput || !altInput || !siteNameInput) return;
 
@@ -682,6 +704,7 @@ function closeProgressModal() {
 document.addEventListener('DOMContentLoaded', function() {
     // Setup page behavior
     initializeOfflineMode();
+    ensureRequiredFieldsUi();
 
     // Force explicit timezone selection in wizard, even if browser restores prior form values.
     enforceTimezonePlaceholder();
