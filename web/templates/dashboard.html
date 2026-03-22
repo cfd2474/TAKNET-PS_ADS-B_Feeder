@@ -535,7 +535,7 @@
     </div>
     {% endif %}
 
-    <script src="/static/js/dashboard.js"></script>
+    <script src="/static/js/dashboard.js?v={{ version }}"></script>
     <script>
         let dashGpsPollInterval = null;
         /** Same interval id as Settings saveAndRestartUltrafeeder / pollServiceRestartProgress */
@@ -543,8 +543,13 @@
         /** Guard against stale /api/service/progress=complete causing instant reload */
         let dashGpsRestartHasActiveState = false;
         let dashGpsRestartPollStartedAt = 0;
+        /** Prevent accidental backdrop dismiss while restart status is showing */
+        let dashGpsRestartInProgress = false;
 
-        function hideDashGpsModal() {
+        function hideDashGpsModal(force) {
+            if (dashGpsRestartInProgress && !force) {
+                return;
+            }
             if (restartPollInterval) {
                 clearInterval(restartPollInterval);
                 restartPollInterval = null;
@@ -560,7 +565,8 @@
                 clearInterval(restartPollInterval);
                 restartPollInterval = null;
             }
-            hideDashGpsModal();
+            dashGpsRestartInProgress = false;
+            hideDashGpsModal(true);
         }
 
         function openDashGpsForceResyncModal() {
@@ -573,6 +579,7 @@
                 clearInterval(restartPollInterval);
                 restartPollInterval = null;
             }
+            dashGpsRestartInProgress = false;
             var titleEl = document.getElementById('dash-gps-modal-title');
             if (titleEl) titleEl.textContent = '📍 Get coordinates from GPS';
             var pr = document.getElementById('dash-gps-phase-restart');
@@ -840,6 +847,7 @@
         }
 
         function dashGpsShowRestartPhase() {
+            dashGpsRestartInProgress = true;
             var titleEl = document.getElementById('dash-gps-modal-title');
             if (titleEl) titleEl.textContent = '📍 Applying location & restarting Ultrafeeder';
             document.getElementById('dash-gps-progress').style.display = 'none';
@@ -894,6 +902,9 @@
         }
 
         function dashGpsModalCancel() {
+            if (dashGpsRestartInProgress) {
+                return;
+            }
             if (dashGpsPollInterval) clearInterval(dashGpsPollInterval);
             dashGpsPollInterval = null;
             if (restartPollInterval) {

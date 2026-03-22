@@ -1286,7 +1286,7 @@ def dashboard():
     except:
         pass  # Fail silently, update check is not critical for dashboard
     
-    return render_template('dashboard.html', 
+    response = make_response(render_template('dashboard.html', 
                          config=env, 
                          docker=docker_status, 
                          version=VERSION, 
@@ -1295,7 +1295,12 @@ def dashboard():
                          network_info=network_info,
                          tunnel_status=tunnel_status,
                          update_available=update_available,
-                         latest_version=latest_version)
+                         latest_version=latest_version))
+    # Ensure clients don't keep stale dashboard inline JS/modal behavior.
+    response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '0'
+    return response
 
 @app.route('/logs')
 def logs():
