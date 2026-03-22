@@ -103,7 +103,7 @@
                 
                 <div class="form-group">
                     <label>Timezone *</label>
-                    <select id="tz">
+                    <select id="tz" required>
                         <option value="">-- Select Timezone --</option>
                         <optgroup label="US Timezones">
                             <option value="America/New_York">Eastern Time (ET)</option>
@@ -198,7 +198,7 @@
                 </div>
                 
                 <div style="margin-top: 30px; padding-top: 20px; border-top: 2px solid #e5e7eb;">
-                    <button class="btn btn-success" onclick="saveAndStart()">Install & Finish →</button>
+                    <button id="setup-finish-btn" class="btn btn-success" onclick="saveAndStart()" disabled>Install & Finish →</button>
                 </div>
             </div>
 
@@ -279,15 +279,19 @@
 
     <script src="/static/js/setup.js"></script>
     <script>
-        // Set timezone dropdown to current value
+        // Setup defaults and wizard state
         document.addEventListener('DOMContentLoaded', function() {
             // Initialize offline mode detection
             initializeOfflineMode();
             
-            const currentTz = "{{ config.get('FEEDER_TZ', '') }}";
             const tzSelect = document.getElementById('tz');
-            if (currentTz) {
-                tzSelect.value = currentTz;
+            // Force explicit user choice every wizard run.
+            if (tzSelect) {
+                tzSelect.value = '';
+                if (typeof updateSetupFinishButtonState === 'function') {
+                    updateSetupFinishButtonState();
+                }
+                tzSelect.addEventListener('change', updateSetupFinishButtonState);
             }
         });
         

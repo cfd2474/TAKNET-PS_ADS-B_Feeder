@@ -142,11 +142,22 @@ async function installTailscale(authKey) {
 }
 
 // Save configuration and start service
+function updateSetupFinishButtonState() {
+    const tzSelect = document.getElementById('tz');
+    const finishBtn = document.getElementById('setup-finish-btn');
+    if (!finishBtn || !tzSelect) return;
+    const hasSelectedTimezone = !!tzSelect.value;
+    finishBtn.disabled = !hasSelectedTimezone;
+    finishBtn.style.opacity = hasSelectedTimezone ? '1' : '0.6';
+    finishBtn.style.cursor = hasSelectedTimezone ? 'pointer' : 'not-allowed';
+}
+
+// Save configuration and start service
 async function saveAndStart() {
     const lat = document.getElementById('lat').value;
     const lon = document.getElementById('lon').value;
     const alt = document.getElementById('alt').value;
-    const tz = document.getElementById('tz').value;
+    const tz = document.getElementById('tz').value.trim();
     const siteName = document.getElementById('site_name').value.trim();
     const userZipCode = document.getElementById('zip_code').value.trim();
     
@@ -652,4 +663,5 @@ document.addEventListener('DOMContentLoaded', function() {
         // Check on page load in case value is pre-filled
         checkTailscaleKey();
     }
+    updateSetupFinishButtonState();
 });
