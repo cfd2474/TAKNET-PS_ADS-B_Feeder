@@ -129,8 +129,10 @@ def _gps_acquisition_thread():
                                 pass
                             break
                         else:
+                            # lat/lon not valid yet — mode is only set inside branch above; use obj
+                            _m = obj.get('mode')
                             gps_state['log_lines'].append(
-                                f"Waiting for fix... mode={mode}" if mode is not None else "Waiting for fix..."
+                                f"Waiting for fix... mode={_m}" if _m is not None else "Waiting for fix..."
                             )
                     elif cls == 'SKY':
                         sats = obj.get('satellites', [])

@@ -6,8 +6,8 @@ TAKNET-PS Mobile mode GPS daemon (FEEDER_DEPLOYMENT_MODE=mobile only).
 - After motion, when speed stays in the stationary band for STATIONARY_SECONDS (drift-tolerant):
   sync FEEDER_LAT/LONG/ALT_M from GPS, resume MLAT, restart ultrafeeder.
 
-The 60s hold and sync only run after a motion event (MLAT was paused by this daemon), not
-while continuously parked from startup.
+After a reboot, .env may still have MLAT paused with no in-memory motion flag; in that case
+we arm awaiting_stationary_sync so a parked 60s hold can still sync coords and resume MLAT.
 """
 
 from __future__ import annotations
@@ -161,6 +161,12 @@ def main() -> None:
             stationary_accum = 0.0
             awaiting_stationary_sync = False
             continue
+
+        # Reboot / cold start: MLAT may still be false in .env from last session while
+        # awaiting_stationary_sync was lost in RAM — arm the stationary hold so we can
+        # resume without another motion event first.
+        if env.get("TAKNET_PS_MLAT_ENABLED", "true").lower() != "true":
+            awaiting_stationary_sync = True
 
         tpv = parse_gpspipe_tpv()
         mlat_on = env.get("TAKNET_PS_MLAT_ENABLED", "true").lower() == "true"
