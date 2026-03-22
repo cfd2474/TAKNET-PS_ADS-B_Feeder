@@ -540,6 +540,9 @@
         let dashGpsPollInterval = null;
         /** Same interval id as Settings saveAndRestartUltrafeeder / pollServiceRestartProgress */
         let restartPollInterval = null;
+        /** Guard against stale /api/service/progress=complete causing instant reload */
+        let dashGpsRestartHasActiveState = false;
+        let dashGpsRestartPollStartedAt = 0;
 
         function hideDashGpsModal() {
             if (restartPollInterval) {
@@ -785,22 +788,39 @@
                         return;
                     }
                     var pct = data.progress != null ? Math.min(100, Math.max(0, Number(data.progress))) : 0;
+                    var statusText = (data.status || '').toString().trim();
+                    var serviceName = (data.service || '').toString().trim().toLowerCase();
+                    var isActiveState =
+                        serviceName === 'ultrafeeder' && (
+                            (pct > 0 && pct < 100) ||
+                            (statusText && statusText.toLowerCase() !== 'ready' && statusText.toLowerCase() !== 'complete')
+                        );
+                    if (isActiveState) {
+                        dashGpsRestartHasActiveState = true;
+                    }
                     dashGpsUfSetProgress(pct);
                     if (detailDiv) {
                         detailDiv.textContent = data.details || '';
                     }
                     if (statusDiv) {
-                        statusDiv.textContent =
-                            data.status === 'complete'
-                                ? '✅ Ultrafeeder ready'
-                                : 'Restarting Ultrafeeder… ' + pct + '% — ' + (data.status || 'in progress');
+                        if (!dashGpsRestartHasActiveState && statusText.toLowerCase() === 'complete') {
+                            statusDiv.textContent = 'Restart requested. Waiting for fresh restart status…';
+                        } else {
+                            statusDiv.textContent =
+                                data.status === 'complete'
+                                    ? '✅ Ultrafeeder ready'
+                                    : 'Restarting Ultrafeeder… ' + pct + '% — ' + (data.status || 'in progress');
+                        }
                     }
                     if (logDiv) {
                         logDiv.style.display = 'block';
                         logDiv.textContent = data.message || data.status || '…';
                         logDiv.scrollTop = logDiv.scrollHeight;
                     }
-                    if (data.status === 'complete' || (pct >= 100 && data.service && data.service !== 'idle')) {
+                    var completeSignal = data.status === 'complete' || (pct >= 100 && data.service && data.service !== 'idle');
+                    var elapsedMs = Date.now() - dashGpsRestartPollStartedAt;
+                    var allowComplete = dashGpsRestartHasActiveState || elapsedMs > 8000;
+                    if (completeSignal && allowComplete) {
                         clearInterval(restartPollInterval);
                         restartPollInterval = null;
                         if (spin) spin.style.display = 'none';
@@ -829,6 +849,8 @@
             document.getElementById('dash-gps-uf-actions').style.display = 'none';
             var spin = document.getElementById('dash-gps-uf-spinner');
             if (spin) spin.style.display = 'block';
+            dashGpsRestartHasActiveState = false;
+            dashGpsRestartPollStartedAt = Date.now();
             dashGpsUfSetProgress(0);
             document.getElementById('dash-gps-uf-detail').textContent = '';
             var logEl = document.getElementById('dash-gps-uf-log');
