@@ -2529,6 +2529,63 @@ def api_gps_check():
         out['message'] = str(e)
     return jsonify(out)
 
+
+@app.route('/api/gps/apply-location', methods=['POST'])
+def api_gps_apply_location():
+    """
+    Write FEEDER_LAT/LONG/ALT_M from a completed GPS fix, enable MLAT, rebuild config, restart ultrafeeder.
+    Intended for dashboard mobile-mode "Force location re-sync" after GET /api/gps/status has a fix.
+    """
+    try:
+        data = request.get_json(silent=True) or {}
+        lat = data.get('lat')
+        lon = data.get('lon')
+        alt = data.get('alt')
+
+        env = read_env()
+        deployment = (env.get('FEEDER_DEPLOYMENT_MODE') or 'stationary').strip().lower()
+        if deployment != 'mobile':
+            return jsonify({'success': False, 'message': 'Mobile deployment mode is not enabled'}), 403
+
+        try:
+            lat_f = float(lat)
+            lon_f = float(lon)
+        except (TypeError, ValueError):
+            return jsonify({'success': False, 'message': 'Invalid latitude or longitude'}), 400
+
+        if not (-90.0 <= lat_f <= 90.0) or not (-180.0 <= lon_f <= 180.0):
+            return jsonify({'success': False, 'message': 'Latitude or longitude out of range'}), 400
+
+        if alt is not None and alt != '':
+            try:
+                alt_i = int(round(float(alt)))
+            except (TypeError, ValueError):
+                return jsonify({'success': False, 'message': 'Invalid altitude'}), 400
+        else:
+            try:
+                alt_i = int(env.get('FEEDER_ALT_M', '0') or '0')
+            except ValueError:
+                alt_i = 0
+
+        env['FEEDER_LAT'] = f'{lat_f:.5f}'
+        env['FEEDER_LONG'] = f'{lon_f:.5f}'
+        env['FEEDER_ALT_M'] = str(alt_i)
+        env['TAKNET_PS_MLAT_ENABLED'] = 'true'
+        write_env(env)
+
+        if not rebuild_config():
+            return jsonify({'success': False, 'message': 'Config rebuild failed'}), 500
+
+        restart_ok = restart_service()
+        return jsonify({
+            'success': True,
+            'message': 'Location saved, MLAT enabled, ultrafeeder restart initiated',
+            'restart_initiated': restart_ok,
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+
 @app.route('/api/mobile/status', methods=['GET'])
 def api_mobile_status():
     """Mobile feeder mode: in-motion (GPS speed) and MLAT on/paused. Used by dashboard when FEEDER_DEPLOYMENT_MODE=mobile."""

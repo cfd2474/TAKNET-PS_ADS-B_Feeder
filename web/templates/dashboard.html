@@ -114,6 +114,11 @@
                 </table>
                 <p style="margin: 10px 0 0 0; font-size: 0.85em; color: #4b5563; display: none;" id="mobile-daemon-msg"></p>
                 <p style="margin: 10px 0 0 0; font-size: 0.85em; color: #6b7280; display: none;" id="mobile-speed-hint"></p>
+                <div style="margin-top: 14px;">
+                    <button type="button" class="btn" onclick="openDashGpsForceResyncModal()" title="Acquire a GPS fix and save to feeder position (MLAT on)">
+                        📍 Force location re-sync
+                    </button>
+                </div>
             </div>
             {% endif %}
 
@@ -468,8 +473,181 @@
         </div>
     </div>
 
+    <!-- Force location re-sync (same flow as Settings → Get coordinates from GPS; Accept saves + MLAT resync) -->
+    {% if config.get('FEEDER_DEPLOYMENT_MODE', 'stationary') == 'mobile' %}
+    <div id="dashGpsModal" class="modal">
+        <div class="modal-content" style="max-width: 520px;">
+            <h2 class="modal-header">📍 Get coordinates from GPS</h2>
+            <div class="modal-body">
+                <div id="dash-gps-progress" style="padding: 15px 0;">
+                    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 15px;">
+                        <div id="dash-gps-spinner" class="status-spinner" style="flex-shrink: 0;"></div>
+                        <div>
+                            <div id="dash-gps-status-text" style="font-weight: 500; color: #374151;">Starting GPS...</div>
+                            <div id="dash-gps-status-detail" style="font-size: 0.9em; color: #6b7280; margin-top: 4px;">Acquiring fix (up to 20 seconds)</div>
+                        </div>
+                    </div>
+                    <div id="dash-gps-log" style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 10px; max-height: 160px; overflow-y: auto; font-family: monospace; font-size: 0.85em; color: #374151;"></div>
+                </div>
+                <div id="dash-gps-result" style="display: none; padding: 15px 0;">
+                    <div id="dash-gps-result-success" style="display: none;">
+                        <div style="margin-bottom: 12px; font-weight: 500; color: #059669;">✓ Fix acquired</div>
+                        <div style="background: #f0fdf4; border: 1px solid #86efac; border-radius: 8px; padding: 12px; margin-bottom: 8px;">
+                            <div><strong>Latitude:</strong> <span id="dash-gps-result-lat"></span></div>
+                            <div><strong>Longitude:</strong> <span id="dash-gps-result-lon"></span></div>
+                            <div><strong>Altitude:</strong> <span id="dash-gps-result-alt"></span> m</div>
+                            <div><strong>Accuracy:</strong> <span id="dash-gps-result-accuracy"></span></div>
+                        </div>
+                        <p style="font-size: 0.88em; color: #6b7280; margin: 0;">Accept writes these coordinates to the feeder, enables MLAT, rebuilds config, and restarts ultrafeeder.</p>
+                    </div>
+                    <div id="dash-gps-result-error" style="display: none;">
+                        <div style="color: #dc2626; font-weight: 500;" id="dash-gps-result-error-msg"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-buttons" id="dash-gps-buttons" style="display: none; gap: 10px; justify-content: center; padding: 0 20px 20px;">
+                <button type="button" class="btn" onclick="dashGpsModalTryAgain()">Try again</button>
+                <button type="button" class="btn btn-success" id="dash-gps-btn-accept" onclick="dashGpsModalAccept()">Accept</button>
+                <button type="button" class="btn" onclick="dashGpsModalCancel()">Cancel</button>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
     <script src="/static/js/dashboard.js"></script>
     <script>
+        let dashGpsPollInterval = null;
+
+        function openDashGpsForceResyncModal() {
+            document.getElementById('dashGpsModal').style.display = 'block';
+            document.getElementById('dash-gps-progress').style.display = 'block';
+            document.getElementById('dash-gps-result').style.display = 'none';
+            document.getElementById('dash-gps-buttons').style.display = 'none';
+            document.getElementById('dash-gps-spinner').style.display = 'block';
+            document.getElementById('dash-gps-btn-accept').style.display = 'inline-block';
+            document.getElementById('dash-gps-btn-accept').disabled = false;
+            startDashGpsAcquisition();
+        }
+
+        function startDashGpsAcquisition() {
+            document.getElementById('dash-gps-status-text').textContent = 'Starting GPS...';
+            document.getElementById('dash-gps-status-detail').textContent = 'Acquiring fix (up to 20 seconds)';
+            document.getElementById('dash-gps-log').textContent = '';
+            fetch('/api/gps/start', { method: 'POST', headers: { 'Content-Type': 'application/json' } })
+                .then(function (r) { return r.json(); })
+                .then(function () {
+                    dashGpsPollInterval = setInterval(pollDashGpsStatus, 1200);
+                    pollDashGpsStatus();
+                })
+                .catch(function () {
+                    document.getElementById('dash-gps-status-text').textContent = 'Failed to start';
+                    showDashGpsResultError('Could not start GPS acquisition');
+                    showDashGpsButtons(false);
+                });
+        }
+
+        function pollDashGpsStatus() {
+            fetch('/api/gps/status')
+                .then(function (r) { return r.json(); })
+                .then(function (data) {
+                    document.getElementById('dash-gps-status-text').textContent =
+                        data.status === 'acquiring' ? 'Acquiring GPS fix...' : (data.message || data.status);
+                    if (data.satellites_used != null) {
+                        document.getElementById('dash-gps-status-detail').textContent =
+                            'Satellites: ' + data.satellites_used + (data.mode ? ' • ' + data.mode : '');
+                    }
+                    if (data.log_lines && data.log_lines.length) {
+                        var logEl = document.getElementById('dash-gps-log');
+                        logEl.textContent = data.log_lines.join('\n');
+                        logEl.scrollTop = logEl.scrollHeight;
+                    }
+                    if (data.status === 'fix') {
+                        clearInterval(dashGpsPollInterval);
+                        dashGpsPollInterval = null;
+                        document.getElementById('dash-gps-spinner').style.display = 'none';
+                        document.getElementById('dash-gps-progress').style.display = 'none';
+                        document.getElementById('dash-gps-result').style.display = 'block';
+                        document.getElementById('dash-gps-result-success').style.display = 'block';
+                        document.getElementById('dash-gps-result-error').style.display = 'none';
+                        document.getElementById('dash-gps-result-lat').textContent = data.lat;
+                        document.getElementById('dash-gps-result-lon').textContent = data.lon;
+                        document.getElementById('dash-gps-result-alt').textContent = data.alt != null ? data.alt : '—';
+                        document.getElementById('dash-gps-result-accuracy').textContent =
+                            data.accuracy_m != null ? '~' + data.accuracy_m + ' m' : '—';
+                        showDashGpsButtons(true);
+                    } else if (data.status === 'timeout' || data.status === 'error') {
+                        clearInterval(dashGpsPollInterval);
+                        dashGpsPollInterval = null;
+                        document.getElementById('dash-gps-spinner').style.display = 'none';
+                        document.getElementById('dash-gps-progress').style.display = 'none';
+                        document.getElementById('dash-gps-result').style.display = 'block';
+                        document.getElementById('dash-gps-result-success').style.display = 'none';
+                        document.getElementById('dash-gps-result-error').style.display = 'block';
+                        document.getElementById('dash-gps-result-error-msg').textContent = data.message || data.status;
+                        showDashGpsButtons(false);
+                    }
+                })
+                .catch(function () {});
+        }
+
+        function showDashGpsResultError(msg) {
+            document.getElementById('dash-gps-result').style.display = 'block';
+            document.getElementById('dash-gps-result-success').style.display = 'none';
+            document.getElementById('dash-gps-result-error').style.display = 'block';
+            document.getElementById('dash-gps-result-error-msg').textContent = msg;
+        }
+
+        function showDashGpsButtons(showAccept) {
+            document.getElementById('dash-gps-buttons').style.display = 'flex';
+            document.getElementById('dash-gps-btn-accept').style.display = showAccept ? 'inline-block' : 'none';
+        }
+
+        function dashGpsModalTryAgain() {
+            document.getElementById('dash-gps-progress').style.display = 'block';
+            document.getElementById('dash-gps-result').style.display = 'none';
+            document.getElementById('dash-gps-buttons').style.display = 'none';
+            document.getElementById('dash-gps-spinner').style.display = 'block';
+            startDashGpsAcquisition();
+        }
+
+        async function dashGpsModalAccept() {
+            var btn = document.getElementById('dash-gps-btn-accept');
+            try {
+                var r = await fetch('/api/gps/status');
+                var data = await r.json();
+                if (data.lat == null || data.lon == null) {
+                    alert('No GPS fix to apply. Try again.');
+                    return;
+                }
+                if (btn) btn.disabled = true;
+                var resp = await fetch('/api/gps/apply-location', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ lat: data.lat, lon: data.lon, alt: data.alt })
+                });
+                var out = await resp.json();
+                if (!out.success) {
+                    alert(out.message || 'Failed to save location');
+                    if (btn) btn.disabled = false;
+                    return;
+                }
+                document.getElementById('dashGpsModal').style.display = 'none';
+                if (dashGpsPollInterval) {
+                    clearInterval(dashGpsPollInterval);
+                    dashGpsPollInterval = null;
+                }
+            } catch (e) {
+                alert('Error: ' + (e && e.message ? e.message : String(e)));
+                if (btn) btn.disabled = false;
+            }
+        }
+
+        function dashGpsModalCancel() {
+            if (dashGpsPollInterval) clearInterval(dashGpsPollInterval);
+            dashGpsPollInterval = null;
+            document.getElementById('dashGpsModal').style.display = 'none';
+        }
+
         // Open feed status/info link
         function openFeedLink(feedType) {
             const hostname = window.location.hostname;
