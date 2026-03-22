@@ -120,65 +120,6 @@
                     </button>
                 </div>
             </div>
-
-            <!-- GPS + ultrafeeder modals: siblings of the card (not nested) — avoids duplicate IDs and stacking issues -->
-            <div id="dashGpsModal" class="modal">
-                <div class="modal-content" style="max-width: 520px;">
-                    <h2 class="modal-header">📍 Get coordinates from GPS</h2>
-                    <div class="modal-body">
-                        <div id="dash-gps-progress" style="padding: 15px 0;">
-                            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 15px;">
-                                <div id="dash-gps-spinner" class="status-spinner" style="flex-shrink: 0;"></div>
-                                <div>
-                                    <div id="dash-gps-status-text" style="font-weight: 500; color: #374151;">Starting GPS...</div>
-                                    <div id="dash-gps-status-detail" style="font-size: 0.9em; color: #6b7280; margin-top: 4px;">Acquiring fix (up to 20 seconds)</div>
-                                </div>
-                            </div>
-                            <div id="dash-gps-log" style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 10px; max-height: 160px; overflow-y: auto; font-family: monospace; font-size: 0.85em; color: #374151;"></div>
-                        </div>
-                        <div id="dash-gps-result" style="display: none; padding: 15px 0;">
-                            <div id="dash-gps-result-success" style="display: none;">
-                                <div style="margin-bottom: 12px; font-weight: 500; color: #059669;">✓ Fix acquired</div>
-                                <div style="background: #f0fdf4; border: 1px solid #86efac; border-radius: 8px; padding: 12px; margin-bottom: 8px;">
-                                    <div><strong>Latitude:</strong> <span id="dash-gps-result-lat"></span></div>
-                                    <div><strong>Longitude:</strong> <span id="dash-gps-result-lon"></span></div>
-                                    <div><strong>Altitude:</strong> <span id="dash-gps-result-alt"></span> m</div>
-                                    <div><strong>Accuracy:</strong> <span id="dash-gps-result-accuracy"></span></div>
-                                </div>
-                                <p style="font-size: 0.88em; color: #6b7280; margin: 0;">Accept writes these coordinates to the feeder, enables MLAT, rebuilds config, and restarts ultrafeeder.</p>
-                            </div>
-                            <div id="dash-gps-result-error" style="display: none;">
-                                <div style="color: #dc2626; font-weight: 500;" id="dash-gps-result-error-msg"></div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="modal-buttons" id="dash-gps-buttons" style="display: none; gap: 10px; justify-content: center; padding: 0 20px 20px;">
-                        <button type="button" class="btn" onclick="dashGpsModalTryAgain()">Try again</button>
-                        <button type="button" class="btn btn-success" id="dash-gps-btn-accept" onclick="dashGpsModalAccept()">Accept</button>
-                        <button type="button" class="btn" onclick="dashGpsModalCancel()">Cancel</button>
-                    </div>
-                </div>
-            </div>
-
-            <div id="dashGpsRestartModal" class="modal" style="z-index: 10050;">
-                <div class="modal-content" style="max-width: 600px;">
-                    <h2 class="modal-header">🔧 Restarting Ultrafeeder</h2>
-                    <div class="modal-body">
-                        <div id="dash-gps-restart-wrap" style="padding: 20px;">
-                            <div style="text-align: center; margin-bottom: 20px;">
-                                <div id="dash-gps-restart-spinner" class="status-spinner" style="margin: 0 auto;"></div>
-                            </div>
-                            <div id="dash-gps-restart-status" style="text-align: center; color: #374151;">
-                                Applying location…
-                            </div>
-                            <div id="dash-gps-restart-log" style="margin-top: 20px; padding: 15px; background: #f3f4f6; border-radius: 6px; font-family: monospace; font-size: 0.9em; max-height: 300px; overflow-y: auto; display: none; white-space: pre-wrap;"></div>
-                        </div>
-                    </div>
-                    <div class="modal-buttons" id="dash-gps-restart-footer" style="display: none; padding: 0 20px 20px; justify-content: center;">
-                        <button type="button" class="btn" onclick="hideDashGpsRestartModal()">Close</button>
-                    </div>
-                </div>
-            </div>
             {% endif %}
 
             <!-- System Status (Compact Dashboard Table) -->
@@ -532,6 +473,67 @@
         </div>
     </div>
 
+    {# Body-level overlays (same pattern as connection-quality-modal). Do not use class="modal" — it conflicts with display:flex. #}
+    {% if config.get('FEEDER_DEPLOYMENT_MODE', 'stationary') == 'mobile' %}
+    <div id="dashGpsModal" style="display: none; position: fixed; inset: 0; z-index: 20040; background: rgba(0,0,0,0.55); align-items: center; justify-content: center; padding: 20px; box-sizing: border-box;" aria-hidden="true">
+        <div id="dash-gps-modal-panel" style="background: #fff; border-radius: 12px; max-width: 520px; width: 100%; box-shadow: 0 20px 50px rgba(0,0,0,0.25); overflow: hidden;">
+            <div style="padding: 16px 20px; border-bottom: 1px solid #e5e7eb;">
+                <h2 style="margin: 0; font-size: 1.25em; color: #1f2937;">📍 Get coordinates from GPS</h2>
+            </div>
+            <div style="padding: 0 20px 20px;">
+                <div id="dash-gps-progress" style="padding: 15px 0;">
+                    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 15px;">
+                        <div id="dash-gps-spinner" class="status-spinner" style="flex-shrink: 0;"></div>
+                        <div>
+                            <div id="dash-gps-status-text" style="font-weight: 500; color: #374151;">Starting GPS...</div>
+                            <div id="dash-gps-status-detail" style="font-size: 0.9em; color: #6b7280; margin-top: 4px;">Acquiring fix (up to 20 seconds)</div>
+                        </div>
+                    </div>
+                    <div id="dash-gps-log" style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 10px; max-height: 160px; overflow-y: auto; font-family: monospace; font-size: 0.85em; color: #374151;"></div>
+                </div>
+                <div id="dash-gps-result" style="display: none; padding: 15px 0;">
+                    <div id="dash-gps-result-success" style="display: none;">
+                        <div style="margin-bottom: 12px; font-weight: 500; color: #059669;">✓ Fix acquired</div>
+                        <div style="background: #f0fdf4; border: 1px solid #86efac; border-radius: 8px; padding: 12px; margin-bottom: 8px;">
+                            <div><strong>Latitude:</strong> <span id="dash-gps-result-lat"></span></div>
+                            <div><strong>Longitude:</strong> <span id="dash-gps-result-lon"></span></div>
+                            <div><strong>Altitude:</strong> <span id="dash-gps-result-alt"></span> m</div>
+                            <div><strong>Accuracy:</strong> <span id="dash-gps-result-accuracy"></span></div>
+                        </div>
+                        <p style="font-size: 0.88em; color: #6b7280; margin: 0;">Accept writes these coordinates to the feeder, enables MLAT, rebuilds config, and restarts ultrafeeder.</p>
+                    </div>
+                    <div id="dash-gps-result-error" style="display: none;">
+                        <div style="color: #dc2626; font-weight: 500;" id="dash-gps-result-error-msg"></div>
+                    </div>
+                </div>
+                <div id="dash-gps-buttons" style="display: none; gap: 10px; justify-content: center; padding: 10px 0 0; flex-wrap: wrap;">
+                    <button type="button" class="btn" onclick="dashGpsModalTryAgain()">Try again</button>
+                    <button type="button" class="btn btn-success" id="dash-gps-btn-accept" onclick="dashGpsModalAccept()">Accept</button>
+                    <button type="button" class="btn" onclick="dashGpsModalCancel()">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="dashGpsRestartModal" style="display: none; position: fixed; inset: 0; z-index: 20050; background: rgba(0,0,0,0.55); align-items: center; justify-content: center; padding: 20px; box-sizing: border-box;" aria-hidden="true">
+        <div id="dash-gps-restart-panel" style="background: #fff; border-radius: 12px; max-width: 600px; width: 100%; box-shadow: 0 20px 50px rgba(0,0,0,0.25); overflow: hidden;">
+            <div style="padding: 16px 20px; border-bottom: 1px solid #e5e7eb;">
+                <h2 style="margin: 0; font-size: 1.25em; color: #1f2937;">🔧 Restarting Ultrafeeder</h2>
+            </div>
+            <div style="padding: 20px;">
+                <div style="text-align: center; margin-bottom: 20px;">
+                    <div id="dash-gps-restart-spinner" class="status-spinner" style="margin: 0 auto;"></div>
+                </div>
+                <div id="dash-gps-restart-status" style="text-align: center; color: #374151;">Applying location…</div>
+                <div id="dash-gps-restart-log" style="margin-top: 20px; padding: 15px; background: #f3f4f6; border-radius: 6px; font-family: monospace; font-size: 0.9em; max-height: 300px; overflow-y: auto; display: none; white-space: pre-wrap;"></div>
+            </div>
+            <div id="dash-gps-restart-footer" style="display: none; padding: 0 20px 20px; text-align: center;">
+                <button type="button" class="btn" onclick="hideDashGpsRestartModal()">Close</button>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
     <script src="/static/js/dashboard.js"></script>
     <script>
         let dashGpsPollInterval = null;
@@ -541,15 +543,17 @@
             var gm = document.getElementById('dashGpsModal');
             if (!gm) return;
             gm.style.display = 'none';
-            gm.style.alignItems = '';
-            gm.style.justifyContent = '';
+            gm.setAttribute('aria-hidden', 'true');
         }
 
         function openDashGpsForceResyncModal() {
             var gm = document.getElementById('dashGpsModal');
+            if (!gm) {
+                alert('GPS modal is not available. Set deployment mode to Mobile in Settings and reload.');
+                return;
+            }
             gm.style.display = 'flex';
-            gm.style.alignItems = 'center';
-            gm.style.justifyContent = 'center';
+            gm.setAttribute('aria-hidden', 'false');
             document.getElementById('dash-gps-progress').style.display = 'block';
             document.getElementById('dash-gps-result').style.display = 'none';
             document.getElementById('dash-gps-buttons').style.display = 'none';
@@ -644,18 +648,22 @@
             var m = document.getElementById('dashGpsRestartModal');
             if (!m) {
                 console.error('dashGpsRestartModal missing from DOM');
-                alert('Could not show the Ultrafeeder restart dialog. Reload the dashboard page.');
+                alert('Could not show the Ultrafeeder restart dialog. Set deployment mode to Mobile, save, and reload the dashboard.');
                 return;
             }
             m.style.display = 'flex';
-            m.style.alignItems = 'center';
-            m.style.justifyContent = 'center';
-            document.getElementById('dash-gps-restart-spinner').style.display = 'block';
-            document.getElementById('dash-gps-restart-footer').style.display = 'none';
+            m.setAttribute('aria-hidden', 'false');
+            var sp = document.getElementById('dash-gps-restart-spinner');
+            if (sp) sp.style.display = 'block';
+            var ft = document.getElementById('dash-gps-restart-footer');
+            if (ft) ft.style.display = 'none';
             var logEl = document.getElementById('dash-gps-restart-log');
-            logEl.style.display = 'none';
-            logEl.textContent = '';
-            document.getElementById('dash-gps-restart-status').textContent = 'Applying location…';
+            if (logEl) {
+                logEl.style.display = 'none';
+                logEl.textContent = '';
+            }
+            var st = document.getElementById('dash-gps-restart-status');
+            if (st) st.textContent = 'Applying location…';
         }
 
         function hideDashGpsRestartModal() {
@@ -663,8 +671,7 @@
             var m = document.getElementById('dashGpsRestartModal');
             if (m) {
                 m.style.display = 'none';
-                m.style.alignItems = '';
-                m.style.justifyContent = '';
+                m.setAttribute('aria-hidden', 'true');
             }
             var ft = document.getElementById('dash-gps-restart-footer');
             if (ft) ft.style.display = 'none';
@@ -678,10 +685,14 @@
         }
 
         function dashGpsRestartShowError(msg) {
-            document.getElementById('dash-gps-restart-spinner').style.display = 'none';
-            document.getElementById('dash-gps-restart-status').textContent = '❌ ' + (msg || 'Error');
-            document.getElementById('dash-gps-restart-log').style.display = 'block';
-            document.getElementById('dash-gps-restart-footer').style.display = 'flex';
+            var sp = document.getElementById('dash-gps-restart-spinner');
+            if (sp) sp.style.display = 'none';
+            var st = document.getElementById('dash-gps-restart-status');
+            if (st) st.textContent = '❌ ' + (msg || 'Error');
+            var logEl = document.getElementById('dash-gps-restart-log');
+            if (logEl) logEl.style.display = 'block';
+            var ft = document.getElementById('dash-gps-restart-footer');
+            if (ft) ft.style.display = 'block';
         }
 
         function dashGpsRestartAppendLog(line) {
@@ -868,8 +879,20 @@
             window.open(url, '_blank');
         }
 
+        function wireDashGpsModalBackdrops() {
+            var g = document.getElementById('dashGpsModal');
+            var r = document.getElementById('dashGpsRestartModal');
+            if (g) {
+                g.addEventListener('click', function (e) {
+                    if (e.target === g) hideDashGpsModal();
+                });
+            }
+            /* Restart modal: do not close on backdrop click (avoid interrupting apply/restart) */
+        }
+
         // Initialize dashboard on load
         window.addEventListener('DOMContentLoaded', () => {
+            wireDashGpsModalBackdrops();
             initDashboard();
         });
     </script>
