@@ -5,6 +5,9 @@ TAKNET-PS Mobile mode GPS daemon (FEEDER_DEPLOYMENT_MODE=mobile only).
 - When GPS speed indicates motion: pause TAKNET_PS_MLAT (MLAT) and restart ultrafeeder.
 - After motion, when speed stays in the stationary band for STATIONARY_SECONDS (drift-tolerant):
   sync FEEDER_LAT/LONG/ALT_M from GPS, resume MLAT, restart ultrafeeder.
+- When not in motion, if GPS differs from configured FEEDER_LAT/LONG by more than
+  DRIFT_FROM_FEEDER_RESYNC_M, resync .env from GPS (feeder position used for MLAT).
+- Large jumps between consecutive GPS fixes (> POSITION_JUMP_M) reset the stationary timer.
 
 After a reboot, .env may still have MLAT paused with no in-memory motion flag; in that case
 we arm awaiting_stationary_sync so a parked 60s hold can still sync coords and resume MLAT.
@@ -28,7 +31,9 @@ LOOP_INTERVAL_SEC = 2.0
 STATIONARY_SECONDS = 60.0
 MOTION_MS = 1.0
 DRIFT_STATIONARY_MAX_MS = 1.2
-POSITION_JUMP_M = 80.0
+POSITION_JUMP_M = 40.0
+# When not in motion, if GPS differs from configured FEEDER_LAT/LONG by more than this, resync .env from GPS.
+DRIFT_FROM_FEEDER_RESYNC_M = 30.0
 RESTART_COOLDOWN_SEC = 45.0
 
 
@@ -70,6 +75,31 @@ def restart_ultrafeeder() -> bool:
         timeout=180,
     )
     return r.returncode == 0
+
+
+def parse_feeder_lat_lon(env: dict[str, str]) -> tuple[float, float] | None:
+    """Return configured FEEDER_LAT/LONG if both parse as floats."""
+    try:
+        raw_lat = env.get("FEEDER_LAT", "").strip()
+        raw_lon = env.get("FEEDER_LONG", "").strip()
+        if not raw_lat or not raw_lon:
+            return None
+        return float(raw_lat), float(raw_lon)
+    except (TypeError, ValueError):
+        return None
+
+
+def apply_gps_coords_to_env(env: dict[str, str], lat: float, lon: float, alt_m: object) -> int:
+    """Set FEEDER_LAT/LONG/ALT_M from GPS and resume MLAT in .env. Returns altitude used (m)."""
+    try:
+        alt_int = int(round(float(alt_m))) if alt_m is not None else int(env.get("FEEDER_ALT_M", "0") or "0")
+    except (TypeError, ValueError):
+        alt_int = int(env.get("FEEDER_ALT_M", "0") or "0")
+    env["FEEDER_LAT"] = f"{lat:.5f}"
+    env["FEEDER_LONG"] = f"{lon:.5f}"
+    env["FEEDER_ALT_M"] = str(alt_int)
+    env["TAKNET_PS_MLAT_ENABLED"] = "true"
+    return alt_int
 
 
 def haversine_m(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
@@ -237,6 +267,39 @@ def main() -> None:
             )
             continue
 
+        now = time.time()
+
+        # Not in motion: large drift vs configured feeder (MLAT position) — resync coords from GPS
+        fed = parse_feeder_lat_lon(env)
+        if fed is not None:
+            drift_from_feeder_m = haversine_m(fed[0], fed[1], lat, lon)
+            if drift_from_feeder_m > DRIFT_FROM_FEEDER_RESYNC_M:
+                alt_m = tpv.get("alt")
+                alt_int = apply_gps_coords_to_env(env, lat, lon, alt_m)
+                write_env(env)
+                awaiting_stationary_sync = False
+                stationary_accum = 0.0
+                if now - last_restart >= RESTART_COOLDOWN_SEC and rebuild_config():
+                    if restart_ultrafeeder():
+                        last_restart = now
+                write_state(
+                    {
+                        "active": True,
+                        "message": "Position drift vs configured feeder — resynced from GPS",
+                        "in_motion": False,
+                        "stationary_seconds": 0,
+                        "stationary_target_seconds": STATIONARY_SECONDS,
+                        "awaiting_stationary_sync": False,
+                        "speed_mps": round(abs_speed, 2),
+                        "mlat_paused": False,
+                        "drift_from_feeder_m": round(drift_from_feeder_m, 1),
+                        "last_sync_lat": round(lat, 5),
+                        "last_sync_lon": round(lon, 5),
+                        "last_sync_alt_m": alt_int,
+                    }
+                )
+                continue
+
         # Not in motion: drift-tolerant stationary band
         if abs_speed <= DRIFT_STATIONARY_MAX_MS:
             if awaiting_stationary_sync:
@@ -249,15 +312,7 @@ def main() -> None:
         # --- 60s stationary after motion: sync coords, resume MLAT ---
         if awaiting_stationary_sync and stationary_accum >= STATIONARY_SECONDS:
             alt_m = tpv.get("alt")
-            try:
-                alt_int = int(round(float(alt_m))) if alt_m is not None else int(env.get("FEEDER_ALT_M", "0") or "0")
-            except (TypeError, ValueError):
-                alt_int = int(env.get("FEEDER_ALT_M", "0") or "0")
-
-            env["FEEDER_LAT"] = f"{lat:.5f}"
-            env["FEEDER_LONG"] = f"{lon:.5f}"
-            env["FEEDER_ALT_M"] = str(alt_int)
-            env["TAKNET_PS_MLAT_ENABLED"] = "true"
+            alt_int = apply_gps_coords_to_env(env, lat, lon, alt_m)
             write_env(env)
             awaiting_stationary_sync = False
             stationary_accum = 0.0
