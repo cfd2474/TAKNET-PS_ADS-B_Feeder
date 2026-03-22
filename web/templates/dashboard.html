@@ -610,6 +610,48 @@
             startDashGpsAcquisition();
         }
 
+        /** Older feeders may not have POST /api/gps/apply-location — use /api/config + /api/service/restart */
+        async function dashGpsApplyLocationFallback(lat, lon, alt) {
+            var latF = parseFloat(lat);
+            var lonF = parseFloat(lon);
+            var altInt;
+            if (alt != null && alt !== '') {
+                altInt = Math.round(parseFloat(alt));
+            } else {
+                try {
+                    var cr = await fetch('/api/config');
+                    var env = await cr.json();
+                    altInt = parseInt(String(env.FEEDER_ALT_M || '0'), 10);
+                    if (isNaN(altInt)) altInt = 0;
+                } catch (e) {
+                    altInt = 0;
+                }
+            }
+            var cfg = await fetch('/api/config', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    FEEDER_LAT: latF.toFixed(5),
+                    FEEDER_LONG: lonF.toFixed(5),
+                    FEEDER_ALT_M: String(altInt),
+                    TAKNET_PS_MLAT_ENABLED: 'true'
+                })
+            });
+            var cfgOut = await cfg.json();
+            if (!cfgOut.success) {
+                return { success: false, message: cfgOut.message || 'Failed to save configuration' };
+            }
+            var rs = await fetch('/api/service/restart', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            });
+            var rsOut = await rs.json();
+            if (!rsOut.success) {
+                return { success: false, message: rsOut.message || 'Config saved but service restart failed' };
+            }
+            return { success: true, message: 'Location saved, MLAT enabled, service restarting' };
+        }
+
         async function dashGpsModalAccept() {
             var btn = document.getElementById('dash-gps-btn-accept');
             try {
@@ -625,9 +667,22 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ lat: data.lat, lon: data.lon, alt: data.alt })
                 });
-                var out = await resp.json();
-                if (!out.success) {
-                    alert(out.message || 'Failed to save location');
+                var out;
+                if (resp.status === 404) {
+                    out = await dashGpsApplyLocationFallback(data.lat, data.lon, data.alt);
+                } else {
+                    try {
+                        out = await resp.json();
+                    } catch (parseErr) {
+                        if (resp.status === 404) {
+                            out = await dashGpsApplyLocationFallback(data.lat, data.lon, data.alt);
+                        } else {
+                            throw parseErr;
+                        }
+                    }
+                }
+                if (!out || !out.success) {
+                    alert((out && out.message) || 'Failed to save location');
                     if (btn) btn.disabled = false;
                     return;
                 }
