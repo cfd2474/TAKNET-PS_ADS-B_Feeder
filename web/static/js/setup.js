@@ -151,13 +151,28 @@ async function installTailscale(authKey) {
 
 // Save configuration and start service
 function updateSetupFinishButtonState() {
+    const latInput = document.getElementById('lat');
+    const lonInput = document.getElementById('lon');
+    const altInput = document.getElementById('alt');
     const tzSelect = document.getElementById('tz');
+    const siteNameInput = document.getElementById('site_name');
     const finishBtn = document.getElementById('setup-finish-btn');
-    if (!finishBtn || !tzSelect) return;
-    const hasSelectedTimezone = !!tzSelect.value;
-    finishBtn.disabled = !hasSelectedTimezone;
-    finishBtn.style.opacity = hasSelectedTimezone ? '1' : '0.6';
-    finishBtn.style.cursor = hasSelectedTimezone ? 'pointer' : 'not-allowed';
+    const noteEl = document.getElementById('required-fields-note');
+    if (!finishBtn || !tzSelect || !latInput || !lonInput || !altInput || !siteNameInput) return;
+
+    const ready =
+        !!latInput.value.trim() &&
+        !!lonInput.value.trim() &&
+        !!altInput.value.trim() &&
+        !!tzSelect.value &&
+        !!siteNameInput.value.trim();
+
+    finishBtn.disabled = !ready;
+    finishBtn.style.opacity = ready ? '1' : '0.7';
+    finishBtn.style.cursor = ready ? 'pointer' : 'not-allowed';
+    finishBtn.style.background = ready ? '' : '#9ca3af';
+    finishBtn.style.borderColor = ready ? '' : '#9ca3af';
+    if (noteEl) noteEl.style.display = ready ? 'none' : 'block';
 }
 
 // Save configuration and start service
@@ -665,11 +680,21 @@ function closeProgressModal() {
 
 // Initialize Tailscale key checking
 document.addEventListener('DOMContentLoaded', function() {
+    // Setup page behavior
+    initializeOfflineMode();
+
     // Force explicit timezone selection in wizard, even if browser restores prior form values.
     enforceTimezonePlaceholder();
     setTimeout(enforceTimezonePlaceholder, 0);
     setTimeout(enforceTimezonePlaceholder, 300);
     setTimeout(enforceTimezonePlaceholder, 1000);
+
+    ['lat', 'lon', 'alt', 'site_name', 'tz'].forEach(function(id) {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.addEventListener('input', updateSetupFinishButtonState);
+        el.addEventListener('change', updateSetupFinishButtonState);
+    });
 
     const keyInput = document.getElementById('tailscale_key');
     if (keyInput) {

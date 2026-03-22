@@ -198,6 +198,7 @@
                 </div>
                 
                 <div style="margin-top: 30px; padding-top: 20px; border-top: 2px solid #e5e7eb;">
+                    <p id="required-fields-note" style="margin: 0 0 10px 0; color: #6b7280; font-size: 0.92em;">Fill all required fields before proceeding</p>
                     <button id="setup-finish-btn" class="btn btn-success" onclick="saveAndStart()" disabled>Install & Finish →</button>
                 </div>
             </div>
@@ -279,34 +280,6 @@
 
     <script src="/static/js/setup.js?v={{ version }}"></script>
     <script>
-        // Setup defaults and wizard state
-        function enforceWizardTimezonePlaceholder() {
-            const tzSelect = document.getElementById('tz');
-            if (!tzSelect) return;
-            // Force explicit user choice every wizard run.
-            tzSelect.selectedIndex = 0;
-            tzSelect.value = '';
-            if (typeof updateSetupFinishButtonState === 'function') {
-                updateSetupFinishButtonState();
-            }
-        }
-
-        document.addEventListener('DOMContentLoaded', function() {
-            // Initialize offline mode detection
-            initializeOfflineMode();
-            
-            const tzSelect = document.getElementById('tz');
-            enforceWizardTimezonePlaceholder();
-            if (tzSelect) tzSelect.addEventListener('change', updateSetupFinishButtonState);
-            // Some browsers restore form state after DOMContentLoaded/page cache.
-            setTimeout(enforceWizardTimezonePlaceholder, 0);
-            setTimeout(enforceWizardTimezonePlaceholder, 300);
-        });
-
-        window.addEventListener('pageshow', function() {
-            enforceWizardTimezonePlaceholder();
-        });
-        
         // =============================================================
         // Location Configuration Submit
         // =============================================================
@@ -520,6 +493,9 @@
                     if (data.lat != null) document.getElementById('lat').value = data.lat;
                     if (data.lon != null) document.getElementById('lon').value = data.lon;
                     if (data.alt != null) document.getElementById('alt').value = data.alt;
+                    if (typeof updateSetupFinishButtonState === 'function') {
+                        updateSetupFinishButtonState();
+                    }
                 });
             document.getElementById('gpsModal').style.display = 'none';
         }
