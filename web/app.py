@@ -4643,6 +4643,17 @@ def trigger_system_update():
     """Trigger system update process"""
     def is_update_process_running():
         """Best-effort check for updater/install update processes."""
+        def has_update_match(lines):
+            for line in lines:
+                cmd = (line or '').lower()
+                if 'pgrep -af' in cmd:
+                    continue
+                if 'updater.sh' in cmd or 'taknet_installer_update.sh' in cmd:
+                    return True
+                if 'install.sh' in cmd and '--update' in cmd:
+                    return True
+            return False
+
         try:
             result = subprocess.run(
                 ['pgrep', '-af', r'updater\.sh|taknet_installer_update\.sh|install\.sh.*--update'],
@@ -4650,7 +4661,20 @@ def trigger_system_update():
                 text=True,
                 timeout=3
             )
-            return result.returncode == 0 and bool((result.stdout or '').strip())
+            if result.returncode == 0 and has_update_match((result.stdout or '').splitlines()):
+                return True
+        except Exception:
+            pass
+
+        # Fallback for environments where pgrep may be unavailable.
+        try:
+            result = subprocess.run(
+                ['ps', '-eo', 'args'],
+                capture_output=True,
+                text=True,
+                timeout=3
+            )
+            return has_update_match((result.stdout or '').splitlines())
         except Exception:
             return False
 
@@ -4721,6 +4745,17 @@ def trigger_system_update():
 def get_update_status():
     """Get status of ongoing update"""
     def is_update_process_running():
+        def has_update_match(lines):
+            for line in lines:
+                cmd = (line or '').lower()
+                if 'pgrep -af' in cmd:
+                    continue
+                if 'updater.sh' in cmd or 'taknet_installer_update.sh' in cmd:
+                    return True
+                if 'install.sh' in cmd and '--update' in cmd:
+                    return True
+            return False
+
         try:
             result = subprocess.run(
                 ['pgrep', '-af', r'updater\.sh|taknet_installer_update\.sh|install\.sh.*--update'],
@@ -4728,7 +4763,19 @@ def get_update_status():
                 text=True,
                 timeout=3
             )
-            return result.returncode == 0 and bool((result.stdout or '').strip())
+            if result.returncode == 0 and has_update_match((result.stdout or '').splitlines()):
+                return True
+        except Exception:
+            pass
+
+        try:
+            result = subprocess.run(
+                ['ps', '-eo', 'args'],
+                capture_output=True,
+                text=True,
+                timeout=3
+            )
+            return has_update_match((result.stdout or '').splitlines())
         except Exception:
             return False
 
