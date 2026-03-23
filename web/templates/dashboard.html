@@ -587,6 +587,11 @@
             gm.style.setProperty('visibility', 'hidden', 'important');
             gm.style.setProperty('pointer-events', 'none', 'important');
             gm.setAttribute('aria-hidden', 'true');
+            var panel = document.getElementById('dash-gps-modal-panel');
+            if (panel) {
+                panel.style.setProperty('display', 'none', 'important');
+                panel.style.setProperty('visibility', 'hidden', 'important');
+            }
         }
 
         function hideDashGpsModal(force) {
@@ -647,6 +652,11 @@
             gm.style.setProperty('visibility', 'visible', 'important');
             gm.style.setProperty('pointer-events', 'auto', 'important');
             gm.setAttribute('aria-hidden', 'false');
+            var panel = document.getElementById('dash-gps-modal-panel');
+            if (panel) {
+                panel.style.removeProperty('display');
+                panel.style.removeProperty('visibility');
+            }
             document.getElementById('dash-gps-progress').style.display = 'block';
             document.getElementById('dash-gps-result').style.display = 'none';
             document.getElementById('dash-gps-buttons').style.display = 'none';
@@ -754,32 +764,21 @@
         }
 
         async function runDashGpsSaveAndRestartUltrafeeder(lat, lon, altFromGps) {
-            var statusDiv = document.getElementById('dash-gps-uf-status');
-            var detailDiv = document.getElementById('dash-gps-uf-detail');
-            var logDiv = document.getElementById('dash-gps-uf-log');
-            var spin = document.getElementById('dash-gps-uf-spinner');
-            var actions = document.getElementById('dash-gps-uf-actions');
             var ovStatus = document.getElementById('dash-gps-overlay-status');
             var ovDetail = document.getElementById('dash-gps-overlay-detail');
             var ovLog = document.getElementById('dash-gps-overlay-log');
             var ovSpin = document.getElementById('dash-gps-overlay-spinner');
             var ovActions = document.getElementById('dash-gps-overlay-actions');
-            if (!statusDiv || !logDiv) {
+            if (!ovStatus || !ovLog) {
                 alert('Restart UI is missing. Reload the dashboard.');
                 return;
             }
-            if (spin) spin.style.display = 'block';
             if (ovSpin) ovSpin.style.display = 'block';
-            if (actions) actions.style.display = 'none';
             if (ovActions) ovActions.style.display = 'none';
-            statusDiv.textContent = 'Saving configuration…';
-            if (ovStatus) ovStatus.textContent = 'Saving configuration…';
-            if (detailDiv) detailDiv.textContent = '';
+            ovStatus.textContent = 'Saving configuration…';
             if (ovDetail) ovDetail.textContent = '';
             dashGpsUfSetProgress(5);
-            logDiv.style.display = 'none';
-            logDiv.textContent = '';
-            if (ovLog) ovLog.textContent = '[Build marker: ' + DASH_GPS_BUILD_MARKER + ']\nSaving configuration...';
+            ovLog.textContent = '[Build marker: ' + DASH_GPS_BUILD_MARKER + ']\nSaving configuration...';
 
             var cfgResp = await fetch('/api/config');
             var cfg = await cfgResp.json();
@@ -818,12 +817,9 @@
                     var errorData = await saveResponse.json().catch(function () { return {}; });
                     throw new Error(errorData.message || 'Failed to save configuration');
                 }
-                statusDiv.textContent = '✓ Configuration saved — restarting Ultrafeeder…';
-                if (ovStatus) ovStatus.textContent = '✓ Configuration saved — restarting Ultrafeeder…';
+                ovStatus.textContent = '✓ Configuration saved — restarting Ultrafeeder…';
                 dashGpsUfSetProgress(15);
-                logDiv.style.display = 'block';
-                logDiv.textContent = 'Configuration saved.\nStarting Ultrafeeder restart…\n';
-                if (ovLog) ovLog.textContent = 'Configuration saved.\nStarting Ultrafeeder restart…\n';
+                ovLog.textContent = 'Configuration saved.\nStarting Ultrafeeder restart…\n';
 
                 var restartResponse = await fetch('/api/service/restart', { method: 'POST' });
                 if (!restartResponse.ok) {
@@ -836,31 +832,20 @@
                         localStorage.setItem('taknet_last_feeder_claim_submitted_at', String(Date.now()));
                     } catch (e) {}
                 }
-                statusDiv.textContent = 'Restarting Ultrafeeder…';
-                if (ovStatus) ovStatus.textContent = 'Restarting Ultrafeeder…';
+                ovStatus.textContent = 'Restarting Ultrafeeder…';
                 dashGpsUfSetProgress(20);
                 pollDashboardSaveRestartProgress();
             } catch (error) {
-                if (spin) spin.style.display = 'none';
                 if (ovSpin) ovSpin.style.display = 'none';
-                statusDiv.textContent = '❌ Error: ' + error.message;
-                if (ovStatus) ovStatus.textContent = '❌ Error: ' + error.message;
-                if (detailDiv) detailDiv.textContent = '';
+                ovStatus.textContent = '❌ Error: ' + error.message;
                 if (ovDetail) ovDetail.textContent = '';
-                logDiv.style.display = 'block';
-                logDiv.textContent = (logDiv.textContent || '') + '\n\n❌ ' + error.message;
-                if (ovLog) ovLog.textContent = (ovLog.textContent || '') + '\n\n❌ ' + error.message;
+                ovLog.textContent = (ovLog.textContent || '') + '\n\n❌ ' + error.message;
                 dashGpsUfSetProgress(0);
-                if (actions) actions.style.display = 'block';
                 if (ovActions) ovActions.style.display = 'block';
             }
         }
 
         function pollDashboardSaveRestartProgress() {
-            var statusDiv = document.getElementById('dash-gps-uf-status');
-            var detailDiv = document.getElementById('dash-gps-uf-detail');
-            var logDiv = document.getElementById('dash-gps-uf-log');
-            var spin = document.getElementById('dash-gps-uf-spinner');
             var ovStatus = document.getElementById('dash-gps-overlay-status');
             var ovDetail = document.getElementById('dash-gps-overlay-detail');
             var ovLog = document.getElementById('dash-gps-overlay-log');
@@ -888,25 +873,16 @@
                         dashGpsRestartHasActiveState = true;
                     }
                     dashGpsUfSetProgress(pct);
-                    if (detailDiv) {
-                        detailDiv.textContent = data.details || '';
-                    }
                     if (ovDetail) ovDetail.textContent = data.details || '';
-                    if (statusDiv) {
+                    if (ovStatus) {
                         if (!dashGpsRestartHasActiveState && statusText.toLowerCase() === 'complete') {
-                            statusDiv.textContent = 'Restart requested. Waiting for fresh restart status…';
+                            ovStatus.textContent = 'Restart requested. Waiting for fresh restart status…';
                         } else {
-                            statusDiv.textContent =
+                            ovStatus.textContent =
                                 data.status === 'complete'
                                     ? '✅ Ultrafeeder ready'
                                     : 'Restarting Ultrafeeder… ' + pct + '% — ' + (data.status || 'in progress');
                         }
-                    }
-                    if (ovStatus) ovStatus.textContent = statusDiv ? statusDiv.textContent : ('Restarting Ultrafeeder… ' + pct + '%');
-                    if (logDiv) {
-                        logDiv.style.display = 'block';
-                        logDiv.textContent = data.message || data.status || '…';
-                        logDiv.scrollTop = logDiv.scrollHeight;
                     }
                     if (ovLog) {
                         ovLog.textContent = data.message || data.status || '…';
@@ -921,19 +897,11 @@
                             clearInterval(dashGpsVisibilityGuardInterval);
                             dashGpsVisibilityGuardInterval = null;
                         }
-                        if (spin) spin.style.display = 'none';
                         if (ovSpin) ovSpin.style.display = 'none';
-                        if (statusDiv) statusDiv.textContent = '✅ Ultrafeeder restarted successfully!';
                         if (ovStatus) ovStatus.textContent = '✅ Ultrafeeder restarted successfully!';
-                        if (detailDiv) detailDiv.textContent = data.details || '';
                         if (ovDetail) ovDetail.textContent = data.details || '';
-                        if (logDiv) {
-                            logDiv.textContent = (logDiv.textContent || '') + '\n\n✅ Complete! Restart finished.';
-                        }
                         if (ovLog) ovLog.textContent = (ovLog.textContent || '') + '\n\n✅ Complete! Restart finished.';
                         dashGpsRestartInProgress = false;
-                        var actions = document.getElementById('dash-gps-uf-actions');
-                        if (actions) actions.style.display = 'block';
                         if (ovActions) ovActions.style.display = 'block';
                     }
                 } catch (error) {
