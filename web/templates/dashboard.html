@@ -546,11 +546,17 @@
         let dashGpsRestartPollStartedAt = 0;
         /** Prevent accidental backdrop dismiss while restart status is showing */
         let dashGpsRestartInProgress = false;
+        /** Force modal visibility while restart is in progress */
+        let dashGpsVisibilityGuardInterval = null;
         const DASH_GPS_BUILD_MARKER = 'GPS-RESTART-BM-20260315-01';
 
         function hideDashGpsModal(force) {
             if (dashGpsRestartInProgress && !force) {
                 return;
+            }
+            if (dashGpsVisibilityGuardInterval) {
+                clearInterval(dashGpsVisibilityGuardInterval);
+                dashGpsVisibilityGuardInterval = null;
             }
             if (restartPollInterval) {
                 clearInterval(restartPollInterval);
@@ -566,6 +572,10 @@
             if (restartPollInterval) {
                 clearInterval(restartPollInterval);
                 restartPollInterval = null;
+            }
+            if (dashGpsVisibilityGuardInterval) {
+                clearInterval(dashGpsVisibilityGuardInterval);
+                dashGpsVisibilityGuardInterval = null;
             }
             dashGpsRestartInProgress = false;
             hideDashGpsModal(true);
@@ -833,6 +843,10 @@
                     if (completeSignal && allowComplete) {
                         clearInterval(restartPollInterval);
                         restartPollInterval = null;
+                        if (dashGpsVisibilityGuardInterval) {
+                            clearInterval(dashGpsVisibilityGuardInterval);
+                            dashGpsVisibilityGuardInterval = null;
+                        }
                         if (spin) spin.style.display = 'none';
                         if (statusDiv) statusDiv.textContent = '✅ Ultrafeeder restarted successfully!';
                         if (detailDiv) detailDiv.textContent = data.details || '';
@@ -877,6 +891,20 @@
                 logNow.style.display = 'block';
                 logNow.textContent = '[Build marker: ' + DASH_GPS_BUILD_MARKER + ']\nApplying location update and requesting Ultrafeeder restart...';
             }
+            if (dashGpsVisibilityGuardInterval) clearInterval(dashGpsVisibilityGuardInterval);
+            dashGpsVisibilityGuardInterval = setInterval(function () {
+                if (!dashGpsRestartInProgress) return;
+                var gm = document.getElementById('dashGpsModal');
+                if (!gm) return;
+                if (gm.style.display === 'none') {
+                    gm.style.display = 'flex';
+                    gm.setAttribute('aria-hidden', 'false');
+                    document.getElementById('dash-gps-progress').style.display = 'none';
+                    document.getElementById('dash-gps-result').style.display = 'none';
+                    document.getElementById('dash-gps-buttons').style.display = 'none';
+                    document.getElementById('dash-gps-phase-restart').style.display = 'block';
+                }
+            }, 200);
         }
 
         async function dashGpsModalAccept(ev) {
