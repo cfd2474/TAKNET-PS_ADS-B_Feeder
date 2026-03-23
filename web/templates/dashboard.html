@@ -833,12 +833,11 @@
                         if (statusDiv) statusDiv.textContent = '✅ Ultrafeeder restarted successfully!';
                         if (detailDiv) detailDiv.textContent = data.details || '';
                         if (logDiv) {
-                            logDiv.textContent = (logDiv.textContent || '') + '\n\n✅ Complete! Refreshing dashboard…';
+                            logDiv.textContent = (logDiv.textContent || '') + '\n\n✅ Complete! Restart finished.';
                         }
-                        setTimeout(function () {
-                            dashGpsRestartInProgress = false;
-                            window.location.reload();
-                        }, 2000);
+                        dashGpsRestartInProgress = false;
+                        var actions = document.getElementById('dash-gps-uf-actions');
+                        if (actions) actions.style.display = 'block';
                     }
                 } catch (error) {
                     console.error('Error polling restart progress:', error);
@@ -960,7 +959,8 @@
             }
             if (g) {
                 g.addEventListener('click', function (e) {
-                    if (e.target === g) hideDashGpsModal();
+                    // Keep this modal deterministic: do not close on backdrop clicks.
+                    if (e.target === g) return;
                 });
             }
         }
