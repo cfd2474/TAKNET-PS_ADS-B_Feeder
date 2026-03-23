@@ -4641,6 +4641,19 @@ def periodic_reboot_settings():
 @app.route('/api/system/update', methods=['POST'])
 def trigger_system_update():
     """Trigger system update process"""
+    def is_update_process_running():
+        """Best-effort check for updater/install update processes."""
+        try:
+            result = subprocess.run(
+                ['pgrep', '-af', r'updater\.sh|taknet_installer_update\.sh|install\.sh.*--update'],
+                capture_output=True,
+                text=True,
+                timeout=3
+            )
+            return result.returncode == 0 and bool((result.stdout or '').strip())
+        except Exception:
+            return False
+
     try:
         # If a priority-2 scheduled update has been queued for 02:00,
         # clear it so "Update Now" doesn't trigger a second run.
@@ -4653,10 +4666,19 @@ def trigger_system_update():
         # Check if update is already running
         update_lock = Path('/tmp/taknet_update.lock')
         if update_lock.exists():
-            return jsonify({
-                'success': False,
-                'message': 'Update already in progress'
-            }), 409
+            if is_update_process_running():
+                return jsonify({
+                    'success': False,
+                    'message': 'Update already in progress'
+                }), 409
+            # Stale lock from an interrupted update; clear and continue.
+            try:
+                update_lock.unlink()
+            except Exception:
+                return jsonify({
+                    'success': False,
+                    'message': 'Stale update lock detected but could not be cleared. Remove /tmp/taknet_update.lock and retry.'
+                }), 409
         
         # Create lock file
         update_lock.touch()
@@ -4698,11 +4720,29 @@ def trigger_system_update():
 @app.route('/api/system/update/status', methods=['GET'])
 def get_update_status():
     """Get status of ongoing update"""
+    def is_update_process_running():
+        try:
+            result = subprocess.run(
+                ['pgrep', '-af', r'updater\.sh|taknet_installer_update\.sh|install\.sh.*--update'],
+                capture_output=True,
+                text=True,
+                timeout=3
+            )
+            return result.returncode == 0 and bool((result.stdout or '').strip())
+        except Exception:
+            return False
+
     try:
         update_lock = Path('/tmp/taknet_update.lock')
         log_file = Path('/tmp/taknet_update.log')
         
-        is_updating = update_lock.exists()
+        is_updating = update_lock.exists() and is_update_process_running()
+        # Auto-heal stale lock to prevent future 409 conflicts.
+        if update_lock.exists() and not is_updating:
+            try:
+                update_lock.unlink()
+            except Exception:
+                pass
         
         # Read last 50 lines of log
         log_tail = []
