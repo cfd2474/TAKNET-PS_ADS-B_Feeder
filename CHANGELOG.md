@@ -1,3 +1,9 @@
+## v3.0.02 — 2026-03-22
+
+### Changed
+- UI/API restart-poll resilience improvements and additional mobile/dashboard/settings refinements.
+
+---
 ## v3.0.01 — 2026-03-22
 
 ### Changed

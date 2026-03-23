@@ -1,12 +1,12 @@
 #!/bin/bash
-# TAKNET-PS-ADSB-Feeder One-Line Installer v3.0.01
+# TAKNET-PS-ADSB-Feeder One-Line Installer v3.0.02
 # Default (main):
 #   curl -fsSL https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh | sudo bash
 # Branch (e.g. feature/my-branch):
 #   curl -fsSL https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/feature/my-branch/install/install.sh | sudo bash
 # Or: TAKNET_INSTALL_BRANCH=feature/my-branch curl .../main/install/install.sh | sudo -E bash
 
-INSTALLER_VERSION="3.0.01"
+INSTALLER_VERSION="3.0.02"
 
 set -e
 
