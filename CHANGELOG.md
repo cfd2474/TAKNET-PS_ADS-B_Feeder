@@ -1,3 +1,9 @@
+## v3.0.04 — 2026-03-22
+
+### Changed
+- Transient update-restart console noise reduced and status polling hardening in settings.
+
+---
 ## v3.0.03 — 2026-03-22
 
 ### Changed

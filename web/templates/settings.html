@@ -1609,10 +1609,28 @@
             const contentType = (response.headers.get('content-type') || '').toLowerCase();
             if (!response.ok || contentType.indexOf('application/json') === -1) {
                 const text = await response.text().catch(function () { return ''; });
-                throw new Error('HTTP ' + response.status + ' ' + (response.statusText || '') + (text ? ' (non-JSON response)' : ''));
+                const err = new Error('HTTP ' + response.status + ' ' + (response.statusText || '') + (text ? ' (non-JSON response)' : ''));
+                err.httpStatus = response.status;
+                throw err;
             }
             return await response.json();
         }
+
+        function isTransientServiceError(error) {
+            const status = Number(error && error.httpStatus);
+            if (status === 502 || status === 503 || status === 504) return true;
+            const msg = String((error && error.message) || error || '').toUpperCase();
+            return msg.indexOf('HTTP 502') !== -1 || msg.indexOf('HTTP 503') !== -1 || msg.indexOf('HTTP 504') !== -1;
+        }
+
+        // Browser extensions can throw this benign message during page reload/navigation.
+        window.addEventListener('unhandledrejection', function (event) {
+            const reason = event && event.reason;
+            const message = String((reason && reason.message) || reason || '');
+            if (message.indexOf('A listener indicated an asynchronous response by returning true') !== -1) {
+                event.preventDefault();
+            }
+        });
 
         function updateDeploymentModeUi() {
             const selected = document.querySelector('input[name="feeder_deployment_mode"]:checked');
@@ -2229,7 +2247,9 @@
                 updateTailscaleStatusUI(enabled, connected, null, data.hostname, data.ip);
                 
             } catch (error) {
-                console.error('Failed to check Tailscale status:', error);
+                if (!isTransientServiceError(error)) {
+                    console.error('Failed to check Tailscale status:', error);
+                }
                 updateTailscaleStatusDisplay({
                     installed: false,
                     connected: false,
@@ -3861,7 +3881,9 @@
                 const data = await fetchJsonSafe('/api/netbird/status');
                 updateNetbirdUI(data);
             } catch (error) {
-                console.error('NetBird status check failed:', error);
+                if (!isTransientServiceError(error)) {
+                    console.error('NetBird status check failed:', error);
+                }
                 updateNetbirdUI({ installed: false, connected: false });
             }
         }
