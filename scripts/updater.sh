@@ -199,11 +199,25 @@ CLEANUP_EOF
         echo "   ⚠ Failed to restart ultrafeeder"
     fi
     
-    # Restart web interface
+    # Restart web interface (hard recycle fallback to avoid stale template process state)
     if systemctl restart adsb-web 2>/dev/null; then
         echo "   ✓ Web interface restarted"
     else
-        echo "   ⚠ Failed to restart web interface"
+        echo "   ⚠ Restart failed, trying stop/start web interface..."
+        systemctl stop adsb-web 2>/dev/null || true
+        sleep 1
+        if systemctl start adsb-web 2>/dev/null; then
+            echo "   ✓ Web interface started (after stop/start)"
+        else
+            echo "   ⚠ Failed to start web interface"
+        fi
+    fi
+
+    # Quick local health check to confirm Flask is responding post-restart
+    if curl -fsS --max-time 6 "http://127.0.0.1:5000/settings" > /dev/null 2>&1; then
+        echo "   ✓ Web interface health check passed"
+    else
+        echo "   ⚠ Web interface health check failed (check: sudo journalctl -u adsb-web -n 80)"
     fi
 
     # Tunnel: enable unit and start if configured (.env)
