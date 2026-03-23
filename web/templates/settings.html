@@ -358,7 +358,16 @@
                         Zip code will be prepended. Current: {{ config.get('MLAT_SITE_NAME', 'Not set') }}
                     </small>
                 </div>
-                <div class="form-group">
+                <div style="margin-top: 20px; padding-top: 20px; border-top: 2px solid #e5e7eb;">
+                    <button class="btn btn-success" onclick="saveAndRestartUltrafeeder()" style="width: 100%;">
+                        💾 Apply Changes & Restart Ultrafeeder
+                    </button>
+                    <small class="help-text" style="display: block; margin-top: 10px; text-align: center;">
+                        Saves location and name settings, then restarts Ultrafeeder to apply changes
+                    </small>
+                </div>
+
+                <div class="form-group" style="margin-top: 18px;">
                     <label>Aggregator feeder claim key (optional)</label>
                     <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
                         <input type="password" id="taknet_feeder_claim_key" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" autocomplete="off"
@@ -377,15 +386,6 @@
                         When set, this feeder sends a one-line claim before the Beast data on each connection so the dashboard can set feeder owners automatically.
                         Leave blank for legacy behavior. Click <strong>Register feeder</strong> to submit this key.
                         If you're associating a different account, paste the new key and click <strong>Register feeder</strong> again.
-                    </small>
-                </div>
-                
-                <div style="margin-top: 20px; padding-top: 20px; border-top: 2px solid #e5e7eb;">
-                    <button class="btn btn-success" onclick="saveAndRestartUltrafeeder()" style="width: 100%;">
-                        💾 Apply Changes & Restart Ultrafeeder
-                    </button>
-                    <small class="help-text" style="display: block; margin-top: 10px; text-align: center;">
-                        Saves location and name settings, then restarts Ultrafeeder to apply changes
                     </small>
                 </div>
             </div>
