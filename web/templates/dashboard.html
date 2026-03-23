@@ -600,8 +600,13 @@
 
         function destroyDashGpsBaseModalForRestart() {
             var gm = document.getElementById('dashGpsModal');
-            if (!gm) return;
-            gm.remove();
+            var panel = document.getElementById('dash-gps-modal-panel');
+            if (panel) {
+                panel.remove();
+            }
+            if (gm) {
+                gm.remove();
+            }
         }
 
         function hardHideDashGpsBaseModal() {
