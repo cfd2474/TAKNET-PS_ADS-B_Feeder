@@ -128,6 +128,29 @@ run_update() {
 # Function to restart services
 restart_services() {
     echo "🔄 Restarting services..."
+    
+    # Force-refresh critical web files from selected branch to avoid stale template drift.
+    # This makes updates deterministic even if a previous installer run partially succeeded.
+    echo "   • Syncing web UI files from branch: ${INSTALL_BRANCH}"
+    sync_web_file() {
+        local rel="$1"
+        local dest="/opt/adsb/${rel}"
+        local tmp="${dest}.tmp.$$"
+        if curl -fsSL "${REPO_URL}/${rel}" -o "${tmp}"; then
+            mkdir -p "$(dirname "${dest}")"
+            mv "${tmp}" "${dest}"
+            echo "   ✓ Synced ${rel}"
+        else
+            rm -f "${tmp}" 2>/dev/null || true
+            echo "   ⚠ Failed to sync ${rel} (keeping existing file)"
+        fi
+    }
+    sync_web_file "web/app.py"
+    sync_web_file "web/templates/dashboard.html"
+    sync_web_file "web/templates/settings.html"
+    sync_web_file "web/templates/setup.html"
+    sync_web_file "web/static/js/dashboard.js"
+    sync_web_file "web/static/js/setup.js"
 
     # Verify SSH is configured for remote user via VPN
     if ! grep -q "# TAKNET-PS: remote VPN-only access" /etc/ssh/sshd_config 2>/dev/null; then
