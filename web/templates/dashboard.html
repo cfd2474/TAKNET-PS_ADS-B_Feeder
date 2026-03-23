@@ -952,42 +952,17 @@
         function dashGpsShowRestartPhase() {
             dashGpsRestartInProgress = true;
             showDashGpsRestartOverlay();
-            var titleEl = document.getElementById('dash-gps-modal-title');
-            if (titleEl) titleEl.textContent = '📍 Applying location & restarting Ultrafeeder';
-            var bm = document.getElementById('dash-gps-build-marker');
-            if (bm) bm.textContent = 'Build marker: ' + DASH_GPS_BUILD_MARKER + ' (restart phase)';
-            document.getElementById('dash-gps-progress').style.display = 'none';
-            document.getElementById('dash-gps-result').style.display = 'none';
-            document.getElementById('dash-gps-buttons').style.display = 'none';
-            document.getElementById('dash-gps-phase-restart').style.display = 'block';
-            document.getElementById('dash-gps-uf-actions').style.display = 'none';
-            var spin = document.getElementById('dash-gps-uf-spinner');
-            if (spin) spin.style.display = 'block';
+
+            // Keep a single restart surface: hide the GPS acquisition modal entirely.
+            var gm = document.getElementById('dashGpsModal');
+            if (gm) {
+                gm.style.display = 'none';
+                gm.setAttribute('aria-hidden', 'true');
+            }
+
             dashGpsRestartHasActiveState = false;
             dashGpsRestartPollStartedAt = Date.now();
             dashGpsUfSetProgress(0);
-            document.getElementById('dash-gps-uf-detail').textContent = '';
-            var logEl = document.getElementById('dash-gps-uf-log');
-            if (logEl) {
-                logEl.style.display = 'none';
-                logEl.textContent = '';
-            }
-            document.getElementById('dash-gps-uf-status').textContent = 'Saving configuration…';
-            var logNow = document.getElementById('dash-gps-uf-log');
-            if (logNow) {
-                logNow.style.display = 'block';
-                logNow.textContent = '[Build marker: ' + DASH_GPS_BUILD_MARKER + ']\nApplying location update and requesting Ultrafeeder restart...';
-            }
-            if (dashGpsVisibilityGuardInterval) clearInterval(dashGpsVisibilityGuardInterval);
-            dashGpsVisibilityGuardInterval = setInterval(function () {
-                if (!dashGpsRestartInProgress) return;
-                var gm = document.getElementById('dashGpsModal');
-                if (!gm) return;
-                if (gm.style.display === 'none') {
-                    // Keep dedicated restart overlay as the source of truth.
-                    showDashGpsRestartOverlay();
-                }
-            }, 200);
         }
 
         async function dashGpsModalAccept(ev) {
@@ -1011,13 +986,13 @@
                 dashGpsShowRestartPhase();
                 await runDashGpsSaveAndRestartUltrafeeder(data.lat, data.lon, data.alt);
             } catch (e) {
-                var phase = document.getElementById('dash-gps-phase-restart');
-                if (phase && phase.style.display === 'block') {
-                    var st = document.getElementById('dash-gps-uf-status');
-                    var spin = document.getElementById('dash-gps-uf-spinner');
-                    if (st) st.textContent = '❌ Error: ' + (e && e.message ? e.message : String(e));
-                    if (spin) spin.style.display = 'none';
-                    document.getElementById('dash-gps-uf-actions').style.display = 'block';
+                var ovStatus = document.getElementById('dash-gps-overlay-status');
+                var ovSpin = document.getElementById('dash-gps-overlay-spinner');
+                var ovActions = document.getElementById('dash-gps-overlay-actions');
+                if (ovStatus) {
+                    ovStatus.textContent = '❌ Error: ' + (e && e.message ? e.message : String(e));
+                    if (ovSpin) ovSpin.style.display = 'none';
+                    if (ovActions) ovActions.style.display = 'block';
                 } else {
                     alert('Error: ' + (e && e.message ? e.message : String(e)));
                 }
