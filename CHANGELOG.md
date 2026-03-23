@@ -1,3 +1,15 @@
+## v3.0.01 — 2026-03-22
+
+### Changed
+- Release notes for auto-updater: main-branch transition complete; mobile feeder flow, dashboard tunnel restart action, settings deployment-mode UX updates, and updater reliability improvements.
+
+---
+## v3.0.0 — 2026-03-22
+
+### Changed
+- Major release: main-branch transition, mobile feeder workflow updates, and UI/runtime update reliability improvements.
+
+---
 ## v2.59.68 — 2026-03-21
 
 ### Changed
