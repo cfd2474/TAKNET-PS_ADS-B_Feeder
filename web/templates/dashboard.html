@@ -455,6 +455,18 @@
             font-size: 12px;
             z-index: 1000;
         }
+
+        /* Hard kill-switch for legacy GPS modal panel while restart overlay is active */
+        body.dash-gps-restart-active #dash-gps-modal-panel {
+            display: none !important;
+            visibility: hidden !important;
+            pointer-events: none !important;
+        }
+        body.dash-gps-restart-active #dashGpsModal {
+            display: none !important;
+            visibility: hidden !important;
+            pointer-events: none !important;
+        }
     </style>
 
     <div class="last-updated" id="lastUpdated">
@@ -655,11 +667,13 @@
                 dashGpsVisibilityGuardInterval = null;
             }
             dashGpsRestartInProgress = false;
+            document.body.classList.remove('dash-gps-restart-active');
             hideDashGpsRestartOverlay();
             hideDashGpsModal(true);
         }
 
         function openDashGpsForceResyncModal() {
+            document.body.classList.remove('dash-gps-restart-active');
             restoreDashGpsBaseModalIfNeeded();
             var gm = document.getElementById('dashGpsModal');
             if (!gm) {
@@ -950,6 +964,7 @@
 
         function dashGpsShowRestartPhase() {
             dashGpsRestartInProgress = true;
+            document.body.classList.add('dash-gps-restart-active');
             showDashGpsRestartOverlay();
             // Keep a single restart surface: remove GPS acquisition modal from DOM entirely.
             destroyDashGpsBaseModalForRestart();
