@@ -1,3 +1,9 @@
+## v3.0.03 — 2026-03-22
+
+### Changed
+- Dashboard SDR detection aligned with settings and updater lock handling hardened.
+
+---
 ## v3.0.02 — 2026-03-22
 
 ### Changed

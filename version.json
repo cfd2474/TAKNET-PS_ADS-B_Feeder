@@ -1,11 +1,11 @@
 {
-  "version": "3.0.02",
+  "version": "3.0.03",
   "release_date": "2026-03-22",
-  "release_name": "v3.0.02",
+  "release_name": "v3.0.03",
   "download_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh",
   "changelog_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/CHANGELOG.md",
   "minimum_version": "2.40.0",
   "breaking_changes": false,
-  "release_notes": "UI/API restart-poll resilience improvements and additional mobile/dashboard/settings refinements.",
+  "release_notes": "Dashboard SDR detection aligned with settings and updater lock handling hardened.",
   "update_priority": 3
 }
