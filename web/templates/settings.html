@@ -213,10 +213,6 @@
                 <h3>🚐 Deployment mode</h3>
                 <p style="color: #6b7280; margin-bottom: 12px;">Choose how this feeder is used. Mobile mode shows an extra dashboard panel for vehicle-mounted deployments.</p>
                 <p style="color: #6b7280; margin: 0 0 12px 0; font-size: 0.9em;">After changing deployment mode, click <strong>💾 Apply Changes &amp; Restart Ultrafeeder</strong> below to apply the mode update.</p>
-                <div style="margin-bottom: 16px; padding: 12px 14px; background: #fffbeb; border: 1px solid #fcd34d; border-radius: 8px; color: #78350f; font-size: 0.9em; line-height: 1.5;">
-                    <strong>Experimental — alpha</strong><br>
-                    <strong>Mobile mode</strong> is in an <strong>experimental phase</strong> and is considered <strong>alpha development</strong>. Behavior may change; edge cases are still being validated. <strong>Not recommended for public or production feeders yet.</strong> Use <strong>Stationary mode</strong> unless you are actively testing mobile features in a controlled environment.
-                </div>
                 <div style="display: flex; flex-direction: column; gap: 14px;">
                     <label style="display: flex; align-items: flex-start; gap: 12px; cursor: pointer; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; background: #fafafa;">
                         <input type="radio" name="feeder_deployment_mode" value="stationary"
@@ -233,11 +229,11 @@
                             style="margin-top: 4px;">
                         <div>
                             <strong style="color: #1f2937;">Mobile mode <span style="font-weight: 600; color: #b45309;">(alpha)</span></strong>
-                            <p style="margin: 6px 0 0 0; font-size: 0.9em; color: #6b7280; line-height: 1.45;">For mobile deployment where the receiver moves, such as vehicle-mounted solutions. The <strong>mobile-mode-gps</strong> service pauses MLAT while moving, then after ~60s stationary (GPS drift–tolerant) syncs coordinates from GPS, resumes MLAT, and restarts ultrafeeder. The dashboard shows live status and stationary hold progress. <em>See the warning above — not for public production use yet.</em></p>
+                            <p style="margin: 6px 0 0 0; font-size: 0.9em; color: #6b7280; line-height: 1.45;">For mobile deployment where the receiver moves, such as vehicle-mounted solutions. The <strong>mobile-mode-gps</strong> service pauses MLAT while moving, then after ~60s stationary (GPS drift–tolerant) syncs coordinates from GPS, resumes MLAT, and restarts ultrafeeder. The dashboard shows live status and stationary hold progress.</p>
                         </div>
                     </label>
                 </div>
-                <div style="margin-top: 14px; padding: 12px 14px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 0.88em; color: #475569; line-height: 1.55;">
+                <div id="mobile-motion-criteria" style="margin-top: 14px; padding: 12px 14px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 0.88em; color: #475569; line-height: 1.55; display: {% if config.get('FEEDER_DEPLOYMENT_MODE', 'stationary') == 'mobile' %}block{% else %}none{% endif %};">
                     <strong style="color: #334155;">Motion detection criteria</strong> (from <code style="font-size: 0.92em;">mobile-mode-gps</code>)
                     <ul style="margin: 8px 0 0 0; padding-left: 1.25rem;">
                         <li><strong>In motion:</strong> GPS speed &gt; <strong>1.0&nbsp;m/s</strong> (~3.6&nbsp;km/h) — MLAT is paused.</li>
@@ -747,7 +743,7 @@
                 <span id="restart-tunnel-msg" style="margin-left: 12px; font-size: 0.9em; color: #6b7280;"></span>
             </div>
 
-            <div class="actions">
+            <div class="actions" style="margin-top: 14px;">
                 <button class="btn btn-primary" onclick="showRestartServicesModal()">🔄 Restart Services</button>
                 <button class="btn" onclick="rebootDevice()" style="margin-left: 8px;">🔌 Reboot Device</button>
                 <button class="btn" onclick="window.location.href='/dashboard'">← Back to Dashboard</button>
@@ -1608,6 +1604,15 @@
             }
         }
 
+        function updateDeploymentModeUi() {
+            const selected = document.querySelector('input[name="feeder_deployment_mode"]:checked');
+            const mode = selected ? selected.value : 'stationary';
+            const box = document.getElementById('mobile-motion-criteria');
+            if (box) {
+                box.style.display = mode === 'mobile' ? 'block' : 'none';
+            }
+        }
+
         async function registerFeeder() {
             const claimEl = document.getElementById('taknet_feeder_claim_key');
             const claimRaw = claimEl ? claimEl.value.trim() : '';
@@ -1620,10 +1625,16 @@
 
         window.addEventListener('DOMContentLoaded', function () {
             const claimEl = document.getElementById('taknet_feeder_claim_key');
-            if (!claimEl) return;
-            updateRegisterFeederButtonState();
-            claimEl.addEventListener('input', updateRegisterFeederButtonState);
-            claimEl.addEventListener('change', updateRegisterFeederButtonState);
+            if (claimEl) {
+                updateRegisterFeederButtonState();
+                claimEl.addEventListener('input', updateRegisterFeederButtonState);
+                claimEl.addEventListener('change', updateRegisterFeederButtonState);
+            }
+            const modeRadios = document.querySelectorAll('input[name="feeder_deployment_mode"]');
+            modeRadios.forEach(function (el) {
+                el.addEventListener('change', updateDeploymentModeUi);
+            });
+            updateDeploymentModeUi();
         });
         
         async function saveSettings() {
