@@ -1,11 +1,11 @@
 {
-  "version": "3.0.0",
+  "version": "3.0.01",
   "release_date": "2026-03-22",
-  "release_name": "v3.0",
+  "release_name": "v3.0.01",
   "download_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh",
   "changelog_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/CHANGELOG.md",
   "minimum_version": "2.40.0",
   "breaking_changes": false,
-  "release_notes": "Major release: main-branch transition, mobile feeder workflow updates, and UI/runtime update reliability improvements.",
+  "release_notes": "Release notes for auto-updater: main-branch transition complete; mobile feeder flow, dashboard tunnel restart action, settings deployment-mode UX updates, and updater reliability improvements.",
   "update_priority": 3
 }
