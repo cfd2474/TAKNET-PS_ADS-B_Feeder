@@ -12,10 +12,10 @@ if [ -n "${TAKNET_INSTALL_BRANCH:-}" ]; then
 elif [ -f /opt/adsb/REPO_BRANCH ]; then
     INSTALL_BRANCH=$(tr -d '\n\r' < /opt/adsb/REPO_BRANCH)
 else
-    INSTALL_BRANCH="mobile-deploy"
+    INSTALL_BRANCH="main"
 fi
 if ! echo "$INSTALL_BRANCH" | grep -qE '^[a-zA-Z0-9._/+-]+$'; then
-    INSTALL_BRANCH="mobile-deploy"
+    INSTALL_BRANCH="main"
 fi
 
 REPO_URL="https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/${INSTALL_BRANCH}"

@@ -1268,7 +1268,7 @@ def dashboard():
         
         if current_version != 'unknown':
             import requests
-            repo_url = 'https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/mobile-deploy/version.json'
+            repo_url = 'https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/version.json'
             response = requests.get(repo_url, timeout=5)
             
             if response.status_code == 200:
@@ -3365,7 +3365,7 @@ def api_dump978_enable():
         if needs_update:
             print("→ Updating docker-compose.yml with dump978 service...")
             try:
-                url = 'https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/mobile-deploy/config/docker-compose.yml'
+                url = 'https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/config/docker-compose.yml'
                 urllib.request.urlretrieve(url, compose_file)
                 print("✓ docker-compose.yml updated")
             except Exception as e:
@@ -4469,7 +4469,7 @@ def get_system_version():
         print(f"Current version from file: {current_version}")
         
         # Fetch latest version from GitHub
-        repo_url = 'https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/mobile-deploy/version.json'
+        repo_url = 'https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/version.json'
         
         try:
             import requests
