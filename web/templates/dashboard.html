@@ -589,8 +589,12 @@
             gm.setAttribute('aria-hidden', 'true');
             var panel = document.getElementById('dash-gps-modal-panel');
             if (panel) {
-                panel.style.setProperty('display', 'none', 'important');
+                panel.style.setProperty('position', 'absolute', 'important');
+                panel.style.setProperty('left', '-10000px', 'important');
+                panel.style.setProperty('top', '-10000px', 'important');
+                panel.style.setProperty('opacity', '0', 'important');
                 panel.style.setProperty('visibility', 'hidden', 'important');
+                panel.style.setProperty('pointer-events', 'none', 'important');
             }
         }
 
@@ -654,8 +658,12 @@
             gm.setAttribute('aria-hidden', 'false');
             var panel = document.getElementById('dash-gps-modal-panel');
             if (panel) {
-                panel.style.removeProperty('display');
+                panel.style.removeProperty('position');
+                panel.style.removeProperty('left');
+                panel.style.removeProperty('top');
+                panel.style.removeProperty('opacity');
                 panel.style.removeProperty('visibility');
+                panel.style.removeProperty('pointer-events');
             }
             document.getElementById('dash-gps-progress').style.display = 'block';
             document.getElementById('dash-gps-result').style.display = 'none';
