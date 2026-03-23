@@ -1,11 +1,11 @@
 {
-  "version": "2.59.68",
-  "release_date": "2026-03-21",
-  "release_name": "FR24 web UI VPN bind",
+  "version": "3.0.0",
+  "release_date": "2026-03-22",
+  "release_name": "v3.0",
   "download_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh",
   "changelog_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/CHANGELOG.md",
   "minimum_version": "2.40.0",
   "breaking_changes": false,
-  "release_notes": "Set BIND_INTERFACE=0.0.0.0 for FR24 container so web UI works from NetBird/Tailscale (100.x) and other non-RFC1918 ranges.",
+  "release_notes": "Major release: main-branch transition, mobile feeder workflow updates, and UI/runtime update reliability improvements.",
   "update_priority": 3
 }
