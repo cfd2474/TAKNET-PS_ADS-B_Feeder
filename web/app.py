@@ -2262,8 +2262,80 @@ def api_sdr_status():
         env = read_env()
         devices = []
 
+        def format_device_type(raw_type, raw_driver, raw_name, raw_label):
+            driver = (raw_driver or raw_type or '').strip().lower()
+            if driver == 'rtlsdr':
+                return 'RTL-SDR'
+            if driver == 'ftdi':
+                return 'FTDI UATRadio'
+            if driver == 'airspy':
+                return 'Airspy'
+            if driver == 'hackrf':
+                return 'HackRF'
+            return (raw_label or raw_name or raw_driver or raw_type or 'SDR').strip()
+
+        # Preferred path: use the same universal detector used by Settings.
+        # This includes FTDI devices that Soapy-only detection can miss.
+        try:
+            detect_result = subprocess.run(
+                ['/opt/adsb/scripts/detect-all-sdrs.sh'],
+                capture_output=True,
+                text=True,
+                timeout=15
+            )
+            if detect_result.returncode == 0:
+                detected = json.loads((detect_result.stdout or '').strip() or '{}')
+                detected_devices = detected.get('devices', []) or []
+                if detected_devices:
+                    readsb_device = str(env.get('READSB_DEVICE', '0')).strip()
+                    readsb_gain = env.get('READSB_GAIN', 'autogain')
+                    readsb_biastee = env.get('READSB_ENABLE_BIASTEE', '').upper() == 'ON'
+
+                    dump978_enabled = env.get('DUMP978_ENABLED', 'false').lower() == 'true'
+                    dump978_device = str(env.get('DUMP978_DEVICE', '1')).strip()
+                    dump978_gain = env.get('DUMP978_GAIN', 'autogain')
+
+                    for d in detected_devices:
+                        idx = d.get('index')
+                        idx_str = str(idx)
+                        serial = (d.get('serial') or '').strip() or 'Unknown'
+                        driver = (d.get('driver') or d.get('type') or '').strip().lower()
+                        device_path = str(d.get('device_path') or '').strip()
+
+                        use_for = 'Unassigned'
+                        gain = 'autogain'
+                        biastee = False
+
+                        # 1090 assignment (readsb)
+                        if readsb_device == idx_str:
+                            use_for = '1090 MHz'
+                            gain = readsb_gain or 'autogain'
+                            biastee = readsb_biastee
+                        # 978 assignment (dump978): support index-based and path-based configs.
+                        elif dump978_enabled and (
+                            dump978_device == idx_str or
+                            (device_path and dump978_device == device_path)
+                        ):
+                            use_for = '978 MHz (UAT)'
+                            gain = 'autogain' if driver == 'ftdi' else (dump978_gain or 'autogain')
+
+                        devices.append({
+                            'index': idx if idx is not None else len(devices),
+                            'type': format_device_type(d.get('type'), d.get('driver'), d.get('name'), d.get('label')),
+                            'serial': serial,
+                            'use_for': use_for,
+                            'gain': gain,
+                            'biastee': biastee
+                        })
+
+        except Exception:
+            pass
+
         # Try SoapySDR detection
         try:
+            if devices:
+                return jsonify({'success': True, 'devices': devices})
+
             result = subprocess.run(
                 ['SoapySDRUtil', '--find'],
                 capture_output=True, text=True, timeout=8
