@@ -1421,8 +1421,14 @@ systemctl daemon-reload
 systemctl enable ultrafeeder
 systemctl enable adsb-web
 
-# Start web UI (but not ultrafeeder - needs config first)
-systemctl start adsb-web
+# Web UI service
+# - Fresh install: start web UI for setup wizard
+# - Update mode: restart to ensure template/JS cache is reloaded
+if [ "$UPDATE_MODE" = true ]; then
+    systemctl restart adsb-web 2>/dev/null || systemctl start adsb-web
+else
+    systemctl start adsb-web
+fi
 
 # Set permissions
 if [ "$SUDO_USER" ]; then
@@ -1440,6 +1446,11 @@ echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
 if [ "$UPDATE_MODE" = true ]; then
+    # Ensure updated templates/static files and compose changes are active even when
+    # this script is invoked directly in update mode (outside updater.sh wrapper).
+    systemctl restart adsb-web 2>/dev/null || true
+    systemctl restart ultrafeeder 2>/dev/null || true
+
     echo "✓ Update complete!"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo ""
