@@ -479,6 +479,7 @@
         <div id="dash-gps-modal-panel" style="background: #fff; border-radius: 12px; max-width: 520px; width: 100%; box-shadow: 0 20px 50px rgba(0,0,0,0.25); overflow: hidden;">
             <div style="padding: 16px 20px; border-bottom: 1px solid #e5e7eb;">
                 <h2 id="dash-gps-modal-title" style="margin: 0; font-size: 1.25em; color: #1f2937;">📍 Get coordinates from GPS</h2>
+                <div id="dash-gps-build-marker" style="margin-top: 6px; font-size: 0.78em; color: #6b7280;">Build marker: GPS-RESTART-BM-20260315-01</div>
             </div>
             <div style="padding: 0 20px 20px;">
                 <div id="dash-gps-progress" style="padding: 15px 0;">
@@ -545,6 +546,7 @@
         let dashGpsRestartPollStartedAt = 0;
         /** Prevent accidental backdrop dismiss while restart status is showing */
         let dashGpsRestartInProgress = false;
+        const DASH_GPS_BUILD_MARKER = 'GPS-RESTART-BM-20260315-01';
 
         function hideDashGpsModal(force) {
             if (dashGpsRestartInProgress && !force) {
@@ -582,6 +584,8 @@
             dashGpsRestartInProgress = false;
             var titleEl = document.getElementById('dash-gps-modal-title');
             if (titleEl) titleEl.textContent = '📍 Get coordinates from GPS';
+            var bm = document.getElementById('dash-gps-build-marker');
+            if (bm) bm.textContent = 'Build marker: ' + DASH_GPS_BUILD_MARKER;
             var pr = document.getElementById('dash-gps-phase-restart');
             if (pr) {
                 pr.style.display = 'none';
@@ -849,6 +853,8 @@
             dashGpsRestartInProgress = true;
             var titleEl = document.getElementById('dash-gps-modal-title');
             if (titleEl) titleEl.textContent = '📍 Applying location & restarting Ultrafeeder';
+            var bm = document.getElementById('dash-gps-build-marker');
+            if (bm) bm.textContent = 'Build marker: ' + DASH_GPS_BUILD_MARKER + ' (restart phase)';
             document.getElementById('dash-gps-progress').style.display = 'none';
             document.getElementById('dash-gps-result').style.display = 'none';
             document.getElementById('dash-gps-buttons').style.display = 'none';
@@ -869,7 +875,7 @@
             var logNow = document.getElementById('dash-gps-uf-log');
             if (logNow) {
                 logNow.style.display = 'block';
-                logNow.textContent = 'Applying location update and requesting Ultrafeeder restart...';
+                logNow.textContent = '[Build marker: ' + DASH_GPS_BUILD_MARKER + ']\nApplying location update and requesting Ultrafeeder restart...';
             }
         }
 
