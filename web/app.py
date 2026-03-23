@@ -19,6 +19,10 @@ import socket
 import urllib.request
 
 app = Flask(__name__)
+# Keep template rendering in sync with on-disk HTML updates.
+# This avoids stale Jinja template cache after update operations.
+app.config['TEMPLATES_AUTO_RELOAD'] = True
+app.jinja_env.auto_reload = True
 
 # Version information - read from VERSION file
 def get_version():
