@@ -1,6 +1,15 @@
 #!/bin/bash
+<<<<<<< Updated upstream
 # TAKNET-PS-ADSB-Feeder One-Line Installer v2.59.67
 # curl -fsSL https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh | sudo bash
+=======
+# TAKNET-PS-ADSB-Feeder One-Line Installer v2.59.68
+# Default (main):
+#   curl -fsSL https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh | sudo bash
+# Branch (e.g. feature/my-branch):
+#   curl -fsSL https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/feature/my-branch/install/install.sh | sudo bash
+# Or: TAKNET_INSTALL_BRANCH=feature/my-branch curl .../main/install/install.sh | sudo -E bash
+>>>>>>> Stashed changes
 
 INSTALLER_VERSION="2.59.67"
 
@@ -8,8 +17,43 @@ set -e
 
 # Check for update mode flag
 UPDATE_MODE=false
+<<<<<<< Updated upstream
 if [ "$1" == "--update" ]; then
     UPDATE_MODE=true
+=======
+INSTALL_BRANCH_ARG=""
+while [ $# -gt 0 ]; do
+    case "$1" in
+        --update|-u) UPDATE_MODE=true; shift ;;
+        --branch)
+            shift
+            INSTALL_BRANCH_ARG="${1:-main}"
+            shift
+            ;;
+        *) shift ;;
+    esac
+done
+
+# Resolve Git branch for raw.githubusercontent.com (all file downloads use this)
+if [ -n "${TAKNET_INSTALL_BRANCH:-}" ]; then
+    INSTALL_BRANCH="$TAKNET_INSTALL_BRANCH"
+elif [ -n "$INSTALL_BRANCH_ARG" ]; then
+    INSTALL_BRANCH="$INSTALL_BRANCH_ARG"
+elif [ "$UPDATE_MODE" = true ] && [ -f /opt/adsb/REPO_BRANCH ]; then
+    INSTALL_BRANCH=$(tr -d '\n\r' < /opt/adsb/REPO_BRANCH)
+else
+    INSTALL_BRANCH="main"
+fi
+# Allow branch names like main or feature/foo
+if ! echo "$INSTALL_BRANCH" | grep -qE '^[a-zA-Z0-9._/+-]+$'; then
+    echo "⚠ Invalid branch name (allowed: letters, numbers, . _ / + -); using main"
+    INSTALL_BRANCH="main"
+fi
+
+REPO="https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/${INSTALL_BRANCH}"
+
+if [ "$UPDATE_MODE" = true ]; then
+>>>>>>> Stashed changes
     echo ""
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo "  TAKNET-PS UPDATE MODE"
@@ -33,6 +77,10 @@ if [ "$EUID" -ne 0 ]; then
     echo "Please run with sudo:"
     echo ""
     echo "  curl -fsSL https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh | sudo bash"
+<<<<<<< Updated upstream
+=======
+    echo "  Branch: curl -fsSL https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/<branch>/install/install.sh | sudo bash"
+>>>>>>> Stashed changes
     echo ""
     echo "Or if you downloaded the script:"
     echo ""

@@ -74,6 +74,24 @@ TAKNET-PS is an independently developed project focused on delivering free, low-
 curl -fsSL https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh | sudo bash
 ```
 
+<<<<<<< Updated upstream
+=======
+**Install from a branch** (all downloads use that branch; branch is saved to `/opt/adsb/REPO_BRANCH` for future updates):
+
+```bash
+# Option A — URL includes the branch name
+curl -fsSL https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/feature/my-branch/install/install.sh | sudo bash
+
+# Option B — main URL + explicit flag
+curl -fsSL https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh | sudo bash -s -- --branch feature/my-branch
+
+# Option C — environment (use sudo -E so the variable is preserved)
+TAKNET_INSTALL_BRANCH=feature/my-branch curl -fsSL https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh | sudo -E bash
+```
+
+Updates from the web UI or `updater.sh` use the same branch automatically. Override anytime: `TAKNET_INSTALL_BRANCH=my-branch sudo -E bash /opt/adsb/scripts/updater.sh`.
+
+>>>>>>> Stashed changes
 ### Installation Steps
 
 1. **Flash Raspberry Pi OS Lite 64-bit (Bookworm)** to SD card
