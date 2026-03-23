@@ -501,7 +501,7 @@
                             <div><strong>Altitude:</strong> <span id="dash-gps-result-alt"></span> m</div>
                             <div><strong>Accuracy:</strong> <span id="dash-gps-result-accuracy"></span></div>
                         </div>
-                        <p style="font-size: 0.88em; color: #6b7280; margin: 0;">Accept saves your location, enables MLAT, and restarts Ultrafeeder — progress appears below in this window.</p>
+                        <p style="font-size: 0.88em; color: #6b7280; margin: 0;">Accept saves your location, enables MLAT, and restarts Ultrafeeder.</p>
                     </div>
                     <div id="dash-gps-result-error" style="display: none;">
                         <div style="color: #dc2626; font-weight: 500;" id="dash-gps-result-error-msg"></div>
@@ -512,25 +512,7 @@
                     <button type="button" class="btn btn-success" id="dash-gps-btn-accept" onclick="return dashGpsModalAccept(event)">Accept</button>
                     <button type="button" class="btn" onclick="dashGpsModalCancel()">Cancel</button>
                 </div>
-                {# In-modal Ultrafeeder restart (same APIs as Settings; stays visible inside this overlay) #}
-                <div id="dash-gps-phase-restart" style="display: none; padding-top: 16px; border-top: 2px solid #e5e7eb; margin-top: 8px;">
-                    <div style="display: flex; align-items: flex-start; gap: 12px; margin-bottom: 12px;">
-                        <div id="dash-gps-uf-spinner" class="status-spinner" style="flex-shrink: 0; margin-top: 4px;"></div>
-                        <div style="flex: 1; min-width: 0;">
-                            <div style="font-weight: 600; color: #1f2937; font-size: 1em;">🔄 Ultrafeeder restart</div>
-                            <div id="dash-gps-uf-status" style="font-size: 0.95em; color: #374151; margin-top: 6px;">Saving configuration…</div>
-                            <div id="dash-gps-uf-detail" style="font-size: 0.85em; color: #6b7280; margin-top: 4px;"></div>
-                        </div>
-                    </div>
-                    <div id="dash-gps-uf-progress-wrap" style="height: 10px; background: #e5e7eb; border-radius: 4px; overflow: hidden; margin-bottom: 12px;">
-                        <div id="dash-gps-uf-progress-bar" style="height: 100%; width: 0%; background: linear-gradient(90deg, #6366f1, #8b5cf6); transition: width 0.35s ease;"></div>
-                    </div>
-                    <div id="dash-gps-uf-log" style="background: #f3f4f6; border-radius: 8px; padding: 10px 12px; max-height: 180px; overflow-y: auto; font-family: ui-monospace, monospace; font-size: 0.8em; color: #1f2937; white-space: pre-wrap; word-break: break-word; display: none;"></div>
-                    <div id="dash-gps-uf-actions" style="display: none; margin-top: 12px; text-align: center;">
-                        <button type="button" class="btn" onclick="dashGpsModalDismissRestart()">Close</button>
-                    </div>
-                    <p style="font-size: 0.78em; color: #9ca3af; margin: 12px 0 0 0;">Live status from <code>/api/service/progress</code> while Docker restarts.</p>
-                </div>
+                {# Restart status now uses dedicated #dashGpsRestartOverlay only #}
             </div>
         </div>
     </div>
@@ -598,6 +580,15 @@
             ov.setAttribute('aria-hidden', 'true');
         }
 
+        function hardHideDashGpsBaseModal() {
+            var gm = document.getElementById('dashGpsModal');
+            if (!gm) return;
+            gm.style.setProperty('display', 'none', 'important');
+            gm.style.setProperty('visibility', 'hidden', 'important');
+            gm.style.setProperty('pointer-events', 'none', 'important');
+            gm.setAttribute('aria-hidden', 'true');
+        }
+
         function hideDashGpsModal(force) {
             if (dashGpsRestartInProgress && !force) {
                 return;
@@ -652,7 +643,9 @@
                 var act = document.getElementById('dash-gps-uf-actions');
                 if (act) act.style.display = 'none';
             }
-            gm.style.display = 'flex';
+            gm.style.setProperty('display', 'flex', 'important');
+            gm.style.setProperty('visibility', 'visible', 'important');
+            gm.style.setProperty('pointer-events', 'auto', 'important');
             gm.setAttribute('aria-hidden', 'false');
             document.getElementById('dash-gps-progress').style.display = 'block';
             document.getElementById('dash-gps-result').style.display = 'none';
@@ -952,13 +945,8 @@
         function dashGpsShowRestartPhase() {
             dashGpsRestartInProgress = true;
             showDashGpsRestartOverlay();
-
-            // Keep a single restart surface: hide the GPS acquisition modal entirely.
-            var gm = document.getElementById('dashGpsModal');
-            if (gm) {
-                gm.style.display = 'none';
-                gm.setAttribute('aria-hidden', 'true');
-            }
+            // Keep a single restart surface: hard-hide the GPS acquisition modal entirely.
+            hardHideDashGpsBaseModal();
 
             dashGpsRestartHasActiveState = false;
             dashGpsRestartPollStartedAt = Date.now();
