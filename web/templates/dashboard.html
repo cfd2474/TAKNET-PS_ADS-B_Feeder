@@ -177,7 +177,15 @@
                         <!-- Remote access tunnel -->
                         <tr style="background: #f9fafb;">
                             <td colspan="4" style="padding: 8px 12px; font-weight: 600; color: #374151; border-left: 3px solid #0ea5e9; border-top: 1px solid #e5e7eb;">
-                                🔗 Remote Access Tunnel
+                                <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;">
+                                    <span>🔗 Remote Access Tunnel</span>
+                                    <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                                        <button type="button" class="btn btn-primary btn-sm" id="dashboard-restart-tunnel-btn" onclick="restartTunnelServiceDashboard()">
+                                            🔄 Restart tunnel service
+                                        </button>
+                                        <span id="dashboard-restart-tunnel-msg" style="font-size: 0.85em; color: #6b7280; font-weight: 500;"></span>
+                                    </div>
+                                </div>
                             </td>
                         </tr>
                         <tr>
@@ -1009,6 +1017,28 @@
                 if (btn) btn.disabled = false;
             }
             return false;
+        }
+
+        async function restartTunnelServiceDashboard() {
+            const btn = document.getElementById('dashboard-restart-tunnel-btn');
+            const msg = document.getElementById('dashboard-restart-tunnel-msg');
+            if (btn) btn.disabled = true;
+            if (msg) msg.textContent = 'Restarting…';
+            try {
+                const response = await fetch('/api/service/tunnel-client/restart', { method: 'POST' });
+                const data = await response.json().catch(function () { return {}; });
+                if (response.ok && data.success) {
+                    if (msg) msg.textContent = '✓ Tunnel service restarted.';
+                    setTimeout(function () {
+                        pollDashboard();
+                    }, 1500);
+                } else {
+                    if (msg) msg.textContent = '✗ ' + (data.message || 'Restart failed');
+                }
+            } catch (e) {
+                if (msg) msg.textContent = '✗ ' + e.message;
+            }
+            if (btn) btn.disabled = false;
         }
 
         function dashGpsModalCancel() {
