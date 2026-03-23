@@ -10,6 +10,8 @@ FEEDER_LAT=0.0
 FEEDER_LONG=0.0
 FEEDER_ALT_M=0
 MLAT_SITE_NAME=TAKNET-PS-ADSB-Feeder
+# Deployment: stationary (fixed site) | mobile (vehicle-mounted, changing location)
+FEEDER_DEPLOYMENT_MODE=stationary
 
 # ============================================
 # RTL-SDR Configuration (Configured via wizard)
@@ -103,7 +105,7 @@ TAKNET_PS_FEEDER_CLAIM_KEY=
 # TAKNET-PS Server is always fed regardless of these settings
 # ============================================
 
-# FlightRadar24
+# FlightRadar24 (BIND_INTERFACE for web UI is set in generated docker-compose — VPN-safe)
 FR24_ENABLED=false
 FR24_KEY=
 

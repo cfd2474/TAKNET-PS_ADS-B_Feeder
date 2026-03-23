@@ -1,26 +1,24 @@
 #!/bin/bash
 # TAKNET-PS Update Script
 # Handles backing up config, updating system, and restoring config
+# Uses the same Git branch as install: /opt/adsb/REPO_BRANCH (written by install.sh),
+# or override with: TAKNET_INSTALL_BRANCH=my-branch sudo -E bash /opt/adsb/scripts/updater.sh
 
 set -e
 
-<<<<<<< Updated upstream
-REPO_URL="https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main"
-=======
 # Match install.sh branch resolution
 if [ -n "${TAKNET_INSTALL_BRANCH:-}" ]; then
     INSTALL_BRANCH="$TAKNET_INSTALL_BRANCH"
 elif [ -f /opt/adsb/REPO_BRANCH ]; then
     INSTALL_BRANCH=$(tr -d '\n\r' < /opt/adsb/REPO_BRANCH)
 else
-    INSTALL_BRANCH="main"
+    INSTALL_BRANCH="mobile-deploy"
 fi
 if ! echo "$INSTALL_BRANCH" | grep -qE '^[a-zA-Z0-9._/+-]+$'; then
-    INSTALL_BRANCH="main"
+    INSTALL_BRANCH="mobile-deploy"
 fi
 
 REPO_URL="https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/${INSTALL_BRANCH}"
->>>>>>> Stashed changes
 BACKUP_DIR="/opt/adsb/backup"
 CONFIG_FILE="/opt/adsb/config/.env"
 VERSION_FILE="/opt/adsb/VERSION"
@@ -28,6 +26,7 @@ VERSION_FILE="/opt/adsb/VERSION"
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo "  TAKNET-PS System Update"
+echo "  Git branch: ${INSTALL_BRANCH}"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
 
@@ -112,8 +111,8 @@ run_update() {
     echo "🔄 Running update (this may take a few minutes)..."
     echo ""
     
-    # Run installer in update mode
-    if bash "$TEMP_INSTALLER" --update; then
+    # Run installer in update mode (pass branch so REPO matches)
+    if bash "$TEMP_INSTALLER" --update --branch "$INSTALL_BRANCH"; then
         echo ""
         echo "   ✓ Update completed successfully"
         rm -f "$TEMP_INSTALLER"
@@ -129,6 +128,29 @@ run_update() {
 # Function to restart services
 restart_services() {
     echo "🔄 Restarting services..."
+    
+    # Force-refresh critical web files from selected branch to avoid stale template drift.
+    # This makes updates deterministic even if a previous installer run partially succeeded.
+    echo "   • Syncing web UI files from branch: ${INSTALL_BRANCH}"
+    sync_web_file() {
+        local rel="$1"
+        local dest="/opt/adsb/${rel}"
+        local tmp="${dest}.tmp.$$"
+        if curl -fsSL "${REPO_URL}/${rel}" -o "${tmp}"; then
+            mkdir -p "$(dirname "${dest}")"
+            mv "${tmp}" "${dest}"
+            echo "   ✓ Synced ${rel}"
+        else
+            rm -f "${tmp}" 2>/dev/null || true
+            echo "   ⚠ Failed to sync ${rel} (keeping existing file)"
+        fi
+    }
+    sync_web_file "web/app.py"
+    sync_web_file "web/templates/dashboard.html"
+    sync_web_file "web/templates/settings.html"
+    sync_web_file "web/templates/setup.html"
+    sync_web_file "web/static/js/dashboard.js"
+    sync_web_file "web/static/js/setup.js"
 
     # Verify SSH is configured for remote user via VPN
     if ! grep -q "# TAKNET-PS: remote VPN-only access" /etc/ssh/sshd_config 2>/dev/null; then
@@ -177,11 +199,25 @@ CLEANUP_EOF
         echo "   ⚠ Failed to restart ultrafeeder"
     fi
     
-    # Restart web interface
+    # Restart web interface (hard recycle fallback to avoid stale template process state)
     if systemctl restart adsb-web 2>/dev/null; then
         echo "   ✓ Web interface restarted"
     else
-        echo "   ⚠ Failed to restart web interface"
+        echo "   ⚠ Restart failed, trying stop/start web interface..."
+        systemctl stop adsb-web 2>/dev/null || true
+        sleep 1
+        if systemctl start adsb-web 2>/dev/null; then
+            echo "   ✓ Web interface started (after stop/start)"
+        else
+            echo "   ⚠ Failed to start web interface"
+        fi
+    fi
+
+    # Quick local health check to confirm Flask is responding post-restart
+    if curl -fsS --max-time 6 "http://127.0.0.1:5000/settings" > /dev/null 2>&1; then
+        echo "   ✓ Web interface health check passed"
+    else
+        echo "   ⚠ Web interface health check failed (check: sudo journalctl -u adsb-web -n 80)"
     fi
 
     # Tunnel: enable unit and start if configured (.env)

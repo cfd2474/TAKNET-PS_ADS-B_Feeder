@@ -103,8 +103,8 @@
                 
                 <div class="form-group">
                     <label>Timezone *</label>
-                    <select id="tz">
-                        <option value="">-- Select Timezone --</option>
+                    <select id="tz" required autocomplete="off">
+                        <option value="" selected>-- Select Timezone --</option>
                         <optgroup label="US Timezones">
                             <option value="America/New_York">Eastern Time (ET)</option>
                             <option value="America/Chicago">Central Time (CT)</option>
@@ -198,7 +198,8 @@
                 </div>
                 
                 <div style="margin-top: 30px; padding-top: 20px; border-top: 2px solid #e5e7eb;">
-                    <button class="btn btn-success" onclick="saveAndStart()">Install & Finish →</button>
+                    <p id="required-fields-note" style="margin: 0 0 10px 0; color: #6b7280; font-size: 0.92em;">Fill all required fields before proceeding</p>
+                    <button id="setup-finish-btn" class="btn btn-success" onclick="saveAndStart()" disabled>Install & Finish →</button>
                 </div>
             </div>
 
@@ -277,20 +278,8 @@
         </div>
     </div>
 
-    <script src="/static/js/setup.js"></script>
+    <script src="/static/js/setup.js?v={{ version }}"></script>
     <script>
-        // Set timezone dropdown to current value
-        document.addEventListener('DOMContentLoaded', function() {
-            // Initialize offline mode detection
-            initializeOfflineMode();
-            
-            const currentTz = "{{ config.get('FEEDER_TZ', '') }}";
-            const tzSelect = document.getElementById('tz');
-            if (currentTz) {
-                tzSelect.value = currentTz;
-            }
-        });
-        
         // =============================================================
         // Location Configuration Submit
         // =============================================================
@@ -504,6 +493,9 @@
                     if (data.lat != null) document.getElementById('lat').value = data.lat;
                     if (data.lon != null) document.getElementById('lon').value = data.lon;
                     if (data.alt != null) document.getElementById('alt').value = data.alt;
+                    if (typeof updateSetupFinishButtonState === 'function') {
+                        updateSetupFinishButtonState();
+                    }
                 });
             document.getElementById('gpsModal').style.display = 'none';
         }

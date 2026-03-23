@@ -208,6 +208,43 @@
             <h2>Configuration</h2>
             <p class="text-muted">Edit your feeder configuration</p>
             
+            <!-- Deployment mode (stationary vs mobile) -->
+            <div class="card" style="border-left: 4px solid #6366f1;">
+                <h3>🚐 Deployment mode</h3>
+                <p style="color: #6b7280; margin-bottom: 12px;">Choose how this feeder is used. Mobile mode shows an extra dashboard panel for vehicle-mounted deployments.</p>
+                <p style="color: #6b7280; margin: 0 0 12px 0; font-size: 0.9em;">After changing deployment mode, click <strong>💾 Apply Changes &amp; Restart Ultrafeeder</strong> below to apply the mode update.</p>
+                <div style="display: flex; flex-direction: column; gap: 14px;">
+                    <label style="display: flex; align-items: flex-start; gap: 12px; cursor: pointer; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; background: #fafafa;">
+                        <input type="radio" name="feeder_deployment_mode" value="stationary"
+                            {% if config.get('FEEDER_DEPLOYMENT_MODE', 'stationary') != 'mobile' %}checked{% endif %}
+                            style="margin-top: 4px;">
+                        <div>
+                            <strong style="color: #1f2937;">Stationary mode</strong>
+                            <p style="margin: 6px 0 0 0; font-size: 0.9em; color: #6b7280; line-height: 1.45;">For fixed facility use, or occasional relocations. Default for most feeders.</p>
+                        </div>
+                    </label>
+                    <label style="display: flex; align-items: flex-start; gap: 12px; cursor: pointer; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; background: #fafafa;">
+                        <input type="radio" name="feeder_deployment_mode" value="mobile"
+                            {% if config.get('FEEDER_DEPLOYMENT_MODE', 'stationary') == 'mobile' %}checked{% endif %}
+                            style="margin-top: 4px;">
+                        <div>
+                            <strong style="color: #1f2937;">Mobile mode <span style="font-weight: 600; color: #b45309;">(alpha)</span></strong>
+                            <p style="margin: 6px 0 0 0; font-size: 0.9em; color: #6b7280; line-height: 1.45;">For mobile deployment where the receiver moves, such as vehicle-mounted solutions. The <strong>mobile-mode-gps</strong> service pauses MLAT while moving, then after ~60s stationary (GPS drift–tolerant) syncs coordinates from GPS, resumes MLAT, and restarts ultrafeeder. The dashboard shows live status and stationary hold progress.</p>
+                        </div>
+                    </label>
+                </div>
+                <div id="mobile-motion-criteria" style="margin-top: 14px; padding: 12px 14px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 0.88em; color: #475569; line-height: 1.55; display: {% if config.get('FEEDER_DEPLOYMENT_MODE', 'stationary') == 'mobile' %}block{% else %}none{% endif %};">
+                    <strong style="color: #334155;">Motion detection criteria</strong> (from <code style="font-size: 0.92em;">mobile-mode-gps</code>)
+                    <ul style="margin: 8px 0 0 0; padding-left: 1.25rem;">
+                        <li><strong>In motion:</strong> GPS speed &gt; <strong>1.0&nbsp;m/s</strong> (~3.6&nbsp;km/h) — MLAT is paused.</li>
+                        <li><strong>Stationary band (drift-tolerant):</strong> speed ≤ <strong>1.2&nbsp;m/s</strong> — time accrues toward the post-stop hold when a sync is pending.</li>
+                        <li><strong>Stationary hold before sync:</strong> <strong>60&nbsp;seconds</strong> in that band (daemon checks every <strong>2&nbsp;s</strong>), then coordinates are synced from GPS and MLAT resumes.</li>
+                        <li><strong>Position jump:</strong> if consecutive fixes differ by more than <strong>40&nbsp;m</strong>, the stationary timer is reset (guards against bad jumps / inconsistent fixes).</li>
+                        <li><strong>Drift vs configured feeder:</strong> when <strong>not</strong> in motion, if GPS differs from configured <strong>FEEDER_LAT</strong> / <strong>FEEDER_LONG</strong> (the position MLAT uses) by more than <strong>30&nbsp;m</strong>, coordinates are resynced from GPS and ultrafeeder is restarted.</li>
+                    </ul>
+                </div>
+            </div>
+            
             <!-- SDR Devices Section -->
             <div class="card">
                 <h3>📡 SDR Devices</h3>
@@ -317,7 +354,16 @@
                         Zip code will be prepended. Current: {{ config.get('MLAT_SITE_NAME', 'Not set') }}
                     </small>
                 </div>
-                <div class="form-group">
+                <div style="margin-top: 20px; padding-top: 20px; border-top: 2px solid #e5e7eb;">
+                    <button class="btn btn-success" onclick="saveAndRestartUltrafeeder()" style="width: 100%;">
+                        💾 Apply Changes & Restart Ultrafeeder
+                    </button>
+                    <small class="help-text" style="display: block; margin-top: 10px; text-align: center;">
+                        Saves location and name settings, then restarts Ultrafeeder to apply changes
+                    </small>
+                </div>
+
+                <div class="form-group" style="margin-top: 18px;">
                     <label>Aggregator feeder claim key (optional)</label>
                     <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
                         <input type="password" id="taknet_feeder_claim_key" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" autocomplete="off"
@@ -336,15 +382,6 @@
                         When set, this feeder sends a one-line claim before the Beast data on each connection so the dashboard can set feeder owners automatically.
                         Leave blank for legacy behavior. Click <strong>Register feeder</strong> to submit this key.
                         If you're associating a different account, paste the new key and click <strong>Register feeder</strong> again.
-                    </small>
-                </div>
-                
-                <div style="margin-top: 20px; padding-top: 20px; border-top: 2px solid #e5e7eb;">
-                    <button class="btn btn-success" onclick="saveAndRestartUltrafeeder()" style="width: 100%;">
-                        💾 Apply Changes & Restart Ultrafeeder
-                    </button>
-                    <small class="help-text" style="display: block; margin-top: 10px; text-align: center;">
-                        Saves location and name settings, then restarts Ultrafeeder to apply changes
                     </small>
                 </div>
             </div>
@@ -706,7 +743,7 @@
                 <span id="restart-tunnel-msg" style="margin-left: 12px; font-size: 0.9em; color: #6b7280;"></span>
             </div>
 
-            <div class="actions">
+            <div class="actions" style="margin-top: 14px;">
                 <button class="btn btn-primary" onclick="showRestartServicesModal()">🔄 Restart Services</button>
                 <button class="btn" onclick="rebootDevice()" style="margin-left: 8px;">🔌 Reboot Device</button>
                 <button class="btn" onclick="window.location.href='/dashboard'">← Back to Dashboard</button>
@@ -1567,6 +1604,15 @@
             }
         }
 
+        function updateDeploymentModeUi() {
+            const selected = document.querySelector('input[name="feeder_deployment_mode"]:checked');
+            const mode = selected ? selected.value : 'stationary';
+            const box = document.getElementById('mobile-motion-criteria');
+            if (box) {
+                box.style.display = mode === 'mobile' ? 'block' : 'none';
+            }
+        }
+
         async function registerFeeder() {
             const claimEl = document.getElementById('taknet_feeder_claim_key');
             const claimRaw = claimEl ? claimEl.value.trim() : '';
@@ -1579,10 +1625,16 @@
 
         window.addEventListener('DOMContentLoaded', function () {
             const claimEl = document.getElementById('taknet_feeder_claim_key');
-            if (!claimEl) return;
-            updateRegisterFeederButtonState();
-            claimEl.addEventListener('input', updateRegisterFeederButtonState);
-            claimEl.addEventListener('change', updateRegisterFeederButtonState);
+            if (claimEl) {
+                updateRegisterFeederButtonState();
+                claimEl.addEventListener('input', updateRegisterFeederButtonState);
+                claimEl.addEventListener('change', updateRegisterFeederButtonState);
+            }
+            const modeRadios = document.querySelectorAll('input[name="feeder_deployment_mode"]');
+            modeRadios.forEach(function (el) {
+                el.addEventListener('change', updateDeploymentModeUi);
+            });
+            updateDeploymentModeUi();
         });
         
         async function saveSettings() {
@@ -1635,6 +1687,7 @@
                 return;
             }
             const config = {
+                FEEDER_DEPLOYMENT_MODE: (document.querySelector('input[name="feeder_deployment_mode"]:checked') || {}).value || 'stationary',
                 FEEDER_LAT: lat,
                 FEEDER_LONG: lon,
                 FEEDER_ALT_M: document.getElementById('alt').value,
@@ -1721,6 +1774,7 @@
             logDiv.innerHTML = '';
             
             const config = {
+                FEEDER_DEPLOYMENT_MODE: (document.querySelector('input[name="feeder_deployment_mode"]:checked') || {}).value || 'stationary',
                 FEEDER_LAT: lat,
                 FEEDER_LONG: lon,
                 FEEDER_ALT_M: document.getElementById('alt').value,

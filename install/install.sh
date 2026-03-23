@@ -1,33 +1,24 @@
 #!/bin/bash
-<<<<<<< Updated upstream
-# TAKNET-PS-ADSB-Feeder One-Line Installer v2.59.67
-# curl -fsSL https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh | sudo bash
-=======
 # TAKNET-PS-ADSB-Feeder One-Line Installer v2.59.68
-# Default (main):
-#   curl -fsSL https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh | sudo bash
-# Branch (e.g. feature/my-branch):
-#   curl -fsSL https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/feature/my-branch/install/install.sh | sudo bash
-# Or: TAKNET_INSTALL_BRANCH=feature/my-branch curl .../main/install/install.sh | sudo -E bash
->>>>>>> Stashed changes
+# Default (mobile-deploy):
+#   curl -fsSL https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/mobile-deploy/install/install.sh | sudo bash
+# Branch (e.g. mobile-deploy):
+#   curl -fsSL https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/mobile-deploy/install/install.sh | sudo bash
+# Or: TAKNET_INSTALL_BRANCH=mobile-deploy curl .../main/install/install.sh | sudo -E bash
 
-INSTALLER_VERSION="2.59.67"
+INSTALLER_VERSION="2.59.68"
 
 set -e
 
-# Check for update mode flag
+# --- Args: --update | --branch <name> (order-independent) ---
 UPDATE_MODE=false
-<<<<<<< Updated upstream
-if [ "$1" == "--update" ]; then
-    UPDATE_MODE=true
-=======
 INSTALL_BRANCH_ARG=""
 while [ $# -gt 0 ]; do
     case "$1" in
         --update|-u) UPDATE_MODE=true; shift ;;
         --branch)
             shift
-            INSTALL_BRANCH_ARG="${1:-main}"
+            INSTALL_BRANCH_ARG="${1:-mobile-deploy}"
             shift
             ;;
         *) shift ;;
@@ -42,22 +33,22 @@ elif [ -n "$INSTALL_BRANCH_ARG" ]; then
 elif [ "$UPDATE_MODE" = true ] && [ -f /opt/adsb/REPO_BRANCH ]; then
     INSTALL_BRANCH=$(tr -d '\n\r' < /opt/adsb/REPO_BRANCH)
 else
-    INSTALL_BRANCH="main"
+    INSTALL_BRANCH="mobile-deploy"
 fi
-# Allow branch names like main or feature/foo
+# Allow branch names like mobile-deploy or feature/foo
 if ! echo "$INSTALL_BRANCH" | grep -qE '^[a-zA-Z0-9._/+-]+$'; then
-    echo "⚠ Invalid branch name (allowed: letters, numbers, . _ / + -); using main"
-    INSTALL_BRANCH="main"
+    echo "⚠ Invalid branch name (allowed: letters, numbers, . _ / + -); using mobile-deploy"
+    INSTALL_BRANCH="mobile-deploy"
 fi
 
 REPO="https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/${INSTALL_BRANCH}"
 
 if [ "$UPDATE_MODE" = true ]; then
->>>>>>> Stashed changes
     echo ""
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo "  TAKNET-PS UPDATE MODE"
     echo "  Preserving existing configuration"
+    echo "  Git branch: ${INSTALL_BRANCH}"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo ""
 fi
@@ -76,11 +67,8 @@ if [ "$EUID" -ne 0 ]; then
     echo ""
     echo "Please run with sudo:"
     echo ""
-    echo "  curl -fsSL https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh | sudo bash"
-<<<<<<< Updated upstream
-=======
+    echo "  curl -fsSL https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/mobile-deploy/install/install.sh | sudo bash"
     echo "  Branch: curl -fsSL https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/<branch>/install/install.sh | sudo bash"
->>>>>>> Stashed changes
     echo ""
     echo "Or if you downloaded the script:"
     echo ""
@@ -94,6 +82,7 @@ if [ "$UPDATE_MODE" != true ]; then
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo "  TAKNET-PS-ADSB-Feeder Installer v${INSTALLER_VERSION}"
     echo "  Ultrafeeder + TAKNET-PS + Web UI"
+    echo "  Git branch: ${INSTALL_BRANCH}"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo ""
 fi
@@ -483,9 +472,8 @@ fi
 echo "Creating directories..."
 mkdir -p /opt/adsb/{config,scripts,ultrafeeder,web/{templates,static/{css,js}}}
 
-# Download files
-echo "Downloading configuration files..."
-REPO="https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main"
+# Download files (REPO set at top from INSTALL_BRANCH)
+echo "Downloading configuration files from branch: ${INSTALL_BRANCH}"
 
 # Config files
 echo "  - env-template..."
@@ -546,6 +534,34 @@ chmod +x /opt/adsb/scripts/fix-dns.sh
 echo "  - get-gps-coordinates.sh..."
 wget -q $REPO/scripts/get-gps-coordinates.sh -O /opt/adsb/scripts/get-gps-coordinates.sh
 chmod +x /opt/adsb/scripts/get-gps-coordinates.sh
+
+echo "  - mobile-mode-gps.py..."
+wget -q $REPO/scripts/mobile-mode-gps.py -O /opt/adsb/scripts/mobile-mode-gps.py
+chmod +x /opt/adsb/scripts/mobile-mode-gps.py
+mkdir -p /opt/adsb/var
+
+# Mobile mode GPS daemon (MLAT pause while moving; GPS sync after stationary hold)
+cat > /etc/systemd/system/mobile-mode-gps.service << 'MOBILEEOF'
+[Unit]
+Description=TAKNET-PS Mobile mode GPS (MLAT + location sync)
+After=network-online.target gpsd.service docker.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 /opt/adsb/scripts/mobile-mode-gps.py
+Restart=always
+RestartSec=10
+WorkingDirectory=/opt/adsb/scripts
+
+[Install]
+WantedBy=multi-user.target
+MOBILEEOF
+
+systemctl daemon-reload
+systemctl enable mobile-mode-gps
+systemctl restart mobile-mode-gps 2>/dev/null || systemctl start mobile-mode-gps 2>/dev/null || true
+echo "✓ mobile-mode-gps service installed"
 
 # Generate initial docker-compose.yml from .env configuration
 echo "  - Generating docker-compose.yml..."
@@ -1394,18 +1410,33 @@ if [ -f /opt/adsb/config/.env ] && [ -f /opt/adsb/scripts/migrate-phase-b.py ]; 
     echo "✓ Configuration migrated to Phase B format"
 fi
 
+# Default deployment mode (stationary vs mobile) if missing
+if [ -f /opt/adsb/config/.env ] && ! grep -q '^FEEDER_DEPLOYMENT_MODE=' /opt/adsb/config/.env 2>/dev/null; then
+    echo "FEEDER_DEPLOYMENT_MODE=stationary" >> /opt/adsb/config/.env
+    echo "✓ FEEDER_DEPLOYMENT_MODE defaulted to stationary"
+fi
+
 # Enable services
 systemctl daemon-reload
 systemctl enable ultrafeeder
 systemctl enable adsb-web
 
-# Start web UI (but not ultrafeeder - needs config first)
-systemctl start adsb-web
+# Web UI service
+# - Fresh install: start web UI for setup wizard
+# - Update mode: restart to ensure template/JS cache is reloaded
+if [ "$UPDATE_MODE" = true ]; then
+    systemctl restart adsb-web 2>/dev/null || systemctl start adsb-web
+else
+    systemctl start adsb-web
+fi
 
 # Set permissions
 if [ "$SUDO_USER" ]; then
     chown -R $SUDO_USER:$SUDO_USER /opt/adsb
 fi
+
+# Persist Git branch for future updates (scripts/updater.sh reads this)
+echo -n "$INSTALL_BRANCH" > /opt/adsb/REPO_BRANCH
 
 # Get IP address
 IP=$(hostname -I | awk '{print $1}')
@@ -1415,6 +1446,11 @@ echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
 if [ "$UPDATE_MODE" = true ]; then
+    # Ensure updated templates/static files and compose changes are active even when
+    # this script is invoked directly in update mode (outside updater.sh wrapper).
+    systemctl restart adsb-web 2>/dev/null || true
+    systemctl restart ultrafeeder 2>/dev/null || true
+
     echo "✓ Update complete!"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo ""
@@ -1448,12 +1484,6 @@ else
     echo "   • Start: sudo systemctl start ultrafeeder"
     echo "   • Restart: sudo systemctl restart ultrafeeder"
     echo "   • Logs: sudo docker logs ultrafeeder"
-    echo ""
-    echo "📡 Remote Access:"
-    echo "   • User: remote"
-    echo "   • Password: adsb"
-    echo "   • Limited sudo privileges for ADSB commands"
-    echo "   • SSH accessible via NetBird/Tailscale VPN only (100.x.x.x)"
     echo ""
     echo "🔒 SSH Access:"
     echo "   • Connect via NetBird or Tailscale, then:"

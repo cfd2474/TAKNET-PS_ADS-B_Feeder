@@ -4,7 +4,7 @@ TAKNET-PS-ADSB-Feeder Web Interface v2.1
 Flask app with Tailscale hostname management
 """
 
-from flask import Flask, render_template, request, jsonify, redirect, url_for
+from flask import Flask, render_template, request, jsonify, redirect, url_for, make_response
 import subprocess
 import os
 import re
@@ -19,6 +19,10 @@ import socket
 import urllib.request
 
 app = Flask(__name__)
+# Keep template rendering in sync with on-disk HTML updates.
+# This avoids stale Jinja template cache after update operations.
+app.config['TEMPLATES_AUTO_RELOAD'] = True
+app.jinja_env.auto_reload = True
 
 # Version information - read from VERSION file
 def get_version():
@@ -129,8 +133,10 @@ def _gps_acquisition_thread():
                                 pass
                             break
                         else:
+                            # lat/lon not valid yet — mode is only set inside branch above; use obj
+                            _m = obj.get('mode')
                             gps_state['log_lines'].append(
-                                f"Waiting for fix... mode={mode}" if mode is not None else "Waiting for fix..."
+                                f"Waiting for fix... mode={_m}" if _m is not None else "Waiting for fix..."
                             )
                     elif cls == 'SKY':
                         sats = obj.get('satellites', [])
@@ -1199,7 +1205,12 @@ def setup():
     """Setup wizard - Step 2: Location Configuration"""
     env = read_env()
     feeder_uuid = get_or_create_feeder_uuid()
-    return render_template('setup.html', config=env, feeder_uuid=feeder_uuid)
+    response = make_response(render_template('setup.html', config=env, feeder_uuid=feeder_uuid, version=VERSION))
+    # Prevent stale wizard HTML/js state from reusing previous timezone selections.
+    response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '0'
+    return response
 
 @app.route('/loading')
 def loading():
@@ -1257,7 +1268,7 @@ def dashboard():
         
         if current_version != 'unknown':
             import requests
-            repo_url = 'https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/version.json'
+            repo_url = 'https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/mobile-deploy/version.json'
             response = requests.get(repo_url, timeout=5)
             
             if response.status_code == 200:
@@ -1279,7 +1290,7 @@ def dashboard():
     except:
         pass  # Fail silently, update check is not critical for dashboard
     
-    return render_template('dashboard.html', 
+    response = make_response(render_template('dashboard.html', 
                          config=env, 
                          docker=docker_status, 
                          version=VERSION, 
@@ -1288,7 +1299,12 @@ def dashboard():
                          network_info=network_info,
                          tunnel_status=tunnel_status,
                          update_available=update_available,
-                         latest_version=latest_version)
+                         latest_version=latest_version))
+    # Ensure clients don't keep stale dashboard inline JS/modal behavior.
+    response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '0'
+    return response
 
 @app.route('/logs')
 def logs():
@@ -2527,6 +2543,140 @@ def api_gps_check():
         out['message'] = str(e)
     return jsonify(out)
 
+
+@app.route('/api/gps/apply-location', methods=['POST'])
+def api_gps_apply_location():
+    """
+    Write FEEDER_LAT/LONG/ALT_M from a completed GPS fix, enable MLAT, rebuild config, restart ultrafeeder.
+    Intended for dashboard mobile-mode "Force location re-sync" after GET /api/gps/status has a fix.
+    """
+    try:
+        data = request.get_json(silent=True) or {}
+        lat = data.get('lat')
+        lon = data.get('lon')
+        alt = data.get('alt')
+
+        env = read_env()
+        deployment = (env.get('FEEDER_DEPLOYMENT_MODE') or 'stationary').strip().lower()
+        if deployment != 'mobile':
+            return jsonify({'success': False, 'message': 'Mobile deployment mode is not enabled'}), 403
+
+        try:
+            lat_f = float(lat)
+            lon_f = float(lon)
+        except (TypeError, ValueError):
+            return jsonify({'success': False, 'message': 'Invalid latitude or longitude'}), 400
+
+        if not (-90.0 <= lat_f <= 90.0) or not (-180.0 <= lon_f <= 180.0):
+            return jsonify({'success': False, 'message': 'Latitude or longitude out of range'}), 400
+
+        if alt is not None and alt != '':
+            try:
+                alt_i = int(round(float(alt)))
+            except (TypeError, ValueError):
+                return jsonify({'success': False, 'message': 'Invalid altitude'}), 400
+        else:
+            try:
+                alt_i = int(env.get('FEEDER_ALT_M', '0') or '0')
+            except ValueError:
+                alt_i = 0
+
+        env['FEEDER_LAT'] = f'{lat_f:.5f}'
+        env['FEEDER_LONG'] = f'{lon_f:.5f}'
+        env['FEEDER_ALT_M'] = str(alt_i)
+        env['TAKNET_PS_MLAT_ENABLED'] = 'true'
+        write_env(env)
+
+        if not rebuild_config():
+            return jsonify({'success': False, 'message': 'Config rebuild failed'}), 500
+
+        restart_ok = restart_service()
+        return jsonify({
+            'success': True,
+            'message': 'Location saved, MLAT enabled, ultrafeeder restart initiated',
+            'restart_initiated': restart_ok,
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+
+@app.route('/api/mobile/status', methods=['GET'])
+def api_mobile_status():
+    """Mobile feeder mode: in-motion (GPS speed) and MLAT on/paused. Used by dashboard when FEEDER_DEPLOYMENT_MODE=mobile."""
+    env = read_env()
+    deployment = (env.get('FEEDER_DEPLOYMENT_MODE') or 'stationary').strip().lower()
+    if deployment != 'mobile':
+        return jsonify({
+            'success': True,
+            'mobile_mode_enabled': False,
+            'deployment_mode': deployment or 'stationary'
+        })
+    out = {
+        'success': True,
+        'mobile_mode_enabled': True,
+        'deployment_mode': 'mobile',
+        'in_motion': False,
+        'in_motion_unknown': True,
+        'speed_mps': None,
+        'mlat_on': env.get('TAKNET_PS_MLAT_ENABLED', 'true').lower() == 'true',
+        'mlat_paused': env.get('TAKNET_PS_MLAT_ENABLED', 'true').lower() != 'true',
+        'stationary_seconds': None,
+        'stationary_target_seconds': 60,
+        'awaiting_stationary_sync': False,
+        'daemon_message': None,
+    }
+    # Prefer daemon state file (authoritative mobile-mode-gps.py)
+    state_path = Path('/opt/adsb/var/mobile-mode-state.json')
+    if state_path.exists():
+        try:
+            st = json.loads(state_path.read_text())
+            if st.get('active'):
+                im = st.get('in_motion')
+                out['in_motion_unknown'] = im is None
+                if im is True:
+                    out['in_motion'] = True
+                elif im is False:
+                    out['in_motion'] = False
+                if st.get('speed_mps') is not None:
+                    out['speed_mps'] = st.get('speed_mps')
+                out['mlat_paused'] = bool(st.get('mlat_paused', out['mlat_paused']))
+                out['mlat_on'] = not out['mlat_paused']
+                out['stationary_seconds'] = st.get('stationary_seconds')
+                out['stationary_target_seconds'] = st.get('stationary_target_seconds', 60)
+                out['awaiting_stationary_sync'] = bool(st.get('awaiting_stationary_sync'))
+                out['daemon_message'] = st.get('message')
+            return jsonify(out)
+        except (json.JSONDecodeError, OSError):
+            pass
+    try:
+        r = subprocess.run(
+            ['timeout', '3', 'gpspipe', '-w', '-n', '15'],
+            capture_output=True,
+            text=True,
+            timeout=5,
+            cwd='/opt/adsb/scripts',
+            env={**os.environ}
+        )
+        for line in (r.stdout or '').strip().splitlines():
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                obj = json.loads(line)
+                if obj.get('class') == 'TPV' and obj.get('speed') is not None:
+                    out['in_motion_unknown'] = False
+                    speed = float(obj['speed'])
+                    out['speed_mps'] = round(speed, 2)
+                    out['in_motion'] = abs(speed) > 0.5
+                    break
+            except (json.JSONDecodeError, TypeError, ValueError):
+                continue
+    except (FileNotFoundError, subprocess.TimeoutExpired):
+        pass
+    except Exception:
+        pass
+    return jsonify(out)
+
 @app.route('/api/gps/coordinates', methods=['GET'])
 def api_gps_coordinates():
     """Legacy: single-shot GPS coordinates. Prefer POST /api/gps/start + GET /api/gps/status for modal flow."""
@@ -2574,6 +2724,11 @@ def save_config():
         for key in tak_protected_keys:
             if key in data:
                 del data[key]
+        
+        # Sanitize deployment mode (stationary | mobile)
+        if 'FEEDER_DEPLOYMENT_MODE' in data:
+            v = str(data['FEEDER_DEPLOYMENT_MODE']).strip().lower()
+            data['FEEDER_DEPLOYMENT_MODE'] = v if v in ('stationary', 'mobile') else 'stationary'
         
         # Update env with user data (protected TAK settings excluded)
         for key, value in data.items():
@@ -3210,7 +3365,7 @@ def api_dump978_enable():
         if needs_update:
             print("→ Updating docker-compose.yml with dump978 service...")
             try:
-                url = 'https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/config/docker-compose.yml'
+                url = 'https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/mobile-deploy/config/docker-compose.yml'
                 urllib.request.urlretrieve(url, compose_file)
                 print("✓ docker-compose.yml updated")
             except Exception as e:
@@ -4314,7 +4469,7 @@ def get_system_version():
         print(f"Current version from file: {current_version}")
         
         # Fetch latest version from GitHub
-        repo_url = 'https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/version.json'
+        repo_url = 'https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/mobile-deploy/version.json'
         
         try:
             import requests

@@ -464,6 +464,73 @@ async function initDashboard() {
     debugLog(`initial render completed in ${(t1 - t0).toFixed(0)}ms`);
     initPolling();
     wireConnectionQualityModal();
+    initMobileFeederPolling();
+}
+
+/** Mobile feeder mode card: poll /api/mobile/status when #mobile-feeder-card exists */
+function initMobileFeederPolling() {
+    const card = document.getElementById('mobile-feeder-card');
+    if (!card) return;
+
+    const elMotion = document.getElementById('mobile-in-motion');
+    const elMlat = document.getElementById('mobile-mlat-status');
+    const elSpeed = document.getElementById('mobile-speed-hint');
+    const elHoldRow = document.getElementById('mobile-hold-row');
+    const elHold = document.getElementById('mobile-stationary-hold');
+    const elMsg = document.getElementById('mobile-daemon-msg');
+    if (!elMotion || !elMlat) return;
+
+    async function poll() {
+        try {
+            const resp = await fetchWithTimeout('/api/mobile/status', {}, 6000);
+            if (!resp.ok) return;
+            const data = await resp.json();
+            if (!data.success || !data.mobile_mode_enabled) return;
+
+            if (data.in_motion_unknown) {
+                elMotion.textContent = 'Unknown';
+                elMotion.style.color = '#6b7280';
+            } else if (data.in_motion) {
+                elMotion.textContent = 'Yes';
+                elMotion.style.color = '#d97706';
+            } else {
+                elMotion.textContent = 'No';
+                elMotion.style.color = '#059669';
+            }
+
+            if (data.mlat_paused) {
+                elMlat.innerHTML = '<span style="color: #dc2626;">Paused</span>';
+            } else {
+                elMlat.innerHTML = '<span style="color: #059669;">On</span>';
+            }
+
+            if (elHoldRow && elHold && data.awaiting_stationary_sync && data.stationary_seconds != null && data.stationary_target_seconds != null) {
+                elHold.textContent = `${Math.round(data.stationary_seconds)} / ${data.stationary_target_seconds} s`;
+                elHoldRow.style.display = 'table-row';
+            } else if (elHoldRow) {
+                elHoldRow.style.display = 'none';
+            }
+
+            if (elMsg && data.daemon_message) {
+                elMsg.textContent = data.daemon_message;
+                elMsg.style.display = 'block';
+            } else if (elMsg) {
+                elMsg.style.display = 'none';
+            }
+
+            if (elSpeed && data.speed_mps != null && !data.in_motion_unknown) {
+                elSpeed.textContent = `GPS speed: ${data.speed_mps} m/s`;
+                elSpeed.style.display = 'block';
+            } else if (elSpeed) {
+                elSpeed.style.display = 'none';
+            }
+        } catch (e) {
+            debugLog('mobile status poll failed', e);
+        }
+    }
+
+    poll();
+    setInterval(poll, 5000);
 }
 
 window.initDashboard = initDashboard;

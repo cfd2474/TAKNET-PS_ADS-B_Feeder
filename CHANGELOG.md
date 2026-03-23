@@ -1,3 +1,9 @@
+## v2.59.68 — 2026-03-21
+
+### Changed
+- Set BIND_INTERFACE=0.0.0.0 for FR24 container so web UI works from NetBird/Tailscale (100.x) and other non-RFC1918 ranges.
+
+---
 ## v2.59.67 — 2026-03-19
 
 ### Changed

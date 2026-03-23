@@ -80,6 +80,7 @@ services:
     environment:
       - BEASTHOST=ultrafeeder
       - BEASTPORT=30005
+      - BIND_INTERFACE=0.0.0.0
       - FR24KEY=${FR24_KEY}
       - MLAT=yes
     tmpfs:

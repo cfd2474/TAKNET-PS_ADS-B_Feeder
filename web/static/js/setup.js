@@ -95,6 +95,36 @@ function prevStep(step) {
     nextStep(step);
 }
 
+function enforceTimezonePlaceholder() {
+    const tzSelect = document.getElementById('tz');
+    if (!tzSelect) return;
+    tzSelect.selectedIndex = 0;
+    tzSelect.value = '';
+    updateSetupFinishButtonState();
+}
+
+function getSetupFinishButton() {
+    return document.getElementById('setup-finish-btn') ||
+        document.querySelector('button[onclick="saveAndStart()"]');
+}
+
+function ensureRequiredFieldsUi() {
+    const finishBtn = getSetupFinishButton();
+    if (!finishBtn) return;
+    if (!finishBtn.id) finishBtn.id = 'setup-finish-btn';
+
+    let noteEl = document.getElementById('required-fields-note');
+    if (!noteEl) {
+        noteEl = document.createElement('p');
+        noteEl.id = 'required-fields-note';
+        noteEl.style.margin = '0 0 10px 0';
+        noteEl.style.color = '#6b7280';
+        noteEl.style.fontSize = '0.92em';
+        noteEl.textContent = 'Fill all required fields before proceeding';
+        finishBtn.parentNode.insertBefore(noteEl, finishBtn);
+    }
+}
+
 // Get zip code from coordinates using reverse geocoding
 async function getZipCodeFromCoords(lat, lon) {
     try {
@@ -142,11 +172,37 @@ async function installTailscale(authKey) {
 }
 
 // Save configuration and start service
+function updateSetupFinishButtonState() {
+    const latInput = document.getElementById('lat');
+    const lonInput = document.getElementById('lon');
+    const altInput = document.getElementById('alt');
+    const tzSelect = document.getElementById('tz');
+    const siteNameInput = document.getElementById('site_name');
+    const finishBtn = getSetupFinishButton();
+    const noteEl = document.getElementById('required-fields-note');
+    if (!finishBtn || !tzSelect || !latInput || !lonInput || !altInput || !siteNameInput) return;
+
+    const ready =
+        !!latInput.value.trim() &&
+        !!lonInput.value.trim() &&
+        !!altInput.value.trim() &&
+        !!tzSelect.value &&
+        !!siteNameInput.value.trim();
+
+    finishBtn.disabled = !ready;
+    finishBtn.style.opacity = ready ? '1' : '0.7';
+    finishBtn.style.cursor = ready ? 'pointer' : 'not-allowed';
+    finishBtn.style.background = ready ? '' : '#9ca3af';
+    finishBtn.style.borderColor = ready ? '' : '#9ca3af';
+    if (noteEl) noteEl.style.display = ready ? 'none' : 'block';
+}
+
+// Save configuration and start service
 async function saveAndStart() {
     const lat = document.getElementById('lat').value;
     const lon = document.getElementById('lon').value;
     const alt = document.getElementById('alt').value;
-    const tz = document.getElementById('tz').value;
+    const tz = document.getElementById('tz').value.trim();
     const siteName = document.getElementById('site_name').value.trim();
     const userZipCode = document.getElementById('zip_code').value.trim();
     
@@ -646,10 +702,32 @@ function closeProgressModal() {
 
 // Initialize Tailscale key checking
 document.addEventListener('DOMContentLoaded', function() {
+    // Setup page behavior
+    initializeOfflineMode();
+    ensureRequiredFieldsUi();
+
+    // Force explicit timezone selection in wizard, even if browser restores prior form values.
+    enforceTimezonePlaceholder();
+    setTimeout(enforceTimezonePlaceholder, 0);
+    setTimeout(enforceTimezonePlaceholder, 300);
+    setTimeout(enforceTimezonePlaceholder, 1000);
+
+    ['lat', 'lon', 'alt', 'site_name', 'tz'].forEach(function(id) {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.addEventListener('input', updateSetupFinishButtonState);
+        el.addEventListener('change', updateSetupFinishButtonState);
+    });
+
     const keyInput = document.getElementById('tailscale_key');
     if (keyInput) {
         keyInput.addEventListener('input', checkTailscaleKey);
         // Check on page load in case value is pre-filled
         checkTailscaleKey();
     }
+    updateSetupFinishButtonState();
+});
+
+window.addEventListener('pageshow', function() {
+    enforceTimezonePlaceholder();
 });
