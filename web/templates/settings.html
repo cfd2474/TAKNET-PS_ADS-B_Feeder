@@ -1604,6 +1604,16 @@
             }
         }
 
+        async function fetchJsonSafe(url, options) {
+            const response = await fetch(url, options || {});
+            const contentType = (response.headers.get('content-type') || '').toLowerCase();
+            if (!response.ok || contentType.indexOf('application/json') === -1) {
+                const text = await response.text().catch(function () { return ''; });
+                throw new Error('HTTP ' + response.status + ' ' + (response.statusText || '') + (text ? ' (non-JSON response)' : ''));
+            }
+            return await response.json();
+        }
+
         function updateDeploymentModeUi() {
             const selected = document.querySelector('input[name="feeder_deployment_mode"]:checked');
             const mode = selected ? selected.value : 'stationary';
@@ -2208,8 +2218,7 @@
         // Check Tailscale status (needed for DOMContentLoaded above)
         async function checkTailscaleStatus() {
             try {
-                const response = await fetch('/api/tailscale/status');
-                const data = await response.json();
+                const data = await fetchJsonSafe('/api/tailscale/status');
                 
                 // Update top connection status box
                 updateTailscaleStatusDisplay(data);
@@ -3653,8 +3662,7 @@
 
             updatePollInterval = setInterval(async () => {
                 try {
-                    const response = await fetch('/api/system/update/status');
-                    const data = await response.json();
+                    const data = await fetchJsonSafe('/api/system/update/status');
 
                     if (data.success && data.log) {
                         modalLog.textContent = data.log;
@@ -3692,8 +3700,13 @@
                     }
 
                 } catch (error) {
-                    console.error('Error polling update status:', error);
-                    // Don't stop polling on error, might be temporary
+                    // During adsb-web restart we can briefly get 502/503 HTML from proxy.
+                    // Keep polling and show transient waiting status instead of JSON errors.
+                    statusText.textContent = 'Waiting for web service...';
+                    if (modalLog) {
+                        modalLog.textContent += '\n⏳ Service temporarily unavailable, retrying...';
+                        modalLog.scrollTop = modalLog.scrollHeight;
+                    }
                 }
 
             }, 2000); // Poll every 2 seconds
@@ -3753,8 +3766,7 @@
 
             updatePollInterval = setInterval(async () => {
                 try {
-                    const response = await fetch('/api/system/update/status');
-                    const data = await response.json();
+                    const data = await fetchJsonSafe('/api/system/update/status');
 
                     if (data.success && data.log) {
                         updateLog.textContent = data.log;
@@ -3784,8 +3796,10 @@
                     }
 
                 } catch (error) {
-                    console.error('Error polling update status:', error);
-                    // Don't stop polling on error, might be temporary
+                    if (updateLog) {
+                        updateLog.textContent += '\n⏳ Service temporarily unavailable, retrying...';
+                        updateLog.scrollTop = updateLog.scrollHeight;
+                    }
                 }
 
             }, 2000); // Poll every 2 seconds
@@ -3844,8 +3858,7 @@
 
         async function checkNetbirdStatus() {
             try {
-                const response = await fetch('/api/netbird/status');
-                const data = await response.json();
+                const data = await fetchJsonSafe('/api/netbird/status');
                 updateNetbirdUI(data);
             } catch (error) {
                 console.error('NetBird status check failed:', error);
