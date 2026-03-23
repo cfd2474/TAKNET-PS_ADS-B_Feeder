@@ -554,6 +554,8 @@
         let dashGpsRestartInProgress = false;
         /** Force modal visibility while restart is in progress */
         let dashGpsVisibilityGuardInterval = null;
+        /** Backup markup so we can fully remove/recreate base GPS modal */
+        let dashGpsModalMarkup = null;
         const DASH_GPS_BUILD_MARKER = 'GPS-RESTART-BM-20260315-01';
 
         function showDashGpsRestartOverlay() {
@@ -578,6 +580,28 @@
             if (!ov) return;
             ov.style.display = 'none';
             ov.setAttribute('aria-hidden', 'true');
+        }
+
+        function restoreDashGpsBaseModalIfNeeded() {
+            var gm = document.getElementById('dashGpsModal');
+            if (gm || !dashGpsModalMarkup) return;
+            var wrap = document.createElement('div');
+            wrap.innerHTML = dashGpsModalMarkup;
+            var restored = wrap.firstElementChild;
+            if (!restored) return;
+            var overlay = document.getElementById('dashGpsRestartOverlay');
+            if (overlay && overlay.parentNode) {
+                overlay.parentNode.insertBefore(restored, overlay);
+            } else {
+                document.body.appendChild(restored);
+            }
+            wireDashGpsModalBackdrops();
+        }
+
+        function destroyDashGpsBaseModalForRestart() {
+            var gm = document.getElementById('dashGpsModal');
+            if (!gm) return;
+            gm.remove();
         }
 
         function hardHideDashGpsBaseModal() {
@@ -631,6 +655,7 @@
         }
 
         function openDashGpsForceResyncModal() {
+            restoreDashGpsBaseModalIfNeeded();
             var gm = document.getElementById('dashGpsModal');
             if (!gm) {
                 alert('GPS modal is not available. Set deployment mode to Mobile in Settings and reload.');
@@ -921,8 +946,8 @@
         function dashGpsShowRestartPhase() {
             dashGpsRestartInProgress = true;
             showDashGpsRestartOverlay();
-            // Keep a single restart surface: hard-hide the GPS acquisition modal entirely.
-            hardHideDashGpsBaseModal();
+            // Keep a single restart surface: remove GPS acquisition modal from DOM entirely.
+            destroyDashGpsBaseModalForRestart();
 
             dashGpsRestartHasActiveState = false;
             dashGpsRestartPollStartedAt = Date.now();
@@ -1023,6 +1048,8 @@
 
         // Initialize dashboard on load
         window.addEventListener('DOMContentLoaded', () => {
+            var gm = document.getElementById('dashGpsModal');
+            if (gm) dashGpsModalMarkup = gm.outerHTML;
             wireDashGpsModalBackdrops();
             initDashboard();
         });
