@@ -1,3 +1,9 @@
+## v3.0.08 — 2026-03-25
+
+### Changed
+- Updater now only auto-seeds/uses default NetBird key when no key exists and NetBird is disconnected; existing keys and active connections are left untouched during updates.
+
+---
 ## v3.0.07 — 2026-03-25
 
 ### Changed

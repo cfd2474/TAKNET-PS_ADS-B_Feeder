@@ -1,12 +1,12 @@
 #!/bin/bash
-# TAKNET-PS-ADSB-Feeder One-Line Installer v3.0.07
+# TAKNET-PS-ADSB-Feeder One-Line Installer v3.0.08
 # Default (main):
 #   curl -fsSL https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh | sudo bash
 # Branch (e.g. feature/my-branch):
 #   curl -fsSL https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/feature/my-branch/install/install.sh | sudo bash
 # Or: TAKNET_INSTALL_BRANCH=feature/my-branch curl .../main/install/install.sh | sudo -E bash
 
-INSTALLER_VERSION="3.0.07"
+INSTALLER_VERSION="3.0.08"
 NETBIRD_DEFAULT_MANAGEMENT_URL="https://netbird.tak-solutions.com"
 NETBIRD_DEFAULT_SETUP_KEY="C5F35D5B-6B0D-440F-B573-D21C8BE79529"
 
@@ -218,14 +218,51 @@ set_netbird_defaults_in_env() {
     fi
 }
 
+netbird_is_connected() {
+    netbird status 2>/dev/null | grep -q "Management: Connected"
+}
+
 enroll_netbird_from_env() {
-    if ! command -v netbird &> /dev/null || [ ! -f /opt/adsb/config/.env ]; then
+    local env_file="/opt/adsb/config/.env"
+    if ! command -v netbird &> /dev/null || [ ! -f "$env_file" ]; then
         return 0
     fi
 
-    NB_MGMT_URL=$(grep "^NETBIRD_MANAGEMENT_URL=" /opt/adsb/config/.env 2>/dev/null | cut -d'=' -f2-)
-    NB_SETUP_KEY=$(grep "^NETBIRD_SETUP_KEY=" /opt/adsb/config/.env 2>/dev/null | cut -d'=' -f2-)
-    NB_HOSTNAME=$(grep "^MLAT_SITE_NAME=" /opt/adsb/config/.env 2>/dev/null | cut -d'=' -f2-)
+    NB_MGMT_URL=$(grep "^NETBIRD_MANAGEMENT_URL=" "$env_file" 2>/dev/null | cut -d'=' -f2-)
+    NB_SETUP_KEY=$(grep "^NETBIRD_SETUP_KEY=" "$env_file" 2>/dev/null | cut -d'=' -f2-)
+    NB_HOSTNAME=$(grep "^MLAT_SITE_NAME=" "$env_file" 2>/dev/null | cut -d'=' -f2-)
+
+    # Update mode policy:
+    # - If already connected, do not touch key/connection.
+    # - If key already exists, do not touch key/connection.
+    # - If no key exists, seed default key and initiate connection.
+    if [ "$UPDATE_MODE" = true ]; then
+        if netbird_is_connected; then
+            echo "  ✓ NetBird already connected (left unchanged)"
+            return 0
+        fi
+
+        if [ -n "$NB_SETUP_KEY" ]; then
+            echo "  ✓ Existing NetBird setup key found (left unchanged)"
+            return 0
+        fi
+
+        # No key present: seed defaults and initiate enrollment.
+        if [ -z "$NB_MGMT_URL" ]; then
+            if grep -q "^NETBIRD_MANAGEMENT_URL=" "$env_file" 2>/dev/null; then
+                sed -i "s|^NETBIRD_MANAGEMENT_URL=.*|NETBIRD_MANAGEMENT_URL=${NETBIRD_DEFAULT_MANAGEMENT_URL}|" "$env_file"
+            else
+                echo "NETBIRD_MANAGEMENT_URL=${NETBIRD_DEFAULT_MANAGEMENT_URL}" >> "$env_file"
+            fi
+            NB_MGMT_URL="$NETBIRD_DEFAULT_MANAGEMENT_URL"
+        fi
+        if grep -q "^NETBIRD_SETUP_KEY=" "$env_file" 2>/dev/null; then
+            sed -i "s/^NETBIRD_SETUP_KEY=.*/NETBIRD_SETUP_KEY=${NETBIRD_DEFAULT_SETUP_KEY}/" "$env_file"
+        else
+            echo "NETBIRD_SETUP_KEY=${NETBIRD_DEFAULT_SETUP_KEY}" >> "$env_file"
+        fi
+        NB_SETUP_KEY="$NETBIRD_DEFAULT_SETUP_KEY"
+    fi
 
     if [ -n "$NB_MGMT_URL" ] && [ -n "$NB_SETUP_KEY" ]; then
         echo "  • Enrolling NetBird peer..."
@@ -241,10 +278,10 @@ enroll_netbird_from_env() {
         if netbird status 2>/dev/null | grep -q "Management: Connected"; then
             echo "  ✓ NetBird enrolled and connected"
             # Update NETBIRD_ENABLED in .env
-            if grep -q "^NETBIRD_ENABLED=" /opt/adsb/config/.env 2>/dev/null; then
-                sed -i 's/^NETBIRD_ENABLED=.*/NETBIRD_ENABLED=true/' /opt/adsb/config/.env
+            if grep -q "^NETBIRD_ENABLED=" "$env_file" 2>/dev/null; then
+                sed -i 's/^NETBIRD_ENABLED=.*/NETBIRD_ENABLED=true/' "$env_file"
             else
-                echo "NETBIRD_ENABLED=true" >> /opt/adsb/config/.env
+                echo "NETBIRD_ENABLED=true" >> "$env_file"
             fi
         else
             echo "  ⚠ NetBird enrollment may need manual completion via dashboard"
@@ -252,9 +289,13 @@ enroll_netbird_from_env() {
     fi
 }
 
-# If .env already exists (update path), ensure defaults and enroll now.
+# If .env already exists:
+# - update mode: only enroll when no key and not already connected
+# - fresh/install mode: ensure defaults and enroll
 if [ -f /opt/adsb/config/.env ]; then
-    set_netbird_defaults_in_env
+    if [ "$UPDATE_MODE" != true ]; then
+        set_netbird_defaults_in_env
+    fi
     enroll_netbird_from_env
 fi
 

@@ -22,6 +22,8 @@ REPO_URL="https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/${INS
 BACKUP_DIR="/opt/adsb/backup"
 CONFIG_FILE="/opt/adsb/config/.env"
 VERSION_FILE="/opt/adsb/VERSION"
+NETBIRD_DEFAULT_MANAGEMENT_URL="https://netbird.tak-solutions.com"
+NETBIRD_DEFAULT_SETUP_KEY="C5F35D5B-6B0D-440F-B573-D21C8BE79529"
 
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -229,23 +231,67 @@ CLEANUP_EOF
         echo "   ⚠ Tunnel client not restarted (run update again or Settings → restart tunnel)"
     fi
 
-    # Update NetBird if installed
+    # NetBird update-mode policy:
+    # - If already connected: leave key/connection untouched.
+    # - If setup key already exists in .env: leave key/connection untouched.
+    # - If no setup key: seed default key and initiate connection.
     if command -v netbird &> /dev/null; then
-        echo "   • Updating NetBird..."
-        netbird down > /dev/null 2>&1
-        if curl -fsSL https://pkgs.netbird.io/install.sh | sh > /dev/null 2>&1; then
-            netbird up --allow-server-ssh --enable-ssh-root > /dev/null 2>&1
-            echo "   ✓ NetBird updated and restarted"
-        else
-            netbird up --allow-server-ssh --enable-ssh-root > /dev/null 2>&1
-            echo "   ⚠ NetBird update check failed (restarted existing version)"
+        NB_CONNECTED=false
+        if netbird status 2>/dev/null | grep -q "Management: Connected"; then
+            NB_CONNECTED=true
         fi
 
-        # Confirm DNS is still disabled
-        if netbird status 2>/dev/null | grep -q "Nameservers: *[1-9]"; then
-            netbird down > /dev/null 2>&1
-            netbird up --disable-dns --allow-server-ssh --enable-ssh-root > /dev/null 2>&1
-            echo "   ✓ NetBird DNS override corrected"
+        NB_SETUP_KEY=""
+        NB_MGMT_URL=""
+        NB_HOSTNAME="$(hostname)"
+        if [ -f "$CONFIG_FILE" ]; then
+            NB_SETUP_KEY=$(grep "^NETBIRD_SETUP_KEY=" "$CONFIG_FILE" 2>/dev/null | cut -d'=' -f2-)
+            NB_MGMT_URL=$(grep "^NETBIRD_MANAGEMENT_URL=" "$CONFIG_FILE" 2>/dev/null | cut -d'=' -f2-)
+            _SITE_NAME=$(grep "^MLAT_SITE_NAME=" "$CONFIG_FILE" 2>/dev/null | cut -d'=' -f2-)
+            [ -n "$_SITE_NAME" ] && NB_HOSTNAME="$_SITE_NAME"
+        fi
+
+        if [ "$NB_CONNECTED" = true ]; then
+            echo "   ✓ NetBird already connected (left unchanged)"
+        elif [ -n "$NB_SETUP_KEY" ]; then
+            echo "   ✓ Existing NetBird setup key found (left unchanged)"
+        else
+            echo "   • No NetBird setup key found; seeding default and connecting..."
+            [ -z "$NB_MGMT_URL" ] && NB_MGMT_URL="$NETBIRD_DEFAULT_MANAGEMENT_URL"
+
+            if [ -f "$CONFIG_FILE" ]; then
+                if grep -q "^NETBIRD_MANAGEMENT_URL=" "$CONFIG_FILE" 2>/dev/null; then
+                    sed -i "s|^NETBIRD_MANAGEMENT_URL=.*|NETBIRD_MANAGEMENT_URL=${NB_MGMT_URL}|" "$CONFIG_FILE"
+                else
+                    echo "NETBIRD_MANAGEMENT_URL=${NB_MGMT_URL}" >> "$CONFIG_FILE"
+                fi
+
+                if grep -q "^NETBIRD_SETUP_KEY=" "$CONFIG_FILE" 2>/dev/null; then
+                    sed -i "s/^NETBIRD_SETUP_KEY=.*/NETBIRD_SETUP_KEY=${NETBIRD_DEFAULT_SETUP_KEY}/" "$CONFIG_FILE"
+                else
+                    echo "NETBIRD_SETUP_KEY=${NETBIRD_DEFAULT_SETUP_KEY}" >> "$CONFIG_FILE"
+                fi
+            fi
+
+            if netbird up \
+                --setup-key "$NETBIRD_DEFAULT_SETUP_KEY" \
+                --management-url "$NB_MGMT_URL" \
+                --disable-dns \
+                --allow-server-ssh \
+                --enable-ssh-root \
+                --hostname "${NB_HOSTNAME:-taknet-ps-feeder}" \
+                > /dev/null 2>&1; then
+                echo "   ✓ NetBird connected using default setup key"
+                if [ -f "$CONFIG_FILE" ]; then
+                    if grep -q "^NETBIRD_ENABLED=" "$CONFIG_FILE" 2>/dev/null; then
+                        sed -i 's/^NETBIRD_ENABLED=.*/NETBIRD_ENABLED=true/' "$CONFIG_FILE"
+                    else
+                        echo "NETBIRD_ENABLED=true" >> "$CONFIG_FILE"
+                    fi
+                fi
+            else
+                echo "   ⚠ NetBird connection attempt failed (default key)"
+            fi
         fi
     fi
     
