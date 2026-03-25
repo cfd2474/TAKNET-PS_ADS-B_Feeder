@@ -7,7 +7,7 @@
 **Team Awareness Kit Network - Public Safety**  
 **For Enhanced Tracking**
 
-**Current Version: 3.0.05**
+**Current Version: 3.0.07**
 
 A comprehensive ADS-B aircraft tracking solution designed for distributed deployment with centralized aggregation. Built for public safety, emergency services, and aviation tracking networks.
 
@@ -488,7 +488,7 @@ Feeders send their software version to the aggregator via the **MLAT client name
 
 ### Feeder claim key (optional owner assignment)
 
-If you set **Aggregator feeder claim key** in Settings (UUID from the TAKNET-PS dashboard → Account details), the Beast feed to the aggregator is sent through a small local proxy that prepends `TAKNET_FEEDER_CLAIM <uuid>` on **each new TCP connection**, then forwards normal Beast binary data. Leave the field empty for legacy behavior (no claim line). Details: `docs/FEEDER_CLAIM_PROTOCOL.md`.
+If you set **Aggregator feeder claim key** in Settings (UUID from the TAKNET-PS dashboard → Account details), the Beast feed to the aggregator is sent through a small local proxy that prepends `TAKNET_FEEDER_CLAIM <uuid>` on **each new TCP connection**, and can also include `TAKNET_FEEDER_MAC <aa:bb:cc:dd:ee:ff>` when `TAKNET_PS_FEEDER_MAC` is set in `.env`, then forwards normal Beast binary data. Leave both fields empty for legacy behavior (no metadata lines). Details: `docs/FEEDER_CLAIM_PROTOCOL.md`.
 
 ---
 
@@ -522,7 +522,7 @@ Michael Leckliter — [mike@tak-solutions.com](mailto:mike@tak-solutions.com)
 
 ## 📝 Version History
 
-**Current Version:** 3.0.05  
+**Current Version:** 3.0.07  
 **Release Date:** 2026-03-17  
 **Minimum Supported Version:** 2.40.0  
 

@@ -1,11 +1,11 @@
 {
-  "version": "3.0.05",
+  "version": "3.0.07",
   "release_date": "2026-03-25",
-  "release_name": "NetBird auto-enrollment",
+  "release_name": "Feeder identity metadata",
   "download_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh",
   "changelog_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/CHANGELOG.md",
   "minimum_version": "2.40.0",
   "breaking_changes": false,
-  "release_notes": "Auto-seed NetBird setup key and enroll automatically after install/update so feeder VPN comes up without manual key entry.",
-  "update_priority": 3
+  "release_notes": "Add TAKNET_FEEDER_MAC metadata support in Beast proxy (with MAC normalization/validation) and wire TAKNET_PS_FEEDER_MAC through config/env docs.",
+  "update_priority": 2
 }

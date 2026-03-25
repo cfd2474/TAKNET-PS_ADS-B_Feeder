@@ -91,6 +91,8 @@ TAKNET_PS_MLAT_PORT=30105
 # Optional: Feeder claim key (UUID from TAKNET-PS dashboard → Account details).
 # When set, the Beast feed sends TAKNET_FEEDER_CLAIM <uuid> so the aggregator can assign owners.
 TAKNET_PS_FEEDER_CLAIM_KEY=
+# Optional: stable feeder MAC identity sent as TAKNET_FEEDER_MAC <aa:bb:cc:dd:ee:ff>.
+TAKNET_PS_FEEDER_MAC=
 
 # Connection mode options:
 # - auto: Automatically detect NetBird and select appropriate host (default)

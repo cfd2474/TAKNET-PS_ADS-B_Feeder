@@ -3,8 +3,10 @@
 Bridge ultrafeeder (readsb) → TAKNET-PS aggregator Beast port.
 
 On each inbound connection, opens TCP to UPSTREAM_HOST:UPSTREAM_PORT, sends
-one ASCII line TAKNET_FEEDER_CLAIM <uuid>\\n when FEEDER_CLAIM_UUID is set,
-then copies bytes both ways (Beast binary unchanged after the line).
+ASCII metadata lines before Beast binary bytes:
+  TAKNET_FEEDER_CLAIM <uuid>\\n when FEEDER_CLAIM_UUID is set
+  TAKNET_FEEDER_MAC <aa:bb:cc:dd:ee:ff>\\n when FEEDER_MAC is valid
+then copies bytes both ways (Beast stream unchanged after metadata lines).
 
 Environment:
   LISTEN_HOST     (default 0.0.0.0)
@@ -12,8 +14,10 @@ Environment:
   UPSTREAM_HOST   (required)
   UPSTREAM_PORT   (default 30004)
   FEEDER_CLAIM_UUID  optional; standard 8-4-4-4-12 hex UUID, sent lowercase
+  FEEDER_MAC         optional; normalized to lowercase colon MAC before sending
 """
 import os
+import re
 import socket
 import threading
 from typing import Optional
@@ -33,6 +37,20 @@ UPSTREAM_PORT = _env_int("UPSTREAM_PORT", 30004)
 _CLAIM = (os.environ.get("FEEDER_CLAIM_UUID") or "").strip().lower()
 CLAIM_PREFIX = b"TAKNET_FEEDER_CLAIM "
 CLAIM_LINE = (CLAIM_PREFIX + _CLAIM.encode("ascii") + b"\n") if _CLAIM else None
+_MAC_RAW = (os.environ.get("FEEDER_MAC") or "").strip()
+
+
+def normalize_mac(mac: str) -> str:
+    """Return lowercase aa:bb:cc:dd:ee:ff, or empty string when invalid."""
+    h = re.sub(r"[^0-9A-Fa-f]", "", mac or "")
+    if len(h) != 12:
+        return ""
+    return ":".join(h[i:i + 2] for i in range(0, 12, 2)).lower()
+
+
+_MAC = normalize_mac(_MAC_RAW)
+MAC_PREFIX = b"TAKNET_FEEDER_MAC "
+MAC_LINE = (MAC_PREFIX + _MAC.encode("ascii") + b"\n") if _MAC else None
 
 
 def _relay(src: socket.socket, dst: socket.socket) -> None:
@@ -58,6 +76,8 @@ def _handle_client(client: socket.socket, addr) -> None:
         upstream.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
         if CLAIM_LINE:
             upstream.sendall(CLAIM_LINE)
+        if MAC_LINE:
+            upstream.sendall(MAC_LINE)
         t_a = threading.Thread(target=_relay, args=(client, upstream), daemon=True)
         t_b = threading.Thread(target=_relay, args=(upstream, client), daemon=True)
         t_a.start()
@@ -87,9 +107,10 @@ def main() -> None:
     ss.bind((LISTEN_HOST, LISTEN_PORT))
     ss.listen(16)
     claim_note = "yes" if CLAIM_LINE else "no"
+    mac_note = _MAC if MAC_LINE else "no"
     print(
         f"[beast-claim-proxy] listen {LISTEN_HOST}:{LISTEN_PORT} "
-        f"-> {UPSTREAM_HOST}:{UPSTREAM_PORT} claim={claim_note}"
+        f"-> {UPSTREAM_HOST}:{UPSTREAM_PORT} claim={claim_note} mac={mac_note}"
     )
     while True:
         c, a = ss.accept()

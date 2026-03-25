@@ -1,3 +1,15 @@
+## v3.0.07 — 2026-03-25
+
+### Changed
+- Add TAKNET_FEEDER_MAC metadata support in Beast proxy (with MAC normalization/validation) and wire TAKNET_PS_FEEDER_MAC through config/env docs.
+
+---
+## v3.0.06 — 2026-03-25
+
+### Changed
+- Add TAKNET_FEEDER_MAC metadata support in Beast proxy (with MAC normalization/validation) and wire TAKNET_PS_FEEDER_MAC through config/env docs.
+
+---
 ## v3.0.05 — 2026-03-25
 
 ### Changed

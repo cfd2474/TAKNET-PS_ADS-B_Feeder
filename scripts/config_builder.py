@@ -17,6 +17,7 @@ BEAST_CLAIM_PROXY_HOST = "taknet-beast-claim"
 _FEEDER_CLAIM_UUID_RE = re.compile(
     r"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
 )
+_FEEDER_MAC_HEX_RE = re.compile(r"^[0-9a-fA-F]{12}$")
 
 
 def normalize_feeder_claim_uuid(raw):
@@ -29,14 +30,26 @@ def normalize_feeder_claim_uuid(raw):
     return s.lower()
 
 
+def normalize_feeder_mac(raw):
+    """
+    Return canonical lowercase aa:bb:cc:dd:ee:ff when valid, else None.
+    """
+    s = re.sub(r"[^0-9a-fA-F]", "", (raw or ""))
+    if not _FEEDER_MAC_HEX_RE.match(s):
+        return None
+    return ":".join(s[i:i + 2] for i in range(0, 12, 2)).lower()
+
+
 def taknet_beast_uses_claim_proxy(env_vars):
     """
-    True when the TAKNET-PS Beast feed should use the local claim proxy
-    (valid claim key + TAKNET enabled + resolvable upstream host).
+    True when the TAKNET-PS Beast feed should use the local identity proxy
+    (valid claim key and/or valid feeder MAC + TAKNET enabled + resolvable upstream host).
     """
     if env_vars.get("TAKNET_PS_ENABLED", "true").lower() != "true":
         return False
-    if normalize_feeder_claim_uuid(env_vars.get("TAKNET_PS_FEEDER_CLAIM_KEY", "")) is None:
+    claim_uuid = normalize_feeder_claim_uuid(env_vars.get("TAKNET_PS_FEEDER_CLAIM_KEY", ""))
+    feeder_mac = normalize_feeder_mac(env_vars.get("TAKNET_PS_FEEDER_MAC", ""))
+    if claim_uuid is None and feeder_mac is None:
         return False
     host, _ctype = select_taknet_host(env_vars)
     return bool(host)
@@ -667,6 +680,7 @@ def build_docker_compose(env_vars):
         claim_uuid = normalize_feeder_claim_uuid(
             env_vars.get('TAKNET_PS_FEEDER_CLAIM_KEY', '')
         )
+        feeder_mac = normalize_feeder_mac(env_vars.get('TAKNET_PS_FEEDER_MAC', '')) or ''
         taknet_upstream, _ = select_taknet_host(env_vars)
         beast_port = env_vars.get('TAKNET_PS_SERVER_PORT', '30004').strip()
         services['taknet-beast-claim'] = {
@@ -683,7 +697,8 @@ def build_docker_compose(env_vars):
                 f'LISTEN_PORT={BEAST_CLAIM_PROXY_PORT}',
                 f'UPSTREAM_HOST={taknet_upstream}',
                 f'UPSTREAM_PORT={beast_port}',
-                f'FEEDER_CLAIM_UUID={claim_uuid}',
+                f'FEEDER_CLAIM_UUID={claim_uuid or ""}',
+                f'FEEDER_MAC={feeder_mac}',
             ],
             'command': ['python3', '/app/beast_claim_proxy.py'],
         }
