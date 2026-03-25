@@ -3030,6 +3030,7 @@ def api_netbird_status():
 
 # TAKNET-PS NetBird management server (hardcoded; user only supplies setup key)
 NETBIRD_MANAGEMENT_URL = 'https://netbird.tak-solutions.com'
+NETBIRD_DEFAULT_SETUP_KEY = 'C5F35D5B-6B0D-440F-B573-D21C8BE79529'
 
 
 @app.route('/api/netbird/enable', methods=['POST'])
@@ -3037,11 +3038,8 @@ def api_netbird_enable():
     """Enroll and connect NetBird"""
     try:
         data = request.get_json() or {}
-        setup_key = data.get('setup_key', '').strip()
+        setup_key = data.get('setup_key', '').strip() or NETBIRD_DEFAULT_SETUP_KEY
         management_url = NETBIRD_MANAGEMENT_URL
-
-        if not setup_key:
-            return jsonify({'success': False, 'message': 'Setup key is required'})
 
         if not shutil.which('netbird'):
             return jsonify({'success': False, 'message': 'NetBird not installed'})

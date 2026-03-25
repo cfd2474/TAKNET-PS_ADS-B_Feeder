@@ -69,8 +69,8 @@ TAILSCALE_AUTH_KEY=
 # Self-hosted NetBird for feeder→aggregator tunnel
 # ============================================
 NETBIRD_ENABLED=false
-NETBIRD_MANAGEMENT_URL=
-NETBIRD_SETUP_KEY=
+NETBIRD_MANAGEMENT_URL=https://netbird.tak-solutions.com
+NETBIRD_SETUP_KEY=C5F35D5B-6B0D-440F-B573-D21C8BE79529
 
 # ============================================
 # TAKNET-PS Server (HARDCODED - Always Enabled)

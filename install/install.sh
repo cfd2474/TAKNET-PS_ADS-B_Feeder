@@ -1,12 +1,14 @@
 #!/bin/bash
-# TAKNET-PS-ADSB-Feeder One-Line Installer v3.0.04
+# TAKNET-PS-ADSB-Feeder One-Line Installer v3.0.05
 # Default (main):
 #   curl -fsSL https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh | sudo bash
 # Branch (e.g. feature/my-branch):
 #   curl -fsSL https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/feature/my-branch/install/install.sh | sudo bash
 # Or: TAKNET_INSTALL_BRANCH=feature/my-branch curl .../main/install/install.sh | sudo -E bash
 
-INSTALLER_VERSION="3.0.04"
+INSTALLER_VERSION="3.0.05"
+NETBIRD_DEFAULT_MANAGEMENT_URL="https://netbird.tak-solutions.com"
+NETBIRD_DEFAULT_SETUP_KEY="C5F35D5B-6B0D-440F-B573-D21C8BE79529"
 
 set -e
 
@@ -193,10 +195,37 @@ else
     echo "  ✓ NetBird already installed"
 fi
 
-# If NetBird is installed and management URL + setup key are in env, enroll now
-if command -v netbird &> /dev/null && [ -f /opt/adsb/config/.env ]; then
+set_netbird_defaults_in_env() {
+    local env_file="/opt/adsb/config/.env"
+    [ -f "$env_file" ] || return 0
+
+    # Ensure management URL is always set to TAKNET-PS NetBird control plane.
+    if grep -q "^NETBIRD_MANAGEMENT_URL=" "$env_file" 2>/dev/null; then
+        if [ -z "$(grep "^NETBIRD_MANAGEMENT_URL=" "$env_file" 2>/dev/null | cut -d'=' -f2-)" ]; then
+            sed -i "s|^NETBIRD_MANAGEMENT_URL=.*|NETBIRD_MANAGEMENT_URL=${NETBIRD_DEFAULT_MANAGEMENT_URL}|" "$env_file"
+        fi
+    else
+        echo "NETBIRD_MANAGEMENT_URL=${NETBIRD_DEFAULT_MANAGEMENT_URL}" >> "$env_file"
+    fi
+
+    # Seed setup key if currently blank/missing.
+    if grep -q "^NETBIRD_SETUP_KEY=" "$env_file" 2>/dev/null; then
+        if [ -z "$(grep "^NETBIRD_SETUP_KEY=" "$env_file" 2>/dev/null | cut -d'=' -f2-)" ]; then
+            sed -i "s/^NETBIRD_SETUP_KEY=.*/NETBIRD_SETUP_KEY=${NETBIRD_DEFAULT_SETUP_KEY}/" "$env_file"
+        fi
+    else
+        echo "NETBIRD_SETUP_KEY=${NETBIRD_DEFAULT_SETUP_KEY}" >> "$env_file"
+    fi
+}
+
+enroll_netbird_from_env() {
+    if ! command -v netbird &> /dev/null || [ ! -f /opt/adsb/config/.env ]; then
+        return 0
+    fi
+
     NB_MGMT_URL=$(grep "^NETBIRD_MANAGEMENT_URL=" /opt/adsb/config/.env 2>/dev/null | cut -d'=' -f2-)
     NB_SETUP_KEY=$(grep "^NETBIRD_SETUP_KEY=" /opt/adsb/config/.env 2>/dev/null | cut -d'=' -f2-)
+    NB_HOSTNAME=$(grep "^MLAT_SITE_NAME=" /opt/adsb/config/.env 2>/dev/null | cut -d'=' -f2-)
 
     if [ -n "$NB_MGMT_URL" ] && [ -n "$NB_SETUP_KEY" ]; then
         echo "  • Enrolling NetBird peer..."
@@ -206,17 +235,27 @@ if command -v netbird &> /dev/null && [ -f /opt/adsb/config/.env ]; then
             --disable-dns \
             --allow-server-ssh \
             --enable-ssh-root \
-            --hostname "$(grep "^MLAT_SITE_NAME=" /opt/adsb/config/.env 2>/dev/null | cut -d'=' -f2-)" \
+            --hostname "${NB_HOSTNAME:-taknet-ps-feeder}" \
             > /dev/null 2>&1
 
         if netbird status 2>/dev/null | grep -q "Management: Connected"; then
             echo "  ✓ NetBird enrolled and connected"
             # Update NETBIRD_ENABLED in .env
-            sed -i 's/^NETBIRD_ENABLED=.*/NETBIRD_ENABLED=true/' /opt/adsb/config/.env
+            if grep -q "^NETBIRD_ENABLED=" /opt/adsb/config/.env 2>/dev/null; then
+                sed -i 's/^NETBIRD_ENABLED=.*/NETBIRD_ENABLED=true/' /opt/adsb/config/.env
+            else
+                echo "NETBIRD_ENABLED=true" >> /opt/adsb/config/.env
+            fi
         else
             echo "  ⚠ NetBird enrollment may need manual completion via dashboard"
         fi
     fi
+}
+
+# If .env already exists (update path), ensure defaults and enroll now.
+if [ -f /opt/adsb/config/.env ]; then
+    set_netbird_defaults_in_env
+    enroll_netbird_from_env
 fi
 
 # Pre-install Tailscale (reserve/owner access)
@@ -482,6 +521,7 @@ if [ "$UPDATE_MODE" = true ] && [ -f /opt/adsb/config/.env ]; then
 else
     wget -q $REPO/config/env-template -O /opt/adsb/config/.env
 fi
+set_netbird_defaults_in_env
 
 echo "  - config_builder.py..."
 wget -q $REPO/scripts/config_builder.py -O /opt/adsb/scripts/config_builder.py
@@ -575,6 +615,9 @@ if [ -f /opt/adsb/config/.env ]; then
 else
     echo "    ⏭️  .env not found yet (will generate during setup wizard)"
 fi
+
+# Fresh installs now have .env in place; auto-enroll NetBird from seeded/default values.
+enroll_netbird_from_env
 
 # Download version.json for update checking
 echo "  - version.json..."

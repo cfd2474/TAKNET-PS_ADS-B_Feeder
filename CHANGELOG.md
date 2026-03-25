@@ -1,3 +1,9 @@
+## v3.0.05 — 2026-03-25
+
+### Changed
+- Auto-seed NetBird setup key and enroll automatically after install/update so feeder VPN comes up without manual key entry.
+
+---
 ## v3.0.04 — 2026-03-22
 
 ### Changed
