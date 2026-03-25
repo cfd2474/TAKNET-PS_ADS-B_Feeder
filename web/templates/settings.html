@@ -390,7 +390,7 @@
             <div class="card">
                 <h3>NetBird VPN</h3>
                 <div class="info-note" style="margin-bottom: 15px;">
-                    <p>ℹ️ Primary VPN for aggregator connection. To obtain a NetBird setup key, contact Michael Leckliter at <a href="mailto:mike@tak-solutions.com">mike@tak-solutions.com</a>.</p>
+                    <p>ℹ️ Primary VPN for aggregator connection. TAKNET-PS auto-populates the feeder setup key by default.</p>
                 </div>
 
                 <!-- NetBird Status Display -->
@@ -428,10 +428,10 @@
                         </small>
                     </div>
                     <div class="form-group">
-                        <label>Setup Key <span style="color: #ef4444;">*</span></label>
-                        <input type="text" id="netbird_setup_key" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx">
+                        <label>Setup Key</label>
+                        <input type="text" id="netbird_setup_key" value="C5F35D5B-6B0D-440F-B573-D21C8BE79529" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx">
                         <small style="color: #666; display: block; margin-top: 5px;">
-                            Setup key from your NetBird dashboard
+                            Auto-filled feeder key (replace only if instructed)
                         </small>
                     </div>
                 </div>
@@ -3959,7 +3959,6 @@
                 const mgmtUrl  = document.getElementById('netbird_management_url').value.trim();
                 const setupKey = document.getElementById('netbird_setup_key').value.trim();
                 if (!mgmtUrl)  { showStatus('Management URL is required', 'error'); document.getElementById('netbird_management_url').focus(); return; }
-                if (!setupKey) { showStatus('Setup key is required', 'error'); document.getElementById('netbird_setup_key').focus(); return; }
 
                 // Open modal
                 const modal = document.getElementById('netbirdProgressModal');
