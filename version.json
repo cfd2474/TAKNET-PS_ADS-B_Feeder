@@ -1,11 +1,11 @@
 {
-  "version": "3.0.16",
+  "version": "3.0.17",
   "release_date": "2026-03-26",
-  "release_name": "Remove sub_filter to fix nginx",
+  "release_name": "Nginx CSP via http map",
   "download_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh",
   "changelog_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/CHANGELOG.md",
   "minimum_version": "2.40.0",
   "breaking_changes": false,
-  "release_notes": "FR24 HTTPS mixed-content workaround no longer uses nginx sub_filter (optional module). Explicitly proxies /logo.png and /monitor.json. Should prevent nginx start failure and restore tunnel (port 80) access.",
+  "release_notes": "Fix nginx failing to start: use conf.d map + add_header instead of server if { add_header } (invalid on stock Debian nginx). Run nginx -t before restart in install.",
   "update_priority": 3
 }

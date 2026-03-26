@@ -1,3 +1,9 @@
+## v3.0.17 — 2026-03-26
+
+### Changed
+- Fix nginx failing to start: use conf.d map + add_header instead of server if { add_header } (invalid on stock Debian nginx). Run nginx -t before restart in install.
+
+---
 ## v3.0.16 — 2026-03-26
 
 ### Changed
