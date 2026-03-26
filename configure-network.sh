@@ -50,6 +50,15 @@ echo "✓ mDNS configured - Device accessible at: taknet-ps.local"
 echo "Installing Nginx reverse proxy..."
 apt-get install -y nginx
 
+# map must live in http context (conf.d). Server-level if { add_header } fails on many nginx builds.
+mkdir -p /etc/nginx/conf.d
+cat > /etc/nginx/conf.d/taknet-ps-csp-map.conf << 'NGINXCSPEOF'
+map $http_x_forwarded_proto $taknet_ps_csp_upgrade {
+    https   "upgrade-insecure-requests";
+    default "";
+}
+NGINXCSPEOF
+
 # Configure Nginx
 cat > /etc/nginx/sites-available/taknet-ps << 'EOF'
 server {
@@ -57,11 +66,7 @@ server {
     listen [::]:80 default_server;
     server_name taknet-ps.local _;
 
-    # If an upstream proxy (e.g. aggregator tunnel) serves this page as HTTPS,
-    # force upgrades of any absolute http:// assets to https:// to avoid mixed-content blocking.
-    if ($http_x_forwarded_proto = "https") {
-        add_header Content-Security-Policy "upgrade-insecure-requests" always;
-    }
+    add_header Content-Security-Policy $taknet_ps_csp_upgrade always;
 
     # Main web UI - redirect root to /web
     location = / {

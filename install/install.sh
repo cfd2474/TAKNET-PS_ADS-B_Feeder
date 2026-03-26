@@ -1,12 +1,12 @@
 #!/bin/bash
-# TAKNET-PS-ADSB-Feeder One-Line Installer v3.0.16
+# TAKNET-PS-ADSB-Feeder One-Line Installer v3.0.17
 # Default (main):
 #   curl -fsSL https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh | sudo bash
 # Branch (e.g. feature/my-branch):
 #   curl -fsSL https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/feature/my-branch/install/install.sh | sudo bash
 # Or: TAKNET_INSTALL_BRANCH=feature/my-branch curl .../main/install/install.sh | sudo -E bash
 
-INSTALLER_VERSION="3.0.16"
+INSTALLER_VERSION="3.0.17"
 NETBIRD_DEFAULT_MANAGEMENT_URL="https://netbird.tak-solutions.com"
 NETBIRD_DEFAULT_SETUP_KEY="C5F35D5B-6B0D-440F-B573-D21C8BE79529"
 
@@ -700,6 +700,16 @@ chmod +x /opt/adsb/web/app.py
 
 # Configure Nginx reverse proxy
 echo "Configuring Nginx reverse proxy..."
+# map must live in http context (conf.d is included there). Do not use server-level if { add_header } —
+# many nginx builds reject add_header inside server if ("directive is not allowed here").
+mkdir -p /etc/nginx/conf.d
+cat > /etc/nginx/conf.d/taknet-ps-csp-map.conf << 'NGINXCSPEOF'
+map $http_x_forwarded_proto $taknet_ps_csp_upgrade {
+    https   "upgrade-insecure-requests";
+    default "";
+}
+NGINXCSPEOF
+
 cat > /etc/nginx/sites-available/taknet-ps << 'NGINXEOF'
 server {
     listen 80 default_server;
@@ -707,11 +717,8 @@ server {
     
     client_max_body_size 10M;
 
-    # If an upstream proxy (e.g. aggregator tunnel) serves this page as HTTPS,
-    # force upgrades of any absolute http:// assets to https:// to avoid mixed-content blocking.
-    if ($http_x_forwarded_proto = "https") {
-        add_header Content-Security-Policy "upgrade-insecure-requests" always;
-    }
+    # When X-Forwarded-Proto: https (aggregator tunnel), upgrade absolute http:// subresources (see conf.d map).
+    add_header Content-Security-Policy $taknet_ps_csp_upgrade always;
 
     # Canonical trailing slash redirects
     location = /fr24 { return 301 /fr24/; }
@@ -795,6 +802,7 @@ NGINXEOF
 rm -f /etc/nginx/sites-enabled/default
 ln -sf /etc/nginx/sites-available/taknet-ps /etc/nginx/sites-enabled/
 systemctl enable nginx
+nginx -t
 systemctl restart nginx
 
 echo "✓ Nginx configured (taknet-ps.local/, /web, /map, /fr24, /piaware)"
