@@ -1,3 +1,9 @@
+## v2.59.69 — 2026-03-26
+
+### Changed
+- Patch nginx front-door so port 80 exposes canonical /fr24/ and /piaware/ for tunnel dashboard target; keeps tunnel routing compatible with aggregator links.
+
+---
 ## v3.0.12 — 2026-03-26
 
 ### Changed
