@@ -1,3 +1,9 @@
+## v3.0.11 — 2026-03-26
+
+### Changed
+- Fix service restart/status APIs to use Docker Compose for FR24 and PiAware instead of systemd, resolving failed restarts and stale status behavior.
+
+---
 ## v3.0.10 — 2026-03-26
 
 ### Changed
