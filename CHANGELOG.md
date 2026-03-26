@@ -1,3 +1,9 @@
+## v3.0.13 — 2026-03-26
+
+### Changed
+- Expose /fr24 and /piaware on port 80 so aggregator tunnel dashboard target can open FR24 and FlightAware UIs.
+
+---
 ## v2.59.69 — 2026-03-26
 
 ### Changed

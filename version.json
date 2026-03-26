@@ -1,11 +1,11 @@
 {
-  "version": "2.59.69",
+  "version": "3.0.13",
   "release_date": "2026-03-26",
-  "release_name": "Expose /fr24 and /piaware in nginx",
+  "release_name": "FR24 and PiAware nginx exposure",
   "download_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh",
   "changelog_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/CHANGELOG.md",
   "minimum_version": "2.40.0",
   "breaking_changes": false,
-  "release_notes": "Patch nginx front-door so port 80 exposes canonical /fr24/ and /piaware/ for tunnel dashboard target; keeps tunnel routing compatible with aggregator links.",
+  "release_notes": "Expose /fr24 and /piaware on port 80 so aggregator tunnel dashboard target can open FR24 and FlightAware UIs.",
   "update_priority": 3
 }
