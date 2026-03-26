@@ -1,11 +1,11 @@
 {
-  "version": "3.0.13",
+  "version": "3.0.14",
   "release_date": "2026-03-26",
-  "release_name": "FR24 and PiAware nginx exposure",
+  "release_name": "Mixed content + FR24 asset path fix",
   "download_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh",
   "changelog_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/CHANGELOG.md",
   "minimum_version": "2.40.0",
   "breaking_changes": false,
-  "release_notes": "Expose /fr24 and /piaware on port 80 so aggregator tunnel dashboard target can open FR24 and FlightAware UIs.",
+  "release_notes": "Feeder nginx now upgrades insecure requests (CSP upgrade-insecure-requests) and rewrites FR24 root-relative /logo.png and /monitor.json to /fr24/... for tunneled HTTPS navigation.",
   "update_priority": 3
 }

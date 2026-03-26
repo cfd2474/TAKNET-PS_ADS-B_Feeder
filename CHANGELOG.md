@@ -1,3 +1,9 @@
+## v3.0.14 — 2026-03-26
+
+### Changed
+- Feeder nginx now upgrades insecure requests (CSP upgrade-insecure-requests) and rewrites FR24 root-relative /logo.png and /monitor.json to /fr24/... for tunneled HTTPS navigation.
+
+---
 ## v3.0.13 — 2026-03-26
 
 ### Changed
