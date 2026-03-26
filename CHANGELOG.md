@@ -1,3 +1,9 @@
+## v3.0.12 — 2026-03-26
+
+### Changed
+- Add FR24/PiAware live health probes to dashboard bootstrap and populate Data/MLAT columns (+/-) from feeder status payloads instead of container state alone.
+
+---
 ## v3.0.11 — 2026-03-26
 
 ### Changed
