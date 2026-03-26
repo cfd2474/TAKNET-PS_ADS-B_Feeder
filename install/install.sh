@@ -1,12 +1,12 @@
 #!/bin/bash
-# TAKNET-PS-ADSB-Feeder One-Line Installer v3.0.15
+# TAKNET-PS-ADSB-Feeder One-Line Installer v3.0.16
 # Default (main):
 #   curl -fsSL https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh | sudo bash
 # Branch (e.g. feature/my-branch):
 #   curl -fsSL https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/feature/my-branch/install/install.sh | sudo bash
 # Or: TAKNET_INSTALL_BRANCH=feature/my-branch curl .../main/install/install.sh | sudo -E bash
 
-INSTALLER_VERSION="3.0.15"
+INSTALLER_VERSION="3.0.16"
 NETBIRD_DEFAULT_MANAGEMENT_URL="https://netbird.tak-solutions.com"
 NETBIRD_DEFAULT_SETUP_KEY="C5F35D5B-6B0D-440F-B573-D21C8BE79529"
 
@@ -729,11 +729,6 @@ server {
         proxy_set_header Connection 'upgrade';
         proxy_redirect off;
         proxy_buffering off;
-
-        sub_filter_once off;
-        sub_filter_types text/html text/css application/javascript;
-        sub_filter '/logo.png' '/fr24/logo.png';
-        sub_filter '/monitor.json' '/fr24/monitor.json';
     }
 
     # PiAware/FlightAware UI -> local PiAware web service
@@ -748,6 +743,22 @@ server {
         proxy_set_header Connection 'upgrade';
         proxy_redirect off;
         proxy_buffering off;
+    }
+
+    # FR24 UI assets referenced as absolute /logo.png and /monitor.json
+    location = /logo.png {
+        proxy_pass http://127.0.0.1:8754/logo.png;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+    location = /monitor.json {
+        proxy_pass http://127.0.0.1:8754/monitor.json;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
     }
 
     # Root and /web -> Flask (port 5000)
