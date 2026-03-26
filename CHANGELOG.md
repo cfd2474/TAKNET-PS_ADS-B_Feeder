@@ -1,3 +1,9 @@
+## v3.0.16 — 2026-03-26
+
+### Changed
+- FR24 HTTPS mixed-content workaround no longer uses nginx sub_filter (optional module). Explicitly proxies /logo.png and /monitor.json. Should prevent nginx start failure and restore tunnel (port 80) access.
+
+---
 ## v3.0.15 — 2026-03-26
 
 ### Changed

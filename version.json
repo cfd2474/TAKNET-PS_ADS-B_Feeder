@@ -1,11 +1,11 @@
 {
-  "version": "3.0.15",
+  "version": "3.0.16",
   "release_date": "2026-03-26",
-  "release_name": "Conditional upgrade-insecure-requests",
+  "release_name": "Remove sub_filter to fix nginx",
   "download_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh",
   "changelog_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/CHANGELOG.md",
   "minimum_version": "2.40.0",
   "breaking_changes": false,
-  "release_notes": "Fix local HTTP: only add CSP upgrade-insecure-requests when X-Forwarded-Proto is https (aggregator tunnel), avoiding https resource fetch refusals.",
+  "release_notes": "FR24 HTTPS mixed-content workaround no longer uses nginx sub_filter (optional module). Explicitly proxies /logo.png and /monitor.json. Should prevent nginx start failure and restore tunnel (port 80) access.",
   "update_priority": 3
 }
