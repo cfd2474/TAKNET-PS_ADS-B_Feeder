@@ -3734,6 +3734,111 @@ def api_dashboard_bootstrap():
         except Exception:
             return {'success': False}
 
+    def classify_health_value(v):
+        """Best-effort classifier for feed status text/values."""
+        if isinstance(v, bool):
+            return v
+        s = str(v or '').strip().lower()
+        if not s:
+            return None
+        negative = ['disconnected', 'not connected', 'inactive', 'failed', 'error', 'down', 'stopped', 'no']
+        positive = ['connected', 'active', 'running', 'ok', 'online', 'yes', 'healthy', 'synchronized', 'sync']
+        if any(tok in s for tok in negative):
+            return False
+        if any(tok in s for tok in positive):
+            return True
+        return None
+
+    def flatten_pairs(obj, prefix=''):
+        pairs = []
+        if isinstance(obj, dict):
+            for k, v in obj.items():
+                key = f"{prefix}.{k}" if prefix else str(k)
+                pairs.extend(flatten_pairs(v, key))
+        elif isinstance(obj, list):
+            for i, v in enumerate(obj):
+                key = f"{prefix}[{i}]"
+                pairs.extend(flatten_pairs(v, key))
+        else:
+            pairs.append((prefix.lower(), obj))
+        return pairs
+
+    def derive_data_mlat_from_payload(payload):
+        """Infer data/mlat health from FR24/PiAware JSON payloads."""
+        data_active = None
+        mlat_active = None
+        for key, value in flatten_pairs(payload):
+            state = classify_health_value(value)
+            if state is None:
+                continue
+            if 'mlat' in key:
+                mlat_active = state
+            elif any(tok in key for tok in ['feed', 'data', 'receiver', 'connection', 'piaware', 'fr24']):
+                data_active = state
+        return data_active, mlat_active
+
+    def fetch_json(url):
+        try:
+            with urllib.request.urlopen(url, timeout=4) as r:
+                body = r.read().decode('utf-8', errors='ignore')
+            return json.loads(body)
+        except Exception:
+            return None
+
+    def build_fr24_stats():
+        env = read_env()
+        if env.get('FR24_ENABLED', 'false').lower() != 'true':
+            return {'enabled': False, 'success': False}
+        if get_service_state('fr24') != 'running':
+            return {'enabled': True, 'success': True, 'data_feed_active': False, 'mlat_active': False, 'mlat_enabled': True}
+
+        payload = fetch_json('http://127.0.0.1:8754/monitor.json')
+        if payload is None:
+            payload = fetch_json('http://127.0.0.1:8754/status.json')
+
+        if payload is None:
+            return {'enabled': True, 'success': False}
+
+        data_active, mlat_active = derive_data_mlat_from_payload(payload)
+        if data_active is None:
+            data_active = False
+        if mlat_active is None:
+            mlat_active = False
+        return {
+            'enabled': True,
+            'success': True,
+            'data_feed_active': data_active,
+            'mlat_active': mlat_active,
+            'mlat_enabled': True
+        }
+
+    def build_piaware_stats():
+        env = read_env()
+        if env.get('PIAWARE_ENABLED', 'false').lower() != 'true':
+            return {'enabled': False, 'success': False}
+        if get_service_state('piaware') != 'running':
+            return {'enabled': True, 'success': True, 'data_feed_active': False, 'mlat_active': False, 'mlat_enabled': True}
+
+        payload = fetch_json('http://127.0.0.1:8082/status.json')
+        if payload is None:
+            payload = fetch_json('http://127.0.0.1:8082/skyaware/data/status.json')
+
+        if payload is None:
+            return {'enabled': True, 'success': False}
+
+        data_active, mlat_active = derive_data_mlat_from_payload(payload)
+        if data_active is None:
+            data_active = False
+        if mlat_active is None:
+            mlat_active = False
+        return {
+            'enabled': True,
+            'success': True,
+            'data_feed_active': data_active,
+            'mlat_active': mlat_active,
+            'mlat_enabled': True
+        }
+
     results = {}
     # Run only request-context-free checks in threads (Flask views need main thread)
     with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
@@ -3757,6 +3862,14 @@ def api_dashboard_bootstrap():
         results['taknet_stats'] = build_taknet_stats()
     except Exception as e:
         results['taknet_stats'] = {'success': False, 'error': str(e)}
+    try:
+        results['fr24_stats'] = build_fr24_stats()
+    except Exception as e:
+        results['fr24_stats'] = {'enabled': True, 'success': False, 'error': str(e)}
+    try:
+        results['piaware_stats'] = build_piaware_stats()
+    except Exception as e:
+        results['piaware_stats'] = {'enabled': True, 'success': False, 'error': str(e)}
 
     return jsonify(results)
 

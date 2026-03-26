@@ -206,6 +206,35 @@ function applyTaknetStats(taknetStats) {
     }
 }
 
+function applySingleFeedStats(prefix, stats) {
+    if (!stats || !stats.enabled || !stats.success) return;
+    const check = document.getElementById(`${prefix}-check`);
+    const dataCol = document.getElementById(`${prefix}-data`);
+    const mlatCol = document.getElementById(`${prefix}-mlat`);
+    if (!check || !dataCol || !mlatCol) return;
+
+    const dataActive = !!stats.data_feed_active;
+    const mlatEnabled = stats.mlat_enabled !== false;
+    const mlatActive = !!stats.mlat_active;
+
+    if (!dataActive) {
+        check.setAttribute('data-status', 'down');
+    } else if (mlatEnabled && !mlatActive) {
+        check.setAttribute('data-status', 'mlat-down');
+    } else {
+        check.setAttribute('data-status', 'good');
+    }
+
+    dataCol.textContent = dataActive ? '+' : '-';
+    mlatCol.textContent = mlatEnabled ? (mlatActive ? '+' : '-') : '.';
+}
+
+function applyFeedStats(feedStats) {
+    if (!feedStats) return;
+    applySingleFeedStats('fr24', feedStats.fr24);
+    applySingleFeedStats('piaware', feedStats.piaware);
+}
+
 function applyServiceStates(serviceStates) {
     if (!serviceStates) return;
 
@@ -435,6 +464,10 @@ function applyBootstrap(data) {
     renderFeeds(data.status);
     applyServiceStates(data.status ? data.status.service_states : null);
     applyTaknetStats(data.taknet_stats);
+    applyFeedStats({
+        fr24: data.fr24_stats,
+        piaware: data.piaware_stats
+    });
     applyPowerStatus(data.power_status);
     applySdrStatus(data.sdr_status);
     lastUpdateTime = new Date();
