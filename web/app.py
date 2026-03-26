@@ -3789,8 +3789,16 @@ def api_restart_individual_service(service_name):
                     'message': 'Configuration rebuild failed. Check logs for details.'
                 }), 500
 
-        # NetBird on feeder runs as a systemd service
-        if service_name == 'netbird':
+        # FR24/PiAware run as Docker Compose services, not systemd units.
+        if service_name in ['fr24', 'piaware']:
+            compose_file = '/opt/adsb/config/docker-compose.yml'
+            env_file = str(ENV_FILE)
+            result = subprocess.run(
+                ['docker', 'compose', '-f', compose_file, '--env-file', env_file, 'restart', service_name],
+                capture_output=True, text=True, timeout=60
+            )
+        # NetBird on feeder runs as a systemd service.
+        elif service_name == 'netbird':
             result = subprocess.run(
                 ['sudo', 'systemctl', 'restart', 'netbird'],
                 capture_output=True, text=True, timeout=30
@@ -3834,20 +3842,29 @@ def api_service_status(service_name):
                 'message': f'Invalid service name. Must be one of: {", ".join(valid_services)}'
             }), 400
         
-        # Check service status
-        result = subprocess.run(
-            ['systemctl', 'is-active', service_name],
-            capture_output=True,
-            text=True,
-            timeout=10
-        )
-        
-        is_running = result.returncode == 0 and result.stdout.strip() == 'active'
-        
+        if service_name in ['fr24', 'piaware']:
+            # Container services: inspect Docker state directly.
+            result = subprocess.run(
+                ['docker', 'inspect', '--format={{.State.Status}}', service_name],
+                capture_output=True, text=True, timeout=10
+            )
+            status_text = result.stdout.strip() if result.returncode == 0 else 'not_installed'
+            is_running = status_text == 'running'
+        else:
+            # Systemd-managed services.
+            result = subprocess.run(
+                ['systemctl', 'is-active', service_name],
+                capture_output=True,
+                text=True,
+                timeout=10
+            )
+            status_text = result.stdout.strip()
+            is_running = result.returncode == 0 and status_text == 'active'
+
         return jsonify({
             'service': service_name,
             'running': is_running,
-            'status': result.stdout.strip()
+            'status': status_text
         })
         
     except Exception as e:
