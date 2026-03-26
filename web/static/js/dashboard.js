@@ -216,11 +216,12 @@ function applyServiceStates(serviceStates) {
         if (piawareCheck) {
             switch (piawareState) {
                 case 'running': {
-                    piawareCheck.setAttribute('data-status', 'good');
+                    // "running" only means container process is up, not remote ingest acceptance.
+                    piawareCheck.setAttribute('data-status', 'unknown');
                     const piawareData = document.getElementById('piaware-data');
                     const piawareMlat = document.getElementById('piaware-mlat');
-                    if (piawareData) piawareData.textContent = '+';
-                    if (piawareMlat) piawareMlat.textContent = '+';
+                    if (piawareData) piawareData.textContent = '.';
+                    if (piawareMlat) piawareMlat.textContent = '.';
                     break;
                 }
                 case 'downloading':
@@ -247,11 +248,12 @@ function applyServiceStates(serviceStates) {
         if (fr24Check) {
             switch (fr24State) {
                 case 'running': {
-                    fr24Check.setAttribute('data-status', 'good');
+                    // "running" only means container process is up, not remote ingest acceptance.
+                    fr24Check.setAttribute('data-status', 'unknown');
                     const fr24Data = document.getElementById('fr24-data');
                     const fr24Mlat = document.getElementById('fr24-mlat');
-                    if (fr24Data) fr24Data.textContent = '+';
-                    if (fr24Mlat) fr24Mlat.textContent = '+';
+                    if (fr24Data) fr24Data.textContent = '.';
+                    if (fr24Mlat) fr24Mlat.textContent = '.';
                     break;
                 }
                 case 'downloading':

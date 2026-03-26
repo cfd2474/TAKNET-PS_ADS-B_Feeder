@@ -1,12 +1,12 @@
 #!/bin/bash
-# TAKNET-PS-ADSB-Feeder One-Line Installer v3.0.08
+# TAKNET-PS-ADSB-Feeder One-Line Installer v3.0.10
 # Default (main):
 #   curl -fsSL https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh | sudo bash
 # Branch (e.g. feature/my-branch):
 #   curl -fsSL https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/feature/my-branch/install/install.sh | sudo bash
 # Or: TAKNET_INSTALL_BRANCH=feature/my-branch curl .../main/install/install.sh | sudo -E bash
 
-INSTALLER_VERSION="3.0.08"
+INSTALLER_VERSION="3.0.10"
 NETBIRD_DEFAULT_MANAGEMENT_URL="https://netbird.tak-solutions.com"
 NETBIRD_DEFAULT_SETUP_KEY="C5F35D5B-6B0D-440F-B573-D21C8BE79529"
 
@@ -483,6 +483,13 @@ if ! grep -q "run-periodic-reboot.sh" /etc/crontab 2>/dev/null; then
 fi
 echo "✓ Periodic reboot checker configured (every minute)"
 
+# Daily refresh of FR24/PiAware sessions to recover from stale long-running upstream links.
+CRON_FEED_REFRESH="17 4 * * * root /opt/adsb/scripts/run-feed-refresh.sh"
+if ! grep -q "run-feed-refresh.sh" /etc/crontab 2>/dev/null; then
+    echo "$CRON_FEED_REFRESH" >> /etc/crontab
+fi
+echo "✓ Daily FR24/PiAware session refresh configured (04:17)"
+
 # Create remote user with sudo privileges (Tailscale-only access)
 echo "Creating remote user..."
 if ! id "remote" &>/dev/null; then
@@ -595,6 +602,10 @@ chmod +x /opt/adsb/scripts/periodic_reboot.py
 echo "  - run-periodic-reboot.sh..."
 wget -q $REPO/scripts/run-periodic-reboot.sh -O /opt/adsb/scripts/run-periodic-reboot.sh
 chmod +x /opt/adsb/scripts/run-periodic-reboot.sh
+
+echo "  - run-feed-refresh.sh..."
+wget -q $REPO/scripts/run-feed-refresh.sh -O /opt/adsb/scripts/run-feed-refresh.sh
+chmod +x /opt/adsb/scripts/run-feed-refresh.sh
 
 echo "  - tunnel_client.py..."
 wget -q $REPO/scripts/tunnel_client.py -O /opt/adsb/scripts/tunnel_client.py

@@ -1,3 +1,15 @@
+## v3.0.10 — 2026-03-26
+
+### Changed
+- Add daily FR24/PiAware session refresh and adjust dashboard feed indicators to avoid reporting remote feed health based solely on container running state.
+
+---
+## v3.0.09 — 2026-03-26
+
+### Changed
+- Add daily FR24/PiAware session refresh and adjust dashboard feed indicators to avoid reporting remote feed health based solely on container running state.
+
+---
 ## v3.0.08 — 2026-03-25
 
 ### Changed

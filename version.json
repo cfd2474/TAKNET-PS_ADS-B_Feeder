@@ -1,11 +1,11 @@
 {
-  "version": "3.0.08",
-  "release_date": "2026-03-25",
-  "release_name": "NetBird update key handling",
+  "version": "3.0.10",
+  "release_date": "2026-03-26",
+  "release_name": "Feed stall auto-recovery",
   "download_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh",
   "changelog_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/CHANGELOG.md",
   "minimum_version": "2.40.0",
   "breaking_changes": false,
-  "release_notes": "Updater now only auto-seeds/uses default NetBird key when no key exists and NetBird is disconnected; existing keys and active connections are left untouched during updates.",
-  "update_priority": 2
+  "release_notes": "Add daily FR24/PiAware session refresh and adjust dashboard feed indicators to avoid reporting remote feed health based solely on container running state.",
+  "update_priority": 3
 }

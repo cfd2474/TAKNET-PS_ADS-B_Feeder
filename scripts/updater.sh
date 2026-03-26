@@ -185,6 +185,17 @@ CLEANUP_EOF
         echo "0 * * * * root $CLEANUP_SCRIPT" >> /etc/crontab
         echo "   ✓ Aircraft data retention (24h) configured"
     fi
+
+    # Keep FR24/PiAware feeds fresh: daily restart to recover stale long-lived sessions.
+    FEED_REFRESH_SCRIPT="/opt/adsb/scripts/run-feed-refresh.sh"
+    if [ ! -x "$FEED_REFRESH_SCRIPT" ]; then
+        sync_web_file "scripts/run-feed-refresh.sh"
+        chmod +x "$FEED_REFRESH_SCRIPT" 2>/dev/null || true
+    fi
+    if ! grep -q "run-feed-refresh.sh" /etc/crontab 2>/dev/null; then
+        echo "17 4 * * * root $FEED_REFRESH_SCRIPT" >> /etc/crontab
+        echo "   ✓ Daily FR24/PiAware session refresh configured (04:17)"
+    fi
     
     # Rebuild docker-compose.yml with new config_builder.py
     echo "   • Rebuilding docker-compose configuration..."
