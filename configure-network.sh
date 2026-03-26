@@ -57,9 +57,11 @@ server {
     listen [::]:80 default_server;
     server_name taknet-ps.local _;
 
-    # When the aggregator serves this page over HTTPS, upstream FR24/dashboard may still emit
-    # absolute http:// links (mixed content). Upgrade them automatically in the browser.
-    add_header Content-Security-Policy "upgrade-insecure-requests" always;
+    # If an upstream proxy (e.g. aggregator tunnel) serves this page as HTTPS,
+    # force upgrades of any absolute http:// assets to https:// to avoid mixed-content blocking.
+    if ($http_x_forwarded_proto = "https") {
+        add_header Content-Security-Policy "upgrade-insecure-requests" always;
+    }
 
     # Main web UI - redirect root to /web
     location = / {
