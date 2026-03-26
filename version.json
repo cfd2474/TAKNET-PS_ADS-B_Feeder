@@ -1,11 +1,11 @@
 {
-  "version": "3.0.14",
+  "version": "3.0.15",
   "release_date": "2026-03-26",
-  "release_name": "Mixed content + FR24 asset path fix",
+  "release_name": "Conditional upgrade-insecure-requests",
   "download_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh",
   "changelog_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/CHANGELOG.md",
   "minimum_version": "2.40.0",
   "breaking_changes": false,
-  "release_notes": "Feeder nginx now upgrades insecure requests (CSP upgrade-insecure-requests) and rewrites FR24 root-relative /logo.png and /monitor.json to /fr24/... for tunneled HTTPS navigation.",
+  "release_notes": "Fix local HTTP: only add CSP upgrade-insecure-requests when X-Forwarded-Proto is https (aggregator tunnel), avoiding https resource fetch refusals.",
   "update_priority": 3
 }

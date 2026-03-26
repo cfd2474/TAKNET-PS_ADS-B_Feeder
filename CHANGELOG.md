@@ -1,3 +1,9 @@
+## v3.0.15 — 2026-03-26
+
+### Changed
+- Fix local HTTP: only add CSP upgrade-insecure-requests when X-Forwarded-Proto is https (aggregator tunnel), avoiding https resource fetch refusals.
+
+---
 ## v3.0.14 — 2026-03-26
 
 ### Changed
