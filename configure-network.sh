@@ -85,11 +85,38 @@ server {
         proxy_cache_bypass $http_upgrade;
     }
 
-    # FR24 interface at /fr24
+    # Canonical trailing slash redirects
+    location = /fr24 {
+        return 301 /fr24/;
+    }
+    location = /piaware {
+        return 301 /piaware/;
+    }
+
+    # FR24 UI -> local FR24 web service
     location /fr24/ {
         proxy_pass http://127.0.0.1:8754/;
         proxy_http_version 1.1;
         proxy_set_header Host $host;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_redirect off;
+    }
+
+    # PiAware/FlightAware UI -> local PiAware web service
+    location /piaware/ {
+        proxy_pass http://127.0.0.1:8082/;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_redirect off;
     }
 
     # Static files with caching
@@ -114,6 +141,7 @@ echo "✓ Nginx configured:"
 echo "  - http://taknet-ps.local/web → Web UI (port 5000)"
 echo "  - http://taknet-ps.local/map → tar1090 Map (port 8080)"
 echo "  - http://taknet-ps.local/fr24 → FlightRadar24 (port 8754)"
+echo "  - http://taknet-ps.local/piaware → PiAware/FlightAware (port 8082)"
 
 # 3. Install WiFi Hotspot Dependencies
 echo "Installing WiFi hotspot components..."

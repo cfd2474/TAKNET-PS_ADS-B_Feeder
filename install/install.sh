@@ -1,12 +1,12 @@
 #!/bin/bash
-# TAKNET-PS-ADSB-Feeder One-Line Installer v3.0.12
+# TAKNET-PS-ADSB-Feeder One-Line Installer v2.59.69
 # Default (main):
 #   curl -fsSL https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh | sudo bash
 # Branch (e.g. feature/my-branch):
 #   curl -fsSL https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/feature/my-branch/install/install.sh | sudo bash
 # Or: TAKNET_INSTALL_BRANCH=feature/my-branch curl .../main/install/install.sh | sudo -E bash
 
-INSTALLER_VERSION="3.0.12"
+INSTALLER_VERSION="2.59.69"
 NETBIRD_DEFAULT_MANAGEMENT_URL="https://netbird.tak-solutions.com"
 NETBIRD_DEFAULT_SETUP_KEY="C5F35D5B-6B0D-440F-B573-D21C8BE79529"
 
@@ -706,7 +706,39 @@ server {
     server_name taknet-ps.local taknet-ps _;
     
     client_max_body_size 10M;
-    
+
+    # Canonical trailing slash redirects
+    location = /fr24 { return 301 /fr24/; }
+    location = /piaware { return 301 /piaware/; }
+
+    # FR24 UI -> local FR24 web service
+    location /fr24/ {
+        proxy_pass http://127.0.0.1:8754/;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_redirect off;
+        proxy_buffering off;
+    }
+
+    # PiAware/FlightAware UI -> local PiAware web service
+    location /piaware/ {
+        proxy_pass http://127.0.0.1:8082/;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_redirect off;
+        proxy_buffering off;
+    }
+
     # Root and /web -> Flask (port 5000)
     location / {
         proxy_pass http://127.0.0.1:5000;
@@ -743,7 +775,7 @@ ln -sf /etc/nginx/sites-available/taknet-ps /etc/nginx/sites-enabled/
 systemctl enable nginx
 systemctl restart nginx
 
-echo "✓ Nginx configured (taknet-ps.local/, /web, /map)"
+echo "✓ Nginx configured (taknet-ps.local/, /web, /map, /fr24, /piaware)"
 
 # Disable WiFi power management (prevents drops to aggregator; persists across reboots/installs)
 echo "Disabling WiFi power management..."
