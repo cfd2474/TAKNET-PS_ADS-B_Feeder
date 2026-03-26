@@ -57,6 +57,10 @@ server {
     listen [::]:80 default_server;
     server_name taknet-ps.local _;
 
+    # When the aggregator serves this page over HTTPS, upstream FR24/dashboard may still emit
+    # absolute http:// links (mixed content). Upgrade them automatically in the browser.
+    add_header Content-Security-Policy "upgrade-insecure-requests" always;
+
     # Main web UI - redirect root to /web
     location = / {
         return 301 http://$host/web;
@@ -104,6 +108,13 @@ server {
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
         proxy_redirect off;
+
+        # FR24 UI sometimes references assets as absolute /logo.png and /monitor.json.
+        # Since we expose it under /fr24/, rewrite those root-relative references.
+        sub_filter_once off;
+        sub_filter_types text/html text/css application/javascript;
+        sub_filter '/logo.png' '/fr24/logo.png';
+        sub_filter '/monitor.json' '/fr24/monitor.json';
     }
 
     # PiAware/FlightAware UI -> local PiAware web service

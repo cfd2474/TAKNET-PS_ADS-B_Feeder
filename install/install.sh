@@ -1,12 +1,12 @@
 #!/bin/bash
-# TAKNET-PS-ADSB-Feeder One-Line Installer v3.0.13
+# TAKNET-PS-ADSB-Feeder One-Line Installer v3.0.14
 # Default (main):
 #   curl -fsSL https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh | sudo bash
 # Branch (e.g. feature/my-branch):
 #   curl -fsSL https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/feature/my-branch/install/install.sh | sudo bash
 # Or: TAKNET_INSTALL_BRANCH=feature/my-branch curl .../main/install/install.sh | sudo -E bash
 
-INSTALLER_VERSION="3.0.13"
+INSTALLER_VERSION="3.0.14"
 NETBIRD_DEFAULT_MANAGEMENT_URL="https://netbird.tak-solutions.com"
 NETBIRD_DEFAULT_SETUP_KEY="C5F35D5B-6B0D-440F-B573-D21C8BE79529"
 
@@ -707,6 +707,10 @@ server {
     
     client_max_body_size 10M;
 
+    # When the aggregator serves this page over HTTPS, upstream pages may still emit
+    # absolute http:// links (mixed content). Upgrade them automatically.
+    add_header Content-Security-Policy "upgrade-insecure-requests" always;
+
     # Canonical trailing slash redirects
     location = /fr24 { return 301 /fr24/; }
     location = /piaware { return 301 /piaware/; }
@@ -723,6 +727,11 @@ server {
         proxy_set_header Connection 'upgrade';
         proxy_redirect off;
         proxy_buffering off;
+
+        sub_filter_once off;
+        sub_filter_types text/html text/css application/javascript;
+        sub_filter '/logo.png' '/fr24/logo.png';
+        sub_filter '/monitor.json' '/fr24/monitor.json';
     }
 
     # PiAware/FlightAware UI -> local PiAware web service
