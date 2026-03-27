@@ -8,6 +8,16 @@ When the aggregator proxies the feeder UI through the tunnel (e.g. `https://aggr
 
 Below is the **complete list of feeder routes** so the aggregator can ensure every path is proxied and nothing is assumed.
 
+### FR24 web UI (`/fr24/`) — third-party absolute paths
+
+The FlightRadar24 container serves HTML that references **`/logo.png`** and **`/monitor.json`** at the **site origin** (not under `/fr24/`). In the tunnel context that means the browser may request:
+
+- `https://<aggregator>/logo.png` and `https://<aggregator>/monitor.json` (no `/feeder/<id>/` prefix).
+
+Those requests **must** be routed to the **same feeder tunnel** that is serving the FR24 page (same as you do for `/api/...` and `/static/...` at the origin). If they hit the aggregator without a feeder binding, they will **404**.
+
+If the aggregator instead prefixes all proxied paths (e.g. `https://<aggregator>/feeder/<id>/logo.png`), the feeder tunnel client **strips** one `/feeder/<id>/` segment before calling the local nginx, so **`/feeder/<id>/logo.png`** becomes **`/logo.png`** on the feeder and matches nginx → FR24.
+
 ---
 
 ## Page routes (HTML)

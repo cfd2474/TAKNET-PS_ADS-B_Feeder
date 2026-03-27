@@ -195,6 +195,29 @@ def write_status(connected, feeder_id=None, error=None):
         log(f"Could not write status file: {e}")
 
 
+def strip_feeder_prefix(path):
+    """Remove one /feeder/<id> prefix when the aggregator forwards prefixed paths.
+
+    Local nginx uses exact paths like ``location = /logo.png``; a request for
+    ``/feeder/my-id/logo.png`` would otherwise miss and fall through to Flask (404).
+    """
+    if not path:
+        return path
+    qsep = path.find("?")
+    q = ""
+    if qsep >= 0:
+        q = path[qsep:]
+        path = path[:qsep]
+    if not path.startswith("/feeder/"):
+        return path + q
+    parts = [p for p in path.split("/") if p]
+    if len(parts) < 2 or parts[0] != "feeder":
+        return path + q
+    if len(parts) == 2:
+        return "/" + q if q else "/"
+    return "/" + "/".join(parts[2:]) + q
+
+
 def infer_target(path, headers):
     """Infer which local backend should receive a tunneled request."""
     hdrs = headers or {}
@@ -228,8 +251,12 @@ def _strip_outbound_headers(headers):
 
 
 def forward_request(method, path, headers, body_b64):
-    """Forward request to local backend; return (status, headers_dict, body_base64, target, upstream_base)."""
+    """Forward request to local backend.
+
+    Returns (status, headers_dict, body_base64, target, upstream_base, path_used).
+    """
     body = base64.b64decode(body_b64) if body_b64 else b""
+    path = strip_feeder_prefix(path)
     target = infer_target(path, headers)
     if target == "tar1090":
         upstream_host, upstream_port = TAR1090_HOST, TAR1090_PORT
@@ -268,7 +295,7 @@ def forward_request(method, path, headers, body_b64):
             continue
         out_headers[k] = v
     body_b64_out = base64.b64encode(resp_body).decode("ascii") if resp_body else ""
-    return status, out_headers, body_b64_out, target, upstream_base
+    return status, out_headers, body_b64_out, target, upstream_base, path
 
 
 def run_once(ws_url, feeder_id):
@@ -305,8 +332,14 @@ def run_once(ws_url, feeder_id):
                 path = msg.get("path", "/")
                 headers = msg.get("headers") or {}
                 body_b64 = msg.get("body") or ""
-                status, resp_headers, resp_b64, target, upstream_base = forward_request(method, path, headers, body_b64)
-                log(f"[tunnel-proxy] id={req_id} path={path} target={target} upstream={upstream_base} status={status}")
+                status, resp_headers, resp_b64, target, upstream_base, path_up = forward_request(
+                    method, path, headers, body_b64
+                )
+                log(
+                    f"[tunnel-proxy] id={req_id} path={path_up}"
+                    + (f" (from {path})" if path != path_up else "")
+                    + f" target={target} upstream={upstream_base} status={status}"
+                )
                 ws.send(
                     json.dumps(
                         {
