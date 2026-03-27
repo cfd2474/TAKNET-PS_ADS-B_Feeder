@@ -1,11 +1,11 @@
 {
-  "version": "3.0.18",
+  "version": "3.0.19",
   "release_date": "2026-03-26",
-  "release_name": "Tunnel path strip for FR24 assets",
+  "release_name": "PiAware nginx root assets",
   "download_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh",
   "changelog_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/CHANGELOG.md",
   "minimum_version": "2.40.0",
   "breaking_changes": false,
-  "release_notes": "Strip /feeder/<id>/ prefix in tunnel client so /logo.png and /monitor.json hit nginx FR24 proxy. Document FR24 absolute paths for aggregator.",
+  "release_notes": "Proxy PiAware root-absolute JS/CSS/font/img paths to port 8082 for tunnel; omit sub_filter (stock nginx). Doc aggregator notes.",
   "update_priority": 3
 }

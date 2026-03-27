@@ -1,3 +1,9 @@
+## v3.0.19 — 2026-03-26
+
+### Changed
+- Proxy PiAware root-absolute JS/CSS/font/img paths to port 8082 for tunnel; omit sub_filter (stock nginx). Doc aggregator notes.
+
+---
 ## v3.0.18 — 2026-03-26
 
 ### Changed
