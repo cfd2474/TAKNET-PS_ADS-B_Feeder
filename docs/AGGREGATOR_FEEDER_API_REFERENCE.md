@@ -1,6 +1,15 @@
 # Feeder Web API Reference (for Aggregator Tunnel Proxy)
 
-When the aggregator proxies the feeder UI through the tunnel (e.g. `https://aggregator/feeder/<feeder_id>/...`), **all requests must be forwarded to the feeder with the same path**. The feeder Flask app serves everything under `/` and `/api/...`. The aggregator must **not** assume or rewrite paths; it should forward the request path as-is (minus the `/feeder/<feeder_id>` prefix) to the feeder.
+When the aggregator proxies the feeder UI through the tunnel (e.g. `https://aggregator/feeder/<feeder_id>/...`), requests must reach the feeder with paths the **local stack** understands.
+
+**Local stack (not Flask-only):** On the feeder, **nginx** listens on port **80** and proxies to:
+
+- **Flask** (port 5000): HTML pages, `/api/...`, `/static/...`
+- **tar1090 / graphs1090** (port 8080): paths like `/map/...`, `/graphs1090`, `/data/`, `/db2/`, `/tracks/`, `/tar1090/` (see tunnel routing below)
+- **FR24** (port 8754): `/fr24/...` and root-absolute **`/logo.png`**, **`/monitor.json`** (nginx `location` on port 80)
+- **PiAware** (port 8082): `/piaware/...`
+
+The tunnel client forwards to **`:80`** (dashboard) or **`:8080`** (tar1090) and **strips one** `/feeder/<feeder_id>/` prefix from the path when present, so the feeder sees `/api/...`, `/static/...`, `/logo.png`, etc. The aggregator may send either prefixed or already-stripped paths; stripping is idempotent.
 
 **Critical:** The browser will send requests **relative to the current page**. If the user is at `https://aggregator/feeder/92882-test/` then a fetch to `/api/network-quality` will go to `https://aggregator/api/network-quality` (origin + path), **not** to `https://aggregator/feeder/92882-test/api/network-quality`. So the aggregator must either:
 1. **Rewrite HTML/JS** so that API calls use a relative base (e.g. `./api/...` or a prefix like `/feeder/92882-test/api/...`), or
@@ -17,6 +26,22 @@ The FlightRadar24 container serves HTML that references **`/logo.png`** and **`/
 Those requests **must** be routed to the **same feeder tunnel** that is serving the FR24 page (same as you do for `/api/...` and `/static/...` at the origin). If they hit the aggregator without a feeder binding, they will **404**.
 
 If the aggregator instead prefixes all proxied paths (e.g. `https://<aggregator>/feeder/<id>/logo.png`), the feeder tunnel client **strips** one `/feeder/<id>/` segment before calling the local nginx, so **`/feeder/<id>/logo.png`** becomes **`/logo.png`** on the feeder and matches nginx → FR24.
+
+---
+
+## Tunnel routing (feeder tunnel client)
+
+The aggregator should send these on each proxied HTTP request (WebSocket tunnel `request` message):
+
+| Mechanism | Purpose |
+|-----------|---------|
+| **`X-Tunnel-Target: dashboard`** | Force nginx/Flask on **127.0.0.1:80** (default for most paths). |
+| **`X-Tunnel-Target: tar1090`** | Force **127.0.0.1:8080** (map, graphs1090, aircraft data paths). |
+| **Path fallback** (if header absent) | Paths starting with `/graphs1090`, `/data/`, `/db2/`, `/tracks/`, `/tar1090/`, or exactly **`/`** go to **tar1090**; everything else to **dashboard** (`:80`). |
+
+**Note:** A tunneled request whose path is exactly **`/`** (e.g. after stripping `/feeder/<id>/`) hits **tar1090 :8080**, not the Flask UI. Deep-link the web app with **`/dashboard`**, **`/setup`**, etc. Use **`X-Tunnel-Target: dashboard`** if you must forward **`/`** to nginx/Flask on **:80**.
+
+Use **`X-Tunnel-Target`** when the path alone is ambiguous (e.g. you forward a shortened path).
 
 ---
 
@@ -49,6 +74,7 @@ If the aggregator instead prefixes all proxied paths (e.g. `https://<aggregator>
 | `/api/network-status` | GET | Internet reachability, primary IP, hostname. |
 | `/api/network-quality` | GET | Ping-based quality: good/moderate/poor, packet_loss, avg_rtt_ms. |
 | `/api/power-status` | GET | Power/throttling status (current_issue, past_issue, message). |
+| `/api/dashboard/bootstrap` | GET | Aggregate JSON for dashboard load (status, network, power, SDR, TAKNET-PS). Does **not** include network-quality (loaded separately). |
 
 ### GPS
 | Path | Method | Behavior |
@@ -57,6 +83,7 @@ If the aggregator instead prefixes all proxied paths (e.g. `https://<aggregator>
 | `/api/gps/start` | POST | Start background GPS acquisition (JSON optional). |
 | `/api/gps/status` | GET | Progress/result of GPS acquisition. |
 | `/api/gps/coordinates` | GET | Legacy single-shot GPS coordinates. |
+| `/api/gps/apply-location` | POST | Apply GPS-derived location to config. |
 
 ### SDR (single-SDR legacy)
 | Path | Method | Behavior |
@@ -72,6 +99,11 @@ If the aggregator instead prefixes all proxied paths (e.g. `https://<aggregator>
 | `/api/sdrs/current-config` | GET | Current SDR configuration. |
 | `/api/sdrs/gain-options/<driver>` | GET | Gain options for driver (e.g. rtlsdr). |
 | `/api/sdrs/configure` | POST | Configure SDRs (JSON body). |
+
+### Mobile / misc
+| Path | Method | Behavior |
+|------|--------|----------|
+| `/api/mobile/status` | GET | Mobile feeder mode status (when UI exposes that card). |
 
 ### Feeds (toggles & setup)
 | Path | Method | Behavior |
@@ -129,9 +161,9 @@ If the aggregator instead prefixes all proxied paths (e.g. `https://<aggregator>
 | `/api/service/restart` | POST | Restart main service (ultrafeeder); JSON body optional. |
 | `/api/service/ready` | GET | Service ready state. |
 | `/api/service/progress` | GET | Service install/restart progress. |
-| `/api/service/<service_name>/state` | GET | State of one service (ultrafeeder, fr24, piaware, etc.). |
-| `/api/service/<service_name>/restart` | POST | Restart one service. |
-| `/api/service/<service_name>/status` | GET | Status of one service. |
+| `/api/service/<service_name>/state` | GET | High-level state for a service (used by UI for docker-backed services, etc.). |
+| `/api/service/<service_name>/restart` | POST | Restart one service. Valid `service_name`: `ultrafeeder`, `fr24`, `piaware`, `netbird`, `tailscale`, `tunnel-client`. |
+| `/api/service/<service_name>/status` | GET | Running or not. Valid `service_name`: `ultrafeeder`, `fr24`, `piaware`, `tailscale`, `tunnel-client` (not `netbird`; use NetBird APIs for VPN state). |
 
 ### System & updates
 | Path | Method | Behavior |
@@ -141,6 +173,7 @@ If the aggregator instead prefixes all proxied paths (e.g. `https://<aggregator>
 | `/api/system/update/status` | GET | Update progress (is_updating, log). |
 | `/api/system/update/schedule` | POST | Schedule overnight update (priority 2). |
 | `/api/system/update/schedule/status` | GET | Whether an update is scheduled. |
+| `/api/system/periodic-reboot/settings` | POST | Configure periodic reboot (JSON body). |
 | `/api/system/reboot` | POST | Reboot the device (after short delay). |
 
 ### Logs & other
@@ -160,7 +193,18 @@ If the aggregator instead prefixes all proxied paths (e.g. `https://<aggregator>
 |------|----------|
 | `/static/<path>` | CSS, JS, images (e.g. `/static/css/style.css`, `/static/js/dashboard.js`, `/static/taknetlogo.png`). |
 
-These must be proxied with the same path so that when the page is at `/feeder/<feeder_id>/...`, links like `/static/css/style.css` are rewritten to `/feeder/<feeder_id>/static/css/style.css` and then proxied to the feeder as `GET /static/css/style.css`.
+These must be proxied with the same path so that when the page is at `/feeder/<feeder_id>/...`, links like `/static/css/style.css` are rewritten to `/feeder/<feeder_id>/static/css/style.css` and then proxied to the feeder as `GET /static/css/style.css` (tunnel strips prefix → `/static/...`).
+
+## Nginx-only paths on port 80 (not Flask)
+
+Proxied like everything else; tunnel target should be **dashboard** (`:80`):
+
+| Path | Behavior |
+|------|----------|
+| `/fr24/`, `/fr24/...` | FR24 web UI (upstream 8754). |
+| `/piaware/`, `/piaware/...` | PiAware / FlightAware UI (upstream 8082). |
+| `/map`, `/map/...` | tar1090 (upstream 8080); may also use **`X-Tunnel-Target: tar1090`** if you forward without `/map` prefix. |
+| `/logo.png`, `/monitor.json` | FR24 assets (see FR24 section above). |
 
 ---
 
@@ -168,7 +212,7 @@ These must be proxied with the same path so that when the page is at `/feeder/<f
 
 The dashboard and other pages call these; **all must be proxied to the feeder** (with path as above), not served by the aggregator:
 
-- **Dashboard:** `/api/status`, `/api/taknet-ps/stats`, `/api/power-status`, `/api/network-quality`, `/api/sdr/status`
+- **Dashboard:** `/api/dashboard/bootstrap` (primary load), `/api/network-quality` (on-demand modal), `/api/mobile/status` (if card present), `/api/service/restart` (ultrafeeder restart button); polled/derived data comes from bootstrap aggregates where applicable
 - **Settings:** `/api/config`, `/api/gps/check`, `/api/gps/start`, `/api/gps/status`, `/api/tailscale/*`, `/api/netbird/*`, `/api/wifi/*`, `/api/sdrs/*`, `/api/service/*`, `/api/system/*`
 - **Feeds:** `/api/feeds/toggle`, `/api/feeds/fr24/*`, `/api/feeds/piaware/*`, `/api/feeds/adsbhub/*`
 - **Setup:** `/api/config`, `/api/gps/*`; setup wizard may call `POST /api/setup` (if present; otherwise setup may use `POST /api/config` with a specific body)
@@ -198,6 +242,7 @@ These are requested by the feeder’s own HTML/JS; they may 404 on the feeder un
 
 ## Summary for aggregator
 
-1. **Path prefix:** When serving the feeder UI at `/feeder/<feeder_id>/`, rewrite all links, form actions, and fetch URLs so that `/api/...` and `/static/...` become `/feeder/<feeder_id>/api/...` and `/feeder/<feeder_id>/static/...`.
-2. **Forward path:** When proxying to the feeder, send the path **without** the `/feeder/<feeder_id>` prefix (e.g. request to `/feeder/92882-test/api/network-quality` → send to feeder as `GET /api/network-quality`).
-3. **Do not implement feeder APIs on the aggregator.** Every path in the tables above is implemented **only on the feeder**; the aggregator should proxy them to the connected feeder’s tunnel and return the feeder’s response unchanged (including status codes and headers).
+1. **Path prefix:** When serving the feeder UI at `/feeder/<feeder_id>/`, rewrite all links, form actions, and fetch URLs so that `/api/...` and `/static/...` become `/feeder/<feeder_id>/api/...` and `/feeder/<feeder_id>/static/...`. Include **origin-absolute** third-party paths such as **`/logo.png`** and **`/monitor.json`** (FR24), or route those URLs to the same feeder tunnel by session/cookie.
+2. **Forward path:** Send paths to the tunnel either **with** or **without** the `/feeder/<feeder_id>/` prefix; the feeder tunnel client strips one prefix segment when present (e.g. `/feeder/92882-test/api/network-quality` → upstream `GET /api/network-quality`).
+3. **Tunnel target:** Set **`X-Tunnel-Target: dashboard`** for Flask/nginx `:80`, **`X-Tunnel-Target: tar1090`** for raw tar1090/graphs1090 on `:8080` when path-based routing is insufficient.
+4. **Do not implement feeder APIs on the aggregator.** Every path in the tables above is implemented **only on the feeder**; the aggregator should proxy them to the connected feeder’s tunnel and return the feeder’s response unchanged (including status codes and headers).
