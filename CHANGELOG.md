@@ -1,3 +1,9 @@
+## v3.0.18 — 2026-03-26
+
+### Changed
+- Strip /feeder/<id>/ prefix in tunnel client so /logo.png and /monitor.json hit nginx FR24 proxy. Document FR24 absolute paths for aggregator.
+
+---
 ## v3.0.17 — 2026-03-26
 
 ### Changed
