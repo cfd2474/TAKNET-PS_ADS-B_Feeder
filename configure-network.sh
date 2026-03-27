@@ -134,7 +134,7 @@ server {
         proxy_set_header X-Forwarded-Proto $scheme;
     }
 
-    # PiAware/FlightAware UI -> local PiAware web service
+    # PiAware/FlightAware UI (no sub_filter — ngx_http_sub_module often unavailable on stock nginx).
     location /piaware/ {
         proxy_pass http://127.0.0.1:8082/;
         proxy_http_version 1.1;
@@ -145,6 +145,57 @@ server {
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
         proxy_redirect off;
+    }
+
+    # PiAware root-absolute assets when UI is mounted under /piaware/
+    location = /jquery.min.js {
+        proxy_pass http://127.0.0.1:8082/jquery.min.js;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+    location = /bootstrap.min.js {
+        proxy_pass http://127.0.0.1:8082/bootstrap.min.js;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+    location = /index.js {
+        proxy_pass http://127.0.0.1:8082/index.js;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+    location /css/ {
+        proxy_pass http://127.0.0.1:8082/css/;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+    location /js/ {
+        proxy_pass http://127.0.0.1:8082/js/;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+    location /fonts/ {
+        proxy_pass http://127.0.0.1:8082/fonts/;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+    location /img/ {
+        proxy_pass http://127.0.0.1:8082/img/;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
     }
 
     # Static files with caching

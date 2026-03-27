@@ -1,12 +1,12 @@
 #!/bin/bash
-# TAKNET-PS-ADSB-Feeder One-Line Installer v3.0.18
+# TAKNET-PS-ADSB-Feeder One-Line Installer v3.0.19
 # Default (main):
 #   curl -fsSL https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh | sudo bash
 # Branch (e.g. feature/my-branch):
 #   curl -fsSL https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/feature/my-branch/install/install.sh | sudo bash
 # Or: TAKNET_INSTALL_BRANCH=feature/my-branch curl .../main/install/install.sh | sudo -E bash
 
-INSTALLER_VERSION="3.0.18"
+INSTALLER_VERSION="3.0.19"
 NETBIRD_DEFAULT_MANAGEMENT_URL="https://netbird.tak-solutions.com"
 NETBIRD_DEFAULT_SETUP_KEY="C5F35D5B-6B0D-440F-B573-D21C8BE79529"
 
@@ -738,7 +738,9 @@ server {
         proxy_buffering off;
     }
 
-    # PiAware/FlightAware UI -> local PiAware web service
+    # PiAware/FlightAware UI -> local PiAware web service (port 8082).
+    # We do not use sub_filter here: ngx_http_sub_module is missing on many Debian nginx builds (breaks nginx -t).
+    # Root-absolute asset URLs are handled via explicit locations below (and aggregator should route origin /jquery.min.js etc.).
     location /piaware/ {
         proxy_pass http://127.0.0.1:8082/;
         proxy_http_version 1.1;
@@ -750,6 +752,57 @@ server {
         proxy_set_header Connection 'upgrade';
         proxy_redirect off;
         proxy_buffering off;
+    }
+
+    # PiAware often emits root-absolute /jquery.min.js, /css/..., etc. Proxy to upstream so tunnel + HTTPS work.
+    location = /jquery.min.js {
+        proxy_pass http://127.0.0.1:8082/jquery.min.js;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+    location = /bootstrap.min.js {
+        proxy_pass http://127.0.0.1:8082/bootstrap.min.js;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+    location = /index.js {
+        proxy_pass http://127.0.0.1:8082/index.js;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+    location /css/ {
+        proxy_pass http://127.0.0.1:8082/css/;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+    location /js/ {
+        proxy_pass http://127.0.0.1:8082/js/;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+    location /fonts/ {
+        proxy_pass http://127.0.0.1:8082/fonts/;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+    location /img/ {
+        proxy_pass http://127.0.0.1:8082/img/;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
     }
 
     # FR24 UI assets referenced as absolute /logo.png and /monitor.json

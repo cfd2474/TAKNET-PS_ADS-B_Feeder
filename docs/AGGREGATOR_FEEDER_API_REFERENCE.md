@@ -27,6 +27,14 @@ Those requests **must** be routed to the **same feeder tunnel** that is serving 
 
 If the aggregator instead prefixes all proxied paths (e.g. `https://<aggregator>/feeder/<id>/logo.png`), the feeder tunnel client **strips** one `/feeder/<id>/` segment before calling the local nginx, so **`/feeder/<id>/logo.png`** becomes **`/logo.png`** on the feeder and matches nginx → FR24.
 
+### PiAware web UI (`/piaware/`) — root-absolute assets
+
+PiAware often serves HTML that references **`/jquery.min.js`**, **`/bootstrap.min.js`**, **`/index.js`**, and paths under **`/css/`**, **`/js/`**, **`/fonts/`**, **`/img/`** at the **site origin** (not under `/piaware/`). The feeder nginx config proxies those paths to **127.0.0.1:8082** so local and tunneled requests work.
+
+The feeder does **not** use `sub_filter` (HTML rewrite) because **`ngx_http_sub_module`** is missing in many stock Debian nginx packages and **breaks `nginx -t`**. If a PiAware version still pulls assets from other root paths, add matching `location` blocks in the same style or install `nginx-extras` and use `sub_filter` only if you accept the module dependency.
+
+**Aggregator:** Route origin requests like **`/jquery.min.js`** to the same feeder tunnel as `/piaware/` when the user is viewing PiAware (same pattern as FR24 `/logo.png`).
+
 ---
 
 ## Tunnel routing (feeder tunnel client)
@@ -203,6 +211,7 @@ Proxied like everything else; tunnel target should be **dashboard** (`:80`):
 |------|----------|
 | `/fr24/`, `/fr24/...` | FR24 web UI (upstream 8754). |
 | `/piaware/`, `/piaware/...` | PiAware / FlightAware UI (upstream 8082). |
+| `/jquery.min.js`, `/bootstrap.min.js`, `/index.js`, `/css/`, `/js/`, `/fonts/`, `/img/` | PiAware root assets (upstream 8082; see PiAware section above). |
 | `/map`, `/map/...` | tar1090 (upstream 8080); may also use **`X-Tunnel-Target: tar1090`** if you forward without `/map` prefix. |
 | `/logo.png`, `/monitor.json` | FR24 assets (see FR24 section above). |
 
@@ -242,7 +251,7 @@ These are requested by the feeder’s own HTML/JS; they may 404 on the feeder un
 
 ## Summary for aggregator
 
-1. **Path prefix:** When serving the feeder UI at `/feeder/<feeder_id>/`, rewrite all links, form actions, and fetch URLs so that `/api/...` and `/static/...` become `/feeder/<feeder_id>/api/...` and `/feeder/<feeder_id>/static/...`. Include **origin-absolute** third-party paths such as **`/logo.png`** and **`/monitor.json`** (FR24), or route those URLs to the same feeder tunnel by session/cookie.
+1. **Path prefix:** When serving the feeder UI at `/feeder/<feeder_id>/`, rewrite all links, form actions, and fetch URLs so that `/api/...` and `/static/...` become `/feeder/<feeder_id>/api/...` and `/feeder/<feeder_id>/static/...`. Include **origin-absolute** third-party paths such as **`/logo.png`** and **`/monitor.json`** (FR24), **`/jquery.min.js`** and other PiAware roots (see **Nginx-only paths** table), or route those URLs to the same feeder tunnel by session/cookie.
 2. **Forward path:** Send paths to the tunnel either **with** or **without** the `/feeder/<feeder_id>/` prefix; the feeder tunnel client strips one prefix segment when present (e.g. `/feeder/92882-test/api/network-quality` → upstream `GET /api/network-quality`).
 3. **Tunnel target:** Set **`X-Tunnel-Target: dashboard`** for Flask/nginx `:80`, **`X-Tunnel-Target: tar1090`** for raw tar1090/graphs1090 on `:8080` when path-based routing is insufficient.
 4. **Do not implement feeder APIs on the aggregator.** Every path in the tables above is implemented **only on the feeder**; the aggregator should proxy them to the connected feeder’s tunnel and return the feeder’s response unchanged (including status codes and headers).
