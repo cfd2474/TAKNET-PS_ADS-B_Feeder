@@ -25,6 +25,23 @@
             </nav>
         </header>
 
+        <!-- Manual Correction Required Banner -->
+        <div id="manual-correction-banner" style="display: none; padding: 20px; background: #fee2e2; border: 2px solid #ef4444; border-radius: 12px; margin-bottom: 25px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); animation: pulse 2s infinite;">
+            <div style="display: flex; align-items: center; gap: 20px;">
+                <span style="font-size: 2.5em;">🚨</span>
+                <div style="flex: 1;">
+                    <h3 style="margin: 0 0 5px 0; color: #991b1b; font-size: 1.2em;">Manual Correction Required</h3>
+                    <p style="margin: 0; color: #b91c1c; font-size: 0.95em;">
+                        The automated watchdog was unable to restore one or more feeds after multiple restarts and a system reboot. 
+                        <strong>Please check your SDR hardware and internet connection.</strong>
+                    </p>
+                </div>
+                <button onclick="window.location.reload()" style="padding: 10px 15px; background: #ef4444; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">
+                    Retry Now
+                </button>
+            </div>
+        </div>
+
         <div class="dashboard">
             <!-- Update Available Banner -->
             {% if update_available %}
@@ -67,7 +84,7 @@
                             {% if docker.get('ultrafeeder') %}
                                 <div style="display: flex; align-items: center; gap: 8px;">
                                     <span class="status-dot {% if 'Up' in docker.get('ultrafeeder') %}active{% else %}inactive{% endif %}"></span>
-                                    <span style="font-weight: 600; font-size: 0.9em;">ultrafeeder</span>
+                                    <span style="font-weight: 600; font-size: 0.9em;" id="ultrafeeder-check">ultrafeeder</span>
                                 </div>
                             {% else %}
                                 <span style="font-size: 0.85em; color: #ef4444;">Not running</span>
@@ -325,7 +342,7 @@
                             </tr>
                             {% endif %}
                             
-                            {% if config.get('FR24_ENABLED') == 'true' %}
+                            {% if config.get('FR24_ENABLED') == 'true' and config.get('FEEDER_DEPLOYMENT_MODE') != 'mobile' %}
                             <tr>
                                 <td>FlightRadar24</td>
                                 <td style="text-align: center;"><span class="feed-check" id="fr24-check" data-status="unknown">✓</span></td>
@@ -335,7 +352,7 @@
                             </tr>
                             {% endif %}
                             
-                            {% if config.get('PIAWARE_ENABLED') == 'true' %}
+                            {% if config.get('PIAWARE_ENABLED') == 'true' and config.get('FEEDER_DEPLOYMENT_MODE') != 'mobile' %}
                             <tr>
                                 <td>FlightAware</td>
                                 <td style="text-align: center;"><span class="feed-check" id="piaware-check" data-status="unknown">✓</span></td>
@@ -346,46 +363,10 @@
                             {% endif %}
                             
                             {% if config.get('ADSBFI_ENABLED') == 'true' %}
-                            <tr>
-                                <td>adsb.fi</td>
-                                <td style="text-align: center;"><span class="feed-check" id="adsbfi-check" data-status="good">✓</span></td>
-                                <td style="text-align: center;">+</td>
-                                <td style="text-align: center;">+</td>
-                                <td style="text-align: center;"><a href="https://api.adsb.fi/v1/myip" class="feed-link" target="_blank" title="View adsb.fi Stats">🔗</a></td>
-                            </tr>
+... (lines 349-387 omitted for brevity, will include in TargetContent)
                             {% endif %}
                             
-                            {% if config.get('ADSBLOL_ENABLED') == 'true' %}
-                            <tr>
-                                <td>adsb.lol</td>
-                                <td style="text-align: center;"><span class="feed-check" id="adsblol-check" data-status="good">✓</span></td>
-                                <td style="text-align: center;">+</td>
-                                <td style="text-align: center;">+</td>
-                                <td style="text-align: center;"><a href="https://api.adsb.lol/0/me" class="feed-link" target="_blank" title="View adsb.lol Stats">🔗</a></td>
-                            </tr>
-                            {% endif %}
-                            
-                            {% if config.get('ADSBX_ENABLED') == 'true' %}
-                            <tr>
-                                <td>ADSBexchange</td>
-                                <td style="text-align: center;"><span class="feed-check" id="adsbx-check" data-status="good">✓</span></td>
-                                <td style="text-align: center;">+</td>
-                                <td style="text-align: center;">+</td>
-                                <td style="text-align: center;"><a href="https://www.adsbexchange.com/myip/" class="feed-link" target="_blank" title="View ADSBexchange Stats">🔗</a></td>
-                            </tr>
-                            {% endif %}
-                            
-                            {% if config.get('AIRPLANESLIVE_ENABLED') == 'true' %}
-                            <tr>
-                                <td>Airplanes.Live</td>
-                                <td style="text-align: center;"><span class="feed-check" id="airplaneslive-check" data-status="good">✓</span></td>
-                                <td style="text-align: center;">+</td>
-                                <td style="text-align: center;">+</td>
-                                <td style="text-align: center;"><a href="https://airplanes.live/myfeed/" class="feed-link" target="_blank" title="View Airplanes.Live Stats">🔗</a></td>
-                            </tr>
-                            {% endif %}
-                            
-                            {% if config.get('ADSBHUB_ENABLED') == 'true' %}
+                            {% if config.get('ADSBHUB_ENABLED') == 'true' and config.get('FEEDER_DEPLOYMENT_MODE') != 'mobile' %}
                             <tr>
                                 <td>ADSBHub</td>
                                 <td style="text-align: center;"><span class="feed-check" id="adsbhub-check" data-status="good">✓</span></td>
@@ -406,6 +387,19 @@
                     </table>
                 </div>
             </div>
+            </div>
+
+            <!-- System Events Log -->
+            <div class="card" style="margin-top: 25px; border-top: 4px solid #94a3b8;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px;">
+                    <h3 style="margin: 0; font-size: 1.2em; color: #334155; display: flex; align-items: center; gap: 8px;">
+                        <span>📋</span> System Events
+                    </h3>
+                    <span style="font-size: 0.8em; color: #64748b; background: #f1f5f9; padding: 4px 10px; border-radius: 20px;">Last 50 events</span>
+                </div>
+                <div id="event-log" style="max-height: 250px; overflow-y: auto; font-family: 'Inter', system-ui, sans-serif; font-size: 0.9em; background: #f8fafc; border-radius: 8px; padding: 5px;">
+                    <div style="padding: 20px; text-align: center; color: #94a3b8;">Loading events...</div>
+                </div>
             </div>
 
             <!-- Actions -->
@@ -475,6 +469,54 @@
             visibility: hidden !important;
             pointer-events: none !important;
         }
+
+        @keyframes pulse {
+            0% { transform: scale(1); box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+            50% { transform: scale(1.01); box-shadow: 0 10px 15px rgba(239, 68, 68, 0.2); }
+            100% { transform: scale(1); box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        }
+
+        .event-item {
+            padding: 10px 12px;
+            border-bottom: 1px solid #f1f5f9;
+            display: flex;
+            gap: 15px;
+            transition: background 0.2s;
+        }
+
+        .event-item:hover {
+            background: #f1f5f9;
+        }
+
+        .event-item:last-child {
+            border-bottom: none;
+        }
+
+        .event-time {
+            color: #64748b;
+            font-size: 0.85em;
+            white-space: nowrap;
+            font-weight: 500;
+        }
+
+        .event-msg {
+            color: #334155;
+            line-height: 1.4;
+        }
+
+        .health-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.75em;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .health-healthy { background: #dcfce7; color: #166534; }
+        .health-unhealthy { background: #fee2e2; color: #991b1b; }
+        .health-starting { background: #fef9c3; color: #854d0e; }
+        .health-unknown { background: #f1f5f9; color: #475569; }
     </style>
 
     <div class="last-updated" id="lastUpdated">

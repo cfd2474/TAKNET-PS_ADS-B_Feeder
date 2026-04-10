@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-TAKNET-PS-ADSB-Feeder Config Builder v2.3
+TAKNET-PS-ADSB-Feeder Config Builder v3.0.21
 Tactical Awareness Kit Network for Enhanced Tracking – Public Safety
 Builds ULTRAFEEDER_CONFIG with TAKNET-PS Server as hardcoded priority
 Supports primary/fallback connection modes with automatic configuration repair
@@ -104,30 +104,36 @@ def validate_gain(driver, gain):
     return default
 
 def read_env(env_file):
-    """Read .env file and return as dict"""
+    """Read .env file and return as dict, handling optional quotes"""
     env_vars = {}
+    if not Path(env_file).exists():
+        return env_vars
     with open(env_file) as f:
         for line in f:
             line = line.strip()
             if line and not line.startswith('#') and '=' in line:
                 key, value = line.split('=', 1)
-                env_vars[key.strip()] = value.strip()
+                key = key.strip()
+                value = value.strip()
+                # Strip leading/trailing quotes if matching pair
+                if len(value) >= 2 and (
+                    (value[0] == '"' and value[-1] == '"') or
+                    (value[0] == "'" and value[-1] == "'")
+                ):
+                    value = value[1:-1]
+                    # Unescape double quotes if they were escaped during writing
+                    value = value.replace('\\"', '"')
+                env_vars[key] = value
     return env_vars
 
 def write_env(env_file, env_vars):
-    """Write env vars back to .env file, including deletions"""
+    """Write dict to .env file, quoting values for safety"""
     lines = []
-    with open(env_file) as f:
-        for line in f:
-            stripped = line.strip()
-            if stripped and not stripped.startswith('#') and '=' in stripped:
-                key = stripped.split('=', 1)[0].strip()
-                if key in env_vars:
-                    lines.append(f"{key}={env_vars[key]}\n")
-                # else: key was deleted from env_vars - omit it from output
-            else:
-                lines.append(line)
-
+    # For simplicity and consistency with app.py, we write a clean quoted file
+    for key, value in env_vars.items():
+        val_str = str(value)
+        val_escaped = val_str.replace('"', '\\"')
+        lines.append(f'{key}="{val_escaped}"\n')
     with open(env_file, 'w') as f:
         f.writelines(lines)
 
@@ -488,7 +494,7 @@ def build_dump978_service(env_vars):
         service['devices'] = ['/dev/bus/usb:/dev/bus/usb']
         service['environment'].extend([
             f'DUMP978_DEVICE={sdr_978_path}',
-            'DUMP978_SDR_GAIN={sdr_978_gain}',
+            f'DUMP978_SDR_GAIN={sdr_978_gain}',
             'DUMP978_SDR_AGC=off',
             'DUMP978_JSON_STDOUT=true'
         ])
@@ -637,6 +643,26 @@ def build_docker_compose(env_vars):
     # Phase B: Smart SDR configuration
     sdr_config = build_sdr_configuration(env_vars)
 
+    # Standard logging configuration for all services
+    logging_config = {
+        'driver': 'json-file',
+        'options': {
+            'max-size': '10m',
+            'max-file': '3'
+        }
+    }
+    
+    # Standard resource limits for Pi stability
+    pi_resource_limits = {
+        'deploy': {
+            'resources': {
+                'limits': {
+                    'memory': '256M'
+                }
+            }
+        }
+    }
+
     ultrafeeder_service = {
         'image': 'ghcr.io/sdr-enthusiasts/docker-adsb-ultrafeeder:latest',
         'container_name': 'ultrafeeder',
@@ -671,7 +697,19 @@ def build_docker_compose(env_vars):
         'tmpfs': [
             '/run:exec,size=256M',
             '/tmp:size=128M'
-        ]
+        ],
+        'logging': logging_config,
+        **pi_resource_limits,
+        'healthcheck': {
+            'test': ['CMD-SHELL', 'curl -f http://localhost/ || exit 1'],
+            'interval': '60s',
+            'timeout': '10s',
+            'retries': 3,
+            'start_period': '60s'
+        },
+        'labels': {
+            'autoheal': 'true'
+        }
     }
 
     services = {'ultrafeeder': ultrafeeder_service}
@@ -701,6 +739,8 @@ def build_docker_compose(env_vars):
                 f'FEEDER_MAC={feeder_mac}',
             ],
             'command': ['python3', '/app/beast_claim_proxy.py'],
+            'logging': logging_config,
+            **pi_resource_limits
         }
         ultrafeeder_service['depends_on'] = ['taknet-beast-claim']
 
@@ -711,86 +751,150 @@ def build_docker_compose(env_vars):
         'services': services
     }
     
-    # Always include FR24 service (can be started/stopped via docker compose)
-    # Get FR24 key from env_vars and write actual value (not ${VARIABLE})
-    fr24_key = env_vars.get('FR24_KEY', '').strip()
+    is_mobile = env_vars.get('FEEDER_DEPLOYMENT_MODE', 'stationary') == 'mobile'
     
-    # Build environment array
-    # BIND_INTERFACE: FR24 web UI only allows RFC1918 by default; VPN (e.g. NetBird 100.x) is not
-    # treated as private — set 0.0.0.0 so LAN + VPN + tunnel access to :8754 works (see docker-flightradar24 README).
-    fr24_env = [
-        'BEASTHOST=ultrafeeder',
-        'BEASTPORT=30005',
-        'BIND_INTERFACE=0.0.0.0',
-        'MLAT=yes'
-    ]
-    
-    # Only add FR24KEY if it has a value
-    if fr24_key:
-        fr24_env.insert(2, f'FR24KEY={fr24_key}')
-    
-    compose['services']['fr24'] = {
-        'image': 'ghcr.io/sdr-enthusiasts/docker-flightradar24:latest',
-        'container_name': 'fr24',
-        'hostname': 'fr24',
-        'restart': 'unless-stopped',
-        'networks': ['adsb_net'],
-        'depends_on': ['ultrafeeder'],
-        'ports': ['8754:8754'],
-        'environment': fr24_env,
-        'tmpfs': ['/var/log']
-    }
-    
-    # Always include PiAware service (can be started/stopped via docker compose)
-    # Get PiAware values from env_vars and write actual values (not ${VARIABLE})
-    feeder_tz = env_vars.get('FEEDER_TZ', 'UTC')
-    piaware_feeder_id = env_vars.get('PIAWARE_FEEDER_ID', '')
-    
-    compose['services']['piaware'] = {
-        'image': 'ghcr.io/sdr-enthusiasts/docker-piaware:latest',
-        'container_name': 'piaware',
-        'hostname': 'piaware',
-        'restart': 'unless-stopped',
-        'networks': ['adsb_net'],
-        'depends_on': ['ultrafeeder'],
-        'ports': ['8082:80'],
-        'environment': [
-            f'TZ={feeder_tz}',  # Write actual value
-            f'FEEDER_ID={piaware_feeder_id}',  # Write actual value
-            'RECEIVER_TYPE=relay',
+    # Include FR24 service unless in mobile mode
+    if not is_mobile:
+        # Get FR24 key from env_vars and write actual value (not ${VARIABLE})
+        fr24_key = env_vars.get('FR24_KEY', '').strip()
+        
+        # Build environment array
+        # BIND_INTERFACE: FR24 web UI only allows RFC1918 by default; VPN (e.g. NetBird 100.x) is not
+        # treated as private — set 0.0.0.0 so LAN + VPN + tunnel access to :8754 works (see docker-flightradar24 README).
+        fr24_env = [
             'BEASTHOST=ultrafeeder',
             'BEASTPORT=30005',
-            'ALLOW_MLAT=yes',
-            'MLAT_RESULTS=yes'
-        ],
-        'tmpfs': [
-            '/run:exec,size=64M',
-            '/var/log'
+            'BIND_INTERFACE=0.0.0.0',
+            'MLAT=yes'
         ]
-    }
+        
+        # Only add FR24KEY if it has a value
+        if fr24_key:
+            fr24_env.insert(2, f'FR24KEY={fr24_key}')
+        
+        compose['services']['fr24'] = {
+            'image': 'ghcr.io/sdr-enthusiasts/docker-flightradar24:latest',
+            'container_name': 'fr24',
+            'hostname': 'fr24',
+            'restart': 'unless-stopped',
+            'networks': ['adsb_net'],
+            'depends_on': ['ultrafeeder'],
+            'ports': ['8754:8754'],
+            'environment': fr24_env,
+            'tmpfs': ['/var/log'],
+            'logging': logging_config,
+            **pi_resource_limits,
+            'healthcheck': {
+                'test': ['CMD-SHELL', 'curl -f http://localhost:8754/monitor.json | grep -q \'"feed_status":"connected"\' || exit 1'],
+                'interval': '60s',
+                'timeout': '10s',
+                'retries': 3,
+                'start_period': '60s'
+            },
+            'labels': {
+                'autoheal': 'true'
+            }
+        }
+    else:
+        print("ℹ Mobile mode: Disabling FlightRadar24 feed")
     
-    # Always include ADSBHub service (can be started/stopped via docker compose)
-    # Get values from env_vars (write actual values, not ${VARIABLE})
-    adsbhub_station_key = env_vars.get('ADSBHUB_STATION_KEY', '')
+    # Include PiAware service unless in mobile mode
+    if not is_mobile:
+        # Get PiAware values from env_vars and write actual values (not ${VARIABLE})
+        feeder_tz = env_vars.get('FEEDER_TZ', 'UTC')
+        piaware_feeder_id = env_vars.get('PIAWARE_FEEDER_ID', '')
+        
+        compose['services']['piaware'] = {
+            'image': 'ghcr.io/sdr-enthusiasts/docker-piaware:latest',
+            'container_name': 'piaware',
+            'hostname': 'piaware',
+            'restart': 'unless-stopped',
+            'networks': ['adsb_net'],
+            'depends_on': ['ultrafeeder'],
+            'ports': ['8082:80'],
+            'environment': [
+                f'TZ={feeder_tz}',  # Write actual value
+                f'FEEDER_ID={piaware_feeder_id}',  # Write actual value
+                'RECEIVER_TYPE=relay',
+                'BEASTHOST=ultrafeeder',
+                'BEASTPORT=30005',
+                'ALLOW_MLAT=yes',
+                'MLAT_RESULTS=yes'
+            ],
+            'tmpfs': [
+                '/run:exec,size=64M',
+                '/var/log'
+            ],
+            'logging': logging_config,
+            **pi_resource_limits,
+            'healthcheck': {
+                'test': ['CMD-SHELL', 'piaware-status | grep -q "is producing data" || exit 1'],
+                'interval': '60s',
+                'timeout': '10s',
+                'retries': 3,
+                'start_period': '60s'
+            },
+            'labels': {
+                'autoheal': 'true'
+            }
+        }
+    else:
+        print("ℹ Mobile mode: Disabling FlightAware (PiAware) feed")
     
-    compose['services']['adsbhub'] = {
-        'image': 'ghcr.io/sdr-enthusiasts/docker-adsbhub:latest',
-        'container_name': 'adsbhub',
-        'hostname': 'adsbhub',
-        'restart': 'unless-stopped',
-        'networks': ['adsb_net'],
-        'depends_on': ['ultrafeeder'],
-        'environment': [
-            f'TZ={feeder_tz}',  # Reuse from ultrafeeder section above
-            'SBSHOST=ultrafeeder',
-            f'CLIENTKEY={adsbhub_station_key}'
-        ]
-    }
+    # Include ADSBHub service unless in mobile mode
+    if not is_mobile:
+        # Get values from env_vars (write actual values, not ${VARIABLE})
+        adsbhub_station_key = env_vars.get('ADSBHUB_STATION_KEY', '')
+        
+        compose['services']['adsbhub'] = {
+            'image': 'ghcr.io/sdr-enthusiasts/docker-adsbhub:latest',
+            'container_name': 'adsbhub',
+            'hostname': 'adsbhub',
+            'restart': 'unless-stopped',
+            'networks': ['adsb_net'],
+            'depends_on': ['ultrafeeder'],
+            'environment': [
+                f'TZ={feeder_tz}',  # Reuse from ultrafeeder section above
+                'SBSHOST=ultrafeeder',
+                f'CLIENTKEY={adsbhub_station_key}'
+            ],
+            'logging': logging_config,
+            **pi_resource_limits,
+            'healthcheck': {
+                'test': ['CMD-SHELL', 'pgrep feeder > /dev/null || exit 1'],
+                'interval': '60s',
+                'timeout': '10s',
+                'retries': 3,
+                'start_period': '60s'
+            },
+            'labels': {
+                'autoheal': 'true'
+            }
+        }
+    else:
+        print("ℹ Mobile mode: Disabling ADSBHub feed")
     
     # Include dump978 service if 978 MHz is configured
     dump978_service = build_dump978_service(env_vars)
     if dump978_service:
+        dump978_service['logging'] = logging_config
+        dump978_service.update(pi_resource_limits)
         compose['services']['dump978'] = dump978_service
+    
+    # Add autoheal service
+    compose['services']['autoheal'] = {
+        'image': 'willfarrell/autoheal:latest',
+        'container_name': 'autoheal',
+        'restart': 'unless-stopped',
+        'environment': [
+            'AUTOHEAL_CONTAINER_LABEL=autoheal'
+        ],
+        'volumes': [
+            '/var/run/docker.sock:/var/run/docker.sock'
+        ],
+        'logging': logging_config,
+        **pi_resource_limits
+    }
     
     return compose
 

@@ -182,6 +182,45 @@ def reset_progress():
     """Reset progress to idle"""
     update_progress('idle', 0, 100, 'Ready', '')
 
+# Persistent health and activity tracking
+HEALTH_STATE_FILE = Path("/opt/adsb/config/health_state.json")
+
+def load_health_state():
+    """Load health state from disk with defaults"""
+    default_state = {
+        'consecutive_failures': {},
+        'manual_correction_required': False,
+        'reboot_count': 0,
+        'last_reboot_at': None,
+        'events': []
+    }
+    if HEALTH_STATE_FILE.exists():
+        try:
+            data = json.loads(HEALTH_STATE_FILE.read_text())
+            # Merge with defaults to ensure all keys exist
+            return {**default_state, **data}
+        except Exception:
+            pass
+    return default_state
+
+def save_health_state(state):
+    """Save health state to disk"""
+    try:
+        HEALTH_STATE_FILE.write_text(json.dumps(state, indent=2))
+    except Exception as e:
+        print(f"Error saving health state: {e}")
+
+def add_health_event(message):
+    """Add a timestamped event to the health state log"""
+    state = load_health_state()
+    event = {
+        'timestamp': time.strftime('%Y-%m-%d %H:%M:%S'),
+        'message': str(message)
+    }
+    state['events'].insert(0, event)
+    state['events'] = state['events'][:50]  # Keep last 50 events
+    save_health_state(state)
+
 ENV_FILE = Path("/opt/adsb/config/.env")
 CONFIG_BUILDER = "/opt/adsb/scripts/config_builder.py"
 
@@ -194,7 +233,7 @@ TAK_PROTECTED_SETTINGS = {
 }
 
 def read_env():
-    """Read .env file and return as dict"""
+    """Read .env file and return as dict, handling optional quotes"""
     env_vars = {}
     if ENV_FILE.exists():
         with open(ENV_FILE) as f:
@@ -202,7 +241,17 @@ def read_env():
                 line = line.strip()
                 if line and not line.startswith('#') and '=' in line:
                     key, value = line.split('=', 1)
-                    env_vars[key.strip()] = value.strip()
+                    key = key.strip()
+                    value = value.strip()
+                    # Strip leading/trailing quotes if matching pair
+                    if len(value) >= 2 and (
+                        (value[0] == '"' and value[-1] == '"') or
+                        (value[0] == "'" and value[-1] == "'")
+                    ):
+                        value = value[1:-1]
+                        # Unescape double quotes if they were escaped during writing
+                        value = value.replace('\\"', '"')
+                    env_vars[key] = value
     return env_vars
 
 
@@ -254,10 +303,15 @@ def get_taknet_connection_status(env_vars):
         return None
 
 def write_env(env_vars):
-    """Write dict to .env file"""
+    """Write dict to .env file, quoting values for safety"""
     lines = []
     for key, value in env_vars.items():
-        lines.append(f"{key}={value}\n")
+        # Ensure value is string
+        val_str = str(value)
+        # Escape any existing double quotes
+        val_escaped = val_str.replace('"', '\\"')
+        # Wrap in double quotes for shell safety
+        lines.append(f'{key}="{val_escaped}"\n')
     with open(ENV_FILE, 'w') as f:
         f.writelines(lines)
 
@@ -2200,6 +2254,10 @@ def feeds_account_required():
     """Account-required feeds configuration page"""
     env = read_env()
     
+    # Redirect if in mobile mode
+    if env.get('FEEDER_DEPLOYMENT_MODE', 'stationary') == 'mobile':
+        return redirect(url_for('feeds'))
+    
     # Check FR24 status
     fr24_key = env.get('FR24_KEY', '')
     fr24_enabled = env.get('FR24_ENABLED', 'false') == 'true'
@@ -2775,38 +2833,60 @@ def api_gps_coordinates():
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)})
 
+# Whitelist of environment variables that can be modified via web UI
+CONFIG_WHITELIST = {
+    'FEEDER_LAT', 'FEEDER_LONG', 'FEEDER_ALT_M', 'FEEDER_TZ',
+    'MLAT_SITE_NAME', 'FEEDER_DEPLOYMENT_MODE',
+    'TAKNET_PS_ENABLED', 'TAKNET_PS_MLAT_ENABLED', 'TAKNET_PS_FEEDER_CLAIM_KEY', 'TAKNET_PS_FEEDER_MAC',
+    'TUNNEL_AGGREGATOR_URL', 'TUNNEL_FEEDER_ID',
+    'SDR_1090_SERIAL', 'SDR_1090_GAIN', 'SDR_1090_DRIVER', 'SDR_1090_DEVICE', 'USE_SOAPYSDR',
+    'FR24_ENABLED', 'FR24_KEY', 'FR24_SHARING_KEY',
+    'ADSBFI_ENABLED', 'ADSBLOL_ENABLED', 'ADSBX_ENABLED', 'AIRPLANESLIVE_ENABLED', 'ADSBHUB_ENABLED', 'PIAWARE_ENABLED',
+    'PIAWARE_FEEDER_ID', 'ADSBHUB_STATION_KEY',
+    'DUMP978_ENABLED', 'SDR_978_DEVICE', 'SDR_978_TYPE', 'SDR_978_PATH', 'SDR_978_GAIN',
+    'NETBIRD_ENABLED', 'NETBIRD_SETUP_KEY', 'NETBIRD_MANAGEMENT_URL',
+    'TAILSCALE_AUTH_KEY', 'TAILSCALE_HOSTNAME',
+    'FEEDER_UUID'
+}
+
 @app.route('/api/config', methods=['POST'])
 def save_config():
     """
-    Save configuration
-    CRITICAL: User can only toggle TAKNET_PS_ENABLED, cannot change connection details
-    NOTE: Tailscale and FR24 setup are handled by their dedicated endpoints/buttons
+    Save configuration with security whitelisting
+    CRITICAL: User can only toggle TAKNET_PS_ENABLED, cannot change connection host/port details
     """
     try:
         data = request.json
         env = read_env()
         
-        # PROTECT TAK CONNECTION SETTINGS
-        # User can only change TAKNET_PS_ENABLED (on/off), nothing else
+        # 1. Filter input against the whitelist
+        sanitized_data = {}
+        for key, value in data.items():
+            if key in CONFIG_WHITELIST:
+                sanitized_data[key] = value
+            else:
+                print(f"Skipping unauthorized config key: {key}")
+
+        # 2. PROTECT TAK CONNECTION SETTINGS (Secondary safety layer)
+        # User cannot change core TAK connection details even if they tried to bypass UI
         tak_protected_keys = ['TAKNET_PS_SERVER_HOST', 'TAKNET_PS_SERVER_HOST_VPN',
                               'TAKNET_PS_SERVER_HOST_FALLBACK', 'TAKNET_PS_SERVER_PORT',
                               'TAKNET_PS_CONNECTION_MODE']
         
-        # Remove any protected TAK settings from user input
         for key in tak_protected_keys:
-            if key in data:
-                del data[key]
+            if key in sanitized_data:
+                del sanitized_data[key]
         
-        # Sanitize deployment mode (stationary | mobile)
-        if 'FEEDER_DEPLOYMENT_MODE' in data:
-            v = str(data['FEEDER_DEPLOYMENT_MODE']).strip().lower()
-            data['FEEDER_DEPLOYMENT_MODE'] = v if v in ('stationary', 'mobile') else 'stationary'
+        # 3. Specific validation for deployment mode
+        if 'FEEDER_DEPLOYMENT_MODE' in sanitized_data:
+            v = str(sanitized_data['FEEDER_DEPLOYMENT_MODE']).strip().lower()
+            sanitized_data['FEEDER_DEPLOYMENT_MODE'] = v if v in ('stationary', 'mobile') else 'stationary'
         
-        # Update env with user data (protected TAK settings excluded)
-        for key, value in data.items():
+        # 4. Update env with sanitized data
+        for key, value in sanitized_data.items():
             env[key] = str(value)
         
-        # Force protected TAK connection settings (always these values)
+        # 5. Reset protected TAK connection settings to hardcoded values
         for key, value in TAK_PROTECTED_SETTINGS.items():
             env[key] = value
         
@@ -5007,6 +5087,26 @@ def get_update_status():
         print(f"❌ Error in get_update_status: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
+@app.route('/api/system/health')
+def api_system_health():
+    """Return current system health and failure state"""
+    state = load_health_state()
+    return jsonify({
+        'success': True,
+        'manual_correction_required': state.get('manual_correction_required', False),
+        'reboot_count': state.get('reboot_count', 0),
+        'consecutive_failures': state.get('consecutive_failures', {})
+    })
+
+@app.route('/api/system/events')
+def api_system_events():
+    """Return recent health and system events"""
+    state = load_health_state()
+    return jsonify({
+        'success': True,
+        'events': state.get('events', [])
+    })
+
 @app.route('/api/system/reboot', methods=['POST'])
 def api_system_reboot():
     """Reboot the device. Returns immediately; reboot is scheduled after a short delay."""
@@ -5059,6 +5159,104 @@ if __name__ == '__main__':
 
     watchdog_thread = threading.Thread(target=vpn_watchdog, daemon=True)
     watchdog_thread.start()
+
+    def health_watchdog():
+        """Background thread: Monitor Docker health and trigger restarts/reboots"""
+        POLL_INTERVAL = 60 # seconds
+        FAILURE_THRESHOLD = 3 # consecutive polls before restart
+        RESTART_LIMIT = 3 # restarts before considering reboot
+        
+        while True:
+            try:
+                env = read_env()
+                state = load_health_state()
+                
+                # Services to monitor (only if enabled in .env)
+                services = []
+                if env.get('TAKNET_PS_ENABLED', 'true').lower() == 'true':
+                    services.append('ultrafeeder')
+                if env.get('FR24_ENABLED', 'false').lower() == 'true' and env.get('FEEDER_DEPLOYMENT_MODE') != 'mobile':
+                    services.append('fr24')
+                if env.get('PIAWARE_ENABLED', 'false').lower() == 'true' and env.get('FEEDER_DEPLOYMENT_MODE') != 'mobile':
+                    services.append('piaware')
+                if env.get('ADSBHUB_ENABLED', 'false').lower() == 'true' and env.get('FEEDER_DEPLOYMENT_MODE') != 'mobile':
+                    services.append('adsbhub')
+
+                any_unhealthy = False
+                all_checked_healthy = True
+                
+                current_failures = state.get('consecutive_failures', {})
+                
+                for svc in services:
+                    # Check Docker health status
+                    health = 'unknown'
+                    try:
+                        res = subprocess.run(
+                            ['docker', 'inspect', '--format', '{{json .State.Health.Status}}', svc],
+                            capture_output=True, text=True, timeout=5
+                        )
+                        if res.returncode == 0:
+                            health = json.loads(res.stdout.strip())
+                    except Exception:
+                        health = 'unknown'
+
+                    if health == 'unhealthy':
+                        any_unhealthy = True
+                        all_checked_healthy = False
+                        count = current_failures.get(svc, 0) + 1
+                        current_failures[svc] = count
+                        
+                        if count >= FAILURE_THRESHOLD:
+                            # Time to take action
+                            restarts = state.get(f'{svc}_restarts', 0)
+                            
+                            if restarts < RESTART_LIMIT:
+                                # Attempt container restart
+                                add_health_event(f"Service {svc} is unhealthy ({count} polls). Triggering container restart ({restarts + 1}/{RESTART_LIMIT}).")
+                                subprocess.run(['docker', 'restart', svc], capture_output=True, timeout=30)
+                                state[f'{svc}_restarts'] = restarts + 1
+                                current_failures[svc] = 0 # reset poll count after restart attempt
+                            else:
+                                # Restarts exhausted, check if we should reboot
+                                if not state.get('manual_correction_required', False):
+                                    if state.get('reboot_count', 0) == 0:
+                                        add_health_event(f"Service {svc} remains unhealthy after {RESTART_LIMIT} restarts. Triggering system reboot.")
+                                        state['reboot_count'] = 1
+                                        state['last_reboot_at'] = time.time()
+                                        save_health_state(state)
+                                        # Perform reboot
+                                        subprocess.Popen(['sudo', 'reboot'], start_new_session=True)
+                                        time.sleep(30) # Wait for shutdown
+                                    else:
+                                        # Already rebooted once, stop and ask for help
+                                        add_health_event(f"Service {svc} still failing after system reboot. Flagging for manual correction.")
+                                        state['manual_correction_required'] = True
+                                        save_health_state(state)
+                    elif health == 'healthy':
+                        current_failures[svc] = 0
+                        state[f'{svc}_restarts'] = 0
+                    else:
+                        # Starting or unknown - don't increment failure yet
+                        all_checked_healthy = False
+
+                # If everything is now healthy, reset the reboot/manual flags
+                if services and all_checked_healthy:
+                    if state.get('manual_correction_required') or state.get('reboot_count', 0) > 0:
+                        add_health_event("All services are healthy. Clearing failure state.")
+                        state['manual_correction_required'] = False
+                        state['reboot_count'] = 0
+                        state['consecutive_failures'] = {}
+                
+                state['consecutive_failures'] = current_failures
+                save_health_state(state)
+
+            except Exception as e:
+                print(f"[Health watchdog] Error: {e}")
+
+            time.sleep(POLL_INTERVAL)
+
+    health_thread = threading.Thread(target=health_watchdog, daemon=True)
+    health_thread.start()
 
     # Run on all interfaces, port 5000
     app.run(host='0.0.0.0', port=5000, debug=False)

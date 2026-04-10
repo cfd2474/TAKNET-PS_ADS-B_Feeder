@@ -22,6 +22,9 @@ REPO_URL="https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/${INS
 BACKUP_DIR="/opt/adsb/backup"
 CONFIG_FILE="/opt/adsb/config/.env"
 VERSION_FILE="/opt/adsb/VERSION"
+# Default credentials for zero-config NetBird setup.
+# NOTE: The aggregator backend restricts this key to TCP traffic specifically for 
+# feeding ADS-B data (Beast/MLAT) to the aggregator.
 NETBIRD_DEFAULT_MANAGEMENT_URL="https://netbird.tak-solutions.com"
 NETBIRD_DEFAULT_SETUP_KEY="C5F35D5B-6B0D-440F-B573-D21C8BE79529"
 

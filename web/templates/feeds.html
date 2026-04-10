@@ -371,6 +371,7 @@
                     </div>
                 </div>
                 
+                {% if config.get('FEEDER_DEPLOYMENT_MODE', 'stationary') != 'mobile' %}
                 <!-- Account-Required Feeds -->
                 <div class="feed-category">
                     <h3 style="margin-bottom: 15px; color: #374151;">
@@ -385,6 +386,22 @@
                         <span style="font-size: 1.5em;">→</span>
                     </button>
                 </div>
+                {% else %}
+                <!-- Mobile mode: Greyed out section -->
+                <div class="feed-category" style="opacity: 0.5; filter: grayscale(1); pointer-events: none; border-style: dashed;">
+                    <h3 style="margin-bottom: 15px; color: #9ca3af;">
+                        Account-Required Feeds (Disabled)
+                    </h3>
+                    <p style="color: #9ca3af; margin-bottom: 20px; font-size: 0.95em;">
+                        Feeding to FR24 and FlightAware is automatically disabled in mobile mode.
+                    </p>
+                    
+                    <button class="account-required-btn" disabled style="cursor: not-allowed; background: #f3f4f6; color: #9ca3af; border-color: #e5e7eb;">
+                        <span>Configure Account-Required Feeds</span>
+                        <span style="font-size: 1.5em;">→</span>
+                    </button>
+                </div>
+                {% endif %}
             </div>
             
             <div class="actions">

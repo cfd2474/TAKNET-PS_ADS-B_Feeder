@@ -1,3 +1,18 @@
+## v3.0.21 — 2026-04-10
+
+### Changed
+- Implemented proactive health monitoring for all feeds, automated container restarts, and safe system rebooting safeguards.
+
+---
+## v3.0.20 — 2026-04-10
+
+### Changed
+- Fix dump978 gain regression in config_builder.
+- Implement security hardening with /api/config whitelist.
+- Improve .env file safety with proper quoting and escaping.
+- Document NetBird setup key security scope in updater.sh.
+
+---
 ## v3.0.19 — 2026-03-26
 
 ### Changed

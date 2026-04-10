@@ -3,6 +3,8 @@ const DASHBOARD_DEBUG = false;
 let dashboardPollInterval = null;
 let lastUpdateTime = new Date();
 let pollInFlight = false;
+let healthPollInFlight = false;
+let eventsPollInFlight = false;
 
 function debugLog(...args) {
     if (DASHBOARD_DEBUG) {
@@ -482,6 +484,100 @@ async function pollDashboard() {
     const data = await fetchBootstrap();
     applyBootstrap(data);
     pollInFlight = false;
+    
+    // Also poll health and events
+    pollSystemHealth();
+    pollSystemEvents();
+}
+
+async function pollSystemHealth() {
+    if (healthPollInFlight) return;
+    healthPollInFlight = true;
+    try {
+        const resp = await fetch('/api/system/health');
+        if (resp.ok) {
+            const data = await resp.json();
+            renderSystemHealth(data);
+        }
+    } catch (e) {
+        debugLog('health poll failed', e);
+    } finally {
+        healthPollInFlight = false;
+    }
+}
+
+async function pollSystemEvents() {
+    if (eventsPollInFlight) return;
+    eventsPollInFlight = true;
+    try {
+        const resp = await fetch('/api/system/events');
+        if (resp.ok) {
+            const data = await resp.json();
+            renderSystemEvents(data);
+        }
+    } catch (e) {
+        debugLog('events poll failed', e);
+    } finally {
+        eventsPollInFlight = false;
+    }
+}
+
+function renderSystemHealth(data) {
+    if (!data || !data.success) return;
+    
+    // Update banner
+    const banner = document.getElementById('manual-correction-banner');
+    if (banner) {
+        banner.style.display = data.manual_correction_required ? 'block' : 'none';
+    }
+    
+    // Update health badges in table
+    const failures = data.consecutive_failures || {};
+    const services = ['ultrafeeder', 'fr24', 'piaware', 'adsbhub'];
+    
+    services.forEach(svc => {
+        const check = document.getElementById(`${svc}-check`);
+        if (!check) return;
+        
+        // Find or create health badge
+        let badge = check.parentElement.querySelector('.health-badge');
+        if (!badge) {
+            badge = document.createElement('div');
+            badge.className = 'health-badge';
+            badge.style.marginTop = '4px';
+            check.parentElement.appendChild(badge);
+        }
+        
+        const failCount = failures[svc] || 0;
+        if (failCount > 0) {
+            badge.textContent = `Retrying ${failCount}/3`;
+            badge.className = 'health-badge health-starting';
+            badge.style.fontSize = '0.65em';
+        } else {
+            // If it's healthy, we'll let the existing "Data/MLAT" logic show its status,
+            // or we could show "Healthy" badge. For now, let's keep it clean.
+            badge.textContent = '';
+            badge.className = 'health-badge';
+        }
+    });
+}
+
+function renderSystemEvents(data) {
+    const container = document.getElementById('event-log');
+    if (!container || !data || !data.success) return;
+    
+    const events = data.events || [];
+    if (events.length === 0) {
+        container.innerHTML = '<div style="padding: 20px; text-align: center; color: #94a3b8;">No events recorded yet.</div>';
+        return;
+    }
+    
+    container.innerHTML = events.map(ev => `
+        <div class="event-item">
+            <div class="event-time">${ev.timestamp.split(' ')[1]}</div>
+            <div class="event-msg">${ev.message}</div>
+        </div>
+    `).join('');
 }
 
 function initPolling() {
@@ -498,6 +594,8 @@ async function initDashboard() {
     const t1 = performance.now();
     debugLog(`initial render completed in ${(t1 - t0).toFixed(0)}ms`);
     initPolling();
+    pollSystemHealth(); // Immediate first poll
+    pollSystemEvents(); // Immediate first poll
     wireConnectionQualityModal();
     initMobileFeederPolling();
 }
