@@ -1,3 +1,9 @@
+## v3.0.30 — 2026-04-10
+
+### Changed
+- Forced health recovery for ADSBHub and other community feeds in watchdog
+
+---
 ## v3.0.29 — 2026-04-10
 
 ### Changed

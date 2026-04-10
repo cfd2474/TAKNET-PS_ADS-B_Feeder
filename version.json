@@ -1,11 +1,11 @@
 {
-  "version": "3.0.29",
+  "version": "3.0.30",
   "release_date": "2026-04-10",
-  "release_name": "2",
+  "release_name": "3",
   "download_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh",
   "changelog_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/CHANGELOG.md",
   "minimum_version": "2.40.0",
   "breaking_changes": false,
-  "release_notes": "Marked ADSBHub MLAT as n/a and updated community feed stats",
+  "release_notes": "Forced health recovery for ADSBHub and other community feeds in watchdog",
   "update_priority": 3
 }

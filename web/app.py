@@ -5246,14 +5246,18 @@ if __name__ == '__main__':
                             elif svc == 'piaware':
                                 stats = build_piaware_stats()
                                 is_actually_feeding = stats.get('data_feed_active', False)
+                            elif svc == 'adsbhub':
+                                stats = build_adsbhub_stats()
+                                is_actually_feeding = stats.get('data_feed_active', False)
                         except Exception:
                             pass
 
                         if is_actually_feeding:
-                            # Data is flowing, so the Docker health check might be brittle or lagging.
-                            # We treat it as 'starting' to avoid false failure increments.
-                            health = 'starting'
-                            all_checked_healthy = False
+                            # Data is flowing, so the Docker health check must be brittle or lagging.
+                            # Force status to healthy to clear 'Retrying' badges and reset counters.
+                            health = 'healthy'
+                            current_failures[svc] = 0
+                            state[f'{svc}_restarts'] = 0
                         else:
                             any_unhealthy = True
                             all_checked_healthy = False
