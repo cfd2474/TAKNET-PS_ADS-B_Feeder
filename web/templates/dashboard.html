@@ -363,7 +363,43 @@
                             {% endif %}
                             
                             {% if config.get('ADSBFI_ENABLED') == 'true' %}
-... (lines 349-387 omitted for brevity, will include in TargetContent)
+                            <tr>
+                                <td>adsb.fi</td>
+                                <td style="text-align: center;"><span class="feed-check" id="adsbfi-check" data-status="unknown">✓</span></td>
+                                <td style="text-align: center;" id="adsbfi-data">.</td>
+                                <td style="text-align: center;" id="adsbfi-mlat">.</td>
+                                <td style="text-align: center;"><a href="https://www.adsb.fi" class="feed-link" target="_blank" title="View adsb.fi Stats">🔗</a></td>
+                            </tr>
+                            {% endif %}
+                            
+                            {% if config.get('ADSBLOL_ENABLED') == 'true' %}
+                            <tr>
+                                <td>adsb.lol</td>
+                                <td style="text-align: center;"><span class="feed-check" id="adsblol-check" data-status="unknown">✓</span></td>
+                                <td style="text-align: center;" id="adsblol-data">.</td>
+                                <td style="text-align: center;" id="adsblol-mlat">.</td>
+                                <td style="text-align: center;"><a href="https://www.adsb.lol" class="feed-link" target="_blank" title="View adsb.lol Stats">🔗</a></td>
+                            </tr>
+                            {% endif %}
+                            
+                            {% if config.get('ADSBX_ENABLED') == 'true' %}
+                            <tr>
+                                <td>ADSBexchange</td>
+                                <td style="text-align: center;"><span class="feed-check" id="adsbx-check" data-status="unknown">✓</span></td>
+                                <td style="text-align: center;" id="adsbx-data">.</td>
+                                <td style="text-align: center;" id="adsbx-mlat">.</td>
+                                <td style="text-align: center;"><a href="https://www.adsbexchange.com" class="feed-link" target="_blank" title="View ADSBexchange Stats">🔗</a></td>
+                            </tr>
+                            {% endif %}
+                            
+                            {% if config.get('AIRPLANESLIVE_ENABLED') == 'true' %}
+                            <tr>
+                                <td>Airplanes.Live</td>
+                                <td style="text-align: center;"><span class="feed-check" id="airplaneslive-check" data-status="unknown">✓</span></td>
+                                <td style="text-align: center;" id="airplaneslive-data">.</td>
+                                <td style="text-align: center;" id="airplaneslive-mlat">.</td>
+                                <td style="text-align: center;"><a href="https://www.airplanes.live" class="feed-link" target="_blank" title="View Airplanes.Live Stats">🔗</a></td>
+                            </tr>
                             {% endif %}
                             
                             {% if config.get('ADSBHUB_ENABLED') == 'true' and config.get('FEEDER_DEPLOYMENT_MODE') != 'mobile' %}

@@ -1,3 +1,9 @@
+## v3.0.27 — 2026-04-10
+
+### Changed
+- Restored missing accountless feeds to the dashboard status table
+
+---
 ## v3.0.26 — 2026-04-10
 
 ### Changed

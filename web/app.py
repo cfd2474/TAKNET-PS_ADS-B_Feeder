@@ -3744,12 +3744,16 @@ def api_dashboard_bootstrap():
                     parts = part.split(',')
                     if len(parts) >= 2:
                         feeds.append(parts[1])
+        ultrafeeder_running = get_service_state('ultrafeeder')
         service_states = {
-            'ultrafeeder': get_service_state('ultrafeeder'),
+            'ultrafeeder': ultrafeeder_running,
             'fr24': get_service_state('fr24') if env.get('FR24_ENABLED') == 'true' else None,
             'piaware': get_service_state('piaware') if env.get('PIAWARE_ENABLED') == 'true' else None,
-            'adsbx': get_service_state('adsbx') if env.get('ADSBX_ENABLED') == 'true' else None,
-            'adsblol': get_service_state('adsblol') if env.get('ADSBLOL_ENABLED') == 'true' else None,
+            'adsbx': ultrafeeder_running if env.get('ADSBX_ENABLED') == 'true' else None,
+            'adsbfi': ultrafeeder_running if env.get('ADSBFI_ENABLED') == 'true' else None,
+            'adsblol': ultrafeeder_running if env.get('ADSBLOL_ENABLED') == 'true' else None,
+            'airplaneslive': ultrafeeder_running if env.get('AIRPLANESLIVE_ENABLED') == 'true' else None,
+            'adsbhub': ultrafeeder_running if env.get('ADSBHUB_ENABLED') == 'true' else None,
         }
         return {
             'docker': docker_status,

@@ -107,21 +107,6 @@ function renderCoreStatus(status) {
     }
 }
 
-function renderFeeds(status) {
-    if (!status || !status.feeds) return;
-    const feedsContainer = document.getElementById('active-feeds');
-    if (feedsContainer && status.feeds.length > 0) {
-        feedsContainer.innerHTML = status.feeds
-            .map(
-                (feed) => `
-                <div class="feed-item">
-                    <span class="status-dot active"></span>
-                    ${feed}
-                </div>`
-            )
-            .join('');
-    }
-}
 
 async function restartService() {
     if (!confirm('Restart the ultrafeeder service?')) return;
@@ -239,6 +224,11 @@ function applyFeedStats(feedStats) {
     if (!feedStats) return;
     applySingleFeedStats('fr24', feedStats.fr24);
     applySingleFeedStats('piaware', feedStats.piaware);
+    applySingleFeedStats('adsbfi', feedStats.adsbfi);
+    applySingleFeedStats('adsblol', feedStats.adsblol);
+    applySingleFeedStats('adsbx', feedStats.adsbx);
+    applySingleFeedStats('airplaneslive', feedStats.airplaneslive);
+    applySingleFeedStats('adsbhub', feedStats.adsbhub);
 }
 
 function applyServiceStates(serviceStates) {
@@ -307,6 +297,21 @@ function applyServiceStates(serviceStates) {
             }
         }
     }
+
+    // Accountless feeders (based on ultrafeeder health)
+    ['adsbfi', 'adsblol', 'adsbx', 'airplaneslive', 'adsbhub'].forEach(id => {
+        if (serviceStates[id]) {
+            const state = serviceStates[id];
+            const check = document.getElementById(`${id}-check`);
+            if (check) {
+                if (state === 'running') {
+                    check.setAttribute('data-status', 'good');
+                } else {
+                    check.setAttribute('data-status', 'down');
+                }
+            }
+        }
+    });
 }
 
 function applyPowerStatus(powerStatus) {
@@ -467,7 +472,6 @@ function applyBootstrap(data) {
     if (!data) return;
     renderNetworkStatus(data.network_status);
     renderCoreStatus(data.status);
-    renderFeeds(data.status);
     applyServiceStates(data.status ? data.status.service_states : null);
     applyTaknetStats(data.taknet_stats);
     applyFeedStats({
