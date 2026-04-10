@@ -834,7 +834,7 @@ def build_docker_compose(env_vars):
             'logging': logging_config,
             **pi_resource_limits,
             'healthcheck': {
-                'test': ['CMD-SHELL', 'piaware-status | grep -q "is producing data" || exit 1'],
+                'test': ['CMD-SHELL', 'pgrep -x piaware > /dev/null || exit 1'],
                 'interval': '60s',
                 'timeout': '10s',
                 'retries': 3,
@@ -867,7 +867,7 @@ def build_docker_compose(env_vars):
             'logging': logging_config,
             **pi_resource_limits,
             'healthcheck': {
-                'test': ['CMD-SHELL', 'pgrep feeder > /dev/null || exit 1'],
+                'test': ['CMD-SHELL', 'pgrep adsbhub > /dev/null || exit 1'],
                 'interval': '60s',
                 'timeout': '10s',
                 'retries': 3,

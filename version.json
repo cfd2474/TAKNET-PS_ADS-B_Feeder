@@ -1,11 +1,11 @@
 {
-  "version": "3.0.27",
+  "version": "3.0.28",
   "release_date": "2026-04-10",
   "release_name": "3",
   "download_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh",
   "changelog_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/CHANGELOG.md",
   "minimum_version": "2.40.0",
   "breaking_changes": false,
-  "release_notes": "Restored missing accountless feeds to the dashboard status table",
+  "release_notes": "Fixed false retrying status and improved healthwatchdog resilience",
   "update_priority": 3
 }

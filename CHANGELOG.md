@@ -1,3 +1,9 @@
+## v3.0.28 — 2026-04-10
+
+### Changed
+- Fixed false retrying status and improved healthwatchdog resilience
+
+---
 ## v3.0.27 — 2026-04-10
 
 ### Changed

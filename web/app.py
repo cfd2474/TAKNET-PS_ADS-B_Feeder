@@ -5205,10 +5205,28 @@ if __name__ == '__main__':
                         health = 'unknown'
 
                     if health == 'unhealthy':
-                        any_unhealthy = True
-                        all_checked_healthy = False
-                        count = current_failures.get(svc, 0) + 1
-                        current_failures[svc] = count
+                        # Double-check if data is actually flowing before incrementing failure
+                        is_actually_feeding = False
+                        try:
+                            if svc == 'fr24':
+                                stats = build_fr24_stats()
+                                is_actually_feeding = stats.get('data_feed_active', False)
+                            elif svc == 'piaware':
+                                stats = build_piaware_stats()
+                                is_actually_feeding = stats.get('data_feed_active', False)
+                        except Exception:
+                            pass
+
+                        if is_actually_feeding:
+                            # Data is flowing, so the Docker health check might be brittle or lagging.
+                            # We treat it as 'starting' to avoid false failure increments.
+                            health = 'starting'
+                            all_checked_healthy = False
+                        else:
+                            any_unhealthy = True
+                            all_checked_healthy = False
+                            count = current_failures.get(svc, 0) + 1
+                            current_failures[svc] = count
                         
                         if count >= FAILURE_THRESHOLD:
                             # Time to take action
