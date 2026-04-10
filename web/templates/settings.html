@@ -4067,7 +4067,7 @@
             // For hourly schedules, enforce minute=00.
             let time = timeEl.value || '02:00';
             if (unit === 'hourly') {
-                if (!/^\\d{2}:\\d{2}$/.test(time)) time = '02:00';
+                if (!/^\d{2}:\d{2}$/.test(time)) time = '02:00';
                 time = time.split(':')[0] + ':00';
                 timeEl.value = time;
                 timeEl.step = '3600'; // seconds
@@ -4103,7 +4103,7 @@
             const time = document.getElementById('periodic-reboot-time').value;
             let timeFinal = time;
 
-            if (!/^\\d{2}:\\d{2}$/.test(timeFinal)) {
+            if (!/^\d{2}:\d{2}$/.test(timeFinal)) {
                 showStatus('Invalid time. Use HH:MM.', 'error');
                 return;
             }

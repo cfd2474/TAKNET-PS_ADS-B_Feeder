@@ -1,3 +1,9 @@
+## v3.0.22 — 2026-04-10
+
+### Changed
+- Fixed a JavaScript bug in the settings page that prevented periodic reboot configuration from saving.
+
+---
 ## v3.0.21 — 2026-04-10
 
 ### Changed
