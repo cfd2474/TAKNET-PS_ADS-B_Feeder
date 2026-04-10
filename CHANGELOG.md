@@ -1,3 +1,9 @@
+## v3.0.29 — 2026-04-10
+
+### Changed
+- Marked ADSBHub MLAT as n/a and updated community feed stats
+
+---
 ## v3.0.28 — 2026-04-10
 
 ### Changed

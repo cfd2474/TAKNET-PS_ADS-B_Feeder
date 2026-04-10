@@ -476,7 +476,12 @@ function applyBootstrap(data) {
     applyTaknetStats(data.taknet_stats);
     applyFeedStats({
         fr24: data.fr24_stats,
-        piaware: data.piaware_stats
+        piaware: data.piaware_stats,
+        adsbfi: data.adsbfi_stats,
+        adsblol: data.adsblol_stats,
+        adsbx: data.adsbx_stats,
+        airplaneslive: data.airplaneslive_stats,
+        adsbhub: data.adsbhub_stats
     });
     applyPowerStatus(data.power_status);
     applySdrStatus(data.sdr_status);

@@ -3923,6 +3923,18 @@ def api_dashboard_bootstrap():
             'mlat_enabled': True
         }
 
+    def build_adsbhub_stats():
+        env = read_env()
+        if env.get('ADSBHUB_ENABLED', 'false').lower() != 'true':
+            return {'enabled': False, 'success': False}
+        return {
+            'enabled': True,
+            'success': True,
+            'data_feed_active': get_service_state('adsbhub') == 'running',
+            'mlat_active': False,
+            'mlat_enabled': False
+        }
+
     results = {}
     # Run only request-context-free checks in threads (Flask views need main thread)
     with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
@@ -3954,6 +3966,26 @@ def api_dashboard_bootstrap():
         results['piaware_stats'] = build_piaware_stats()
     except Exception as e:
         results['piaware_stats'] = {'enabled': True, 'success': False, 'error': str(e)}
+    try:
+        results['adsbhub_stats'] = build_adsbhub_stats()
+    except Exception as e:
+        results['adsbhub_stats'] = {'enabled': True, 'success': False, 'error': str(e)}
+    try:
+        results['adsbfi_stats'] = build_community_stats('adsbfi')
+    except Exception:
+        results['adsbfi_stats'] = {'enabled': True, 'success': False}
+    try:
+        results['adsblol_stats'] = build_community_stats('adsblol')
+    except Exception:
+        results['adsblol_stats'] = {'enabled': True, 'success': False}
+    try:
+        results['adsbx_stats'] = build_community_stats('adsbx')
+    except Exception:
+        results['adsbx_stats'] = {'enabled': True, 'success': False}
+    try:
+        results['airplaneslive_stats'] = build_community_stats('airplaneslive')
+    except Exception:
+        results['airplaneslive_stats'] = {'enabled': True, 'success': False}
 
     return jsonify(results)
 
