@@ -765,7 +765,10 @@ def build_docker_compose(env_vars):
             'BEASTHOST=ultrafeeder',
             'BEASTPORT=30005',
             'BIND_INTERFACE=0.0.0.0',
-            'MLAT=yes'
+            'MLAT=yes',
+            f'LAT={feeder_lat}',
+            f'LON={feeder_long}',
+            f'ALT={feeder_alt_m}'
         ]
         
         # Only add FR24KEY if it has a value
@@ -819,7 +822,10 @@ def build_docker_compose(env_vars):
                 'BEASTHOST=ultrafeeder',
                 'BEASTPORT=30005',
                 'ALLOW_MLAT=yes',
-                'MLAT_RESULTS=yes'
+                'MLAT_RESULTS=yes',
+                f'LAT={feeder_lat}',
+                f'LON={feeder_long}',
+                f'ALT={feeder_alt_m}'
             ],
             'tmpfs': [
                 '/run:exec,size=64M',

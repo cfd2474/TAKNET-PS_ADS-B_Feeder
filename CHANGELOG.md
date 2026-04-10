@@ -1,3 +1,9 @@
+## v3.0.25 — 2026-04-10
+
+### Changed
+- Passed station coordinates (LAT, LON, ALT) to FR24 and PiAware containers to enable MLAT functionality.
+
+---
 ## v3.0.24 — 2026-04-10
 
 ### Changed
