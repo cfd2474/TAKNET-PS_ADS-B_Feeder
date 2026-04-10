@@ -1527,44 +1527,6 @@
             }
         }
         
-        function displayTailscaleStatus(statusData) {
-            const statusDiv = document.getElementById('tailscale-status');
-            const contentDiv = document.getElementById('tailscale-status-content');
-            
-            // Parse status output to get IP
-            let statusHtml = '';
-            if (statusData.status && statusData.status.includes('100.')) {
-                // Extract IP from status
-                const lines = statusData.status.split('\n');
-                const ipLine = lines.find(line => line.includes('100.'));
-                if (ipLine) {
-                    const ip = ipLine.match(/100\.\d+\.\d+\.\d+/);
-                    if (ip) {
-                        statusHtml = `
-                            <div style="display: flex; align-items: center; gap: 10px;">
-                                <span style="font-size: 2em;">✓</span>
-                                <div>
-                                    <div style="font-weight: bold; color: #4caf50;">Tailscale Active</div>
-                                    <div style="color: #666; font-size: 0.9em;">Device IP: ${ip[0]}</div>
-                                </div>
-                            </div>
-                        `;
-                    }
-                }
-            } else {
-                statusHtml = `
-                    <div style="display: flex; align-items: center; gap: 10px;">
-                        <span style="font-size: 2em;">⚠️</span>
-                        <div>
-                            <div style="font-weight: bold; color: #ff9800;">Tailscale Disabled</div>
-                            <div style="color: #666; font-size: 0.9em;">Using public IP fallback</div>
-                        </div>
-                    </div>
-                `;
-            }
-            
-            contentDiv.innerHTML = statusHtml;
-            statusDiv.style.display = 'block';
         }
 
         function isValidFeederClaimKey(raw) {

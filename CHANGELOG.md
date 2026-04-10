@@ -1,3 +1,9 @@
+## v3.0.23 — 2026-04-10
+
+### Changed
+- Fixed broken JavaScript references and removed orphaned Tailscale status functions in the settings page.
+
+---
 ## v3.0.22 — 2026-04-10
 
 ### Changed
