@@ -1,3 +1,9 @@
+## v3.0.24 — 2026-04-10
+
+### Changed
+- Fixed a stray closing brace in settings.html that was breaking the page's JavaScript logic.
+
+---
 ## v3.0.23 — 2026-04-10
 
 ### Changed
