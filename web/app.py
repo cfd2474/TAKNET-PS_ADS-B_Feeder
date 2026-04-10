@@ -3889,7 +3889,7 @@ def api_dashboard_bootstrap():
             'success': True,
             'data_feed_active': data_active,
             'mlat_active': mlat_active,
-            'mlat_enabled': True
+            'mlat_enabled': False
         }
 
     def build_piaware_stats():

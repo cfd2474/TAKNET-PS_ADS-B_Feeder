@@ -1,3 +1,9 @@
+## v3.0.26 — 2026-04-10
+
+### Changed
+- UI refinement for FR24 MLAT (n/a indicator and orange banner)
+
+---
 ## v3.0.25 — 2026-04-10
 
 ### Changed

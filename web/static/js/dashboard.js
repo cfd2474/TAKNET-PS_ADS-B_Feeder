@@ -228,7 +228,11 @@ function applySingleFeedStats(prefix, stats) {
     }
 
     dataCol.textContent = dataActive ? '+' : '-';
-    mlatCol.textContent = mlatEnabled ? (mlatActive ? '+' : '-') : '.';
+    if (mlatEnabled) {
+        mlatCol.textContent = mlatActive ? '+' : '-';
+    } else {
+        mlatCol.innerHTML = '<span style="color: #94a3b8; font-size: 0.8em; cursor: help;" title="MLAT not available in this container by design">n/a</span>';
+    }
 }
 
 function applyFeedStats(feedStats) {

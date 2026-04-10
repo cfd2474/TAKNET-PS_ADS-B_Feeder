@@ -1,11 +1,11 @@
 {
-  "version": "3.0.25",
+  "version": "3.0.26",
   "release_date": "2026-04-10",
-  "release_name": "Enable MLAT Coordinates",
+  "release_name": "3",
   "download_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh",
   "changelog_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/CHANGELOG.md",
   "minimum_version": "2.40.0",
   "breaking_changes": false,
-  "release_notes": "Passed station coordinates (LAT, LON, ALT) to FR24 and PiAware containers to enable MLAT functionality.",
+  "release_notes": "UI refinement for FR24 MLAT (n/a indicator and orange banner)",
   "update_priority": 3
 }
