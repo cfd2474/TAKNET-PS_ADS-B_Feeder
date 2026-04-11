@@ -4,7 +4,7 @@ let isOnline = true; // Will be checked on page load
 // Check internet connectivity
 async function checkInternetConnection() {
     try {
-        const response = await fetch('/api/network-status', {
+        const response = await fetch('api/network-status', {
             method: 'GET',
             cache: 'no-cache'
         });
@@ -157,7 +157,7 @@ async function getZipCodeFromCoords(lat, lon) {
 // Install Tailscale with auth key
 async function installTailscale(authKey) {
     try {
-        const response = await fetch('/api/tailscale/install', {
+        const response = await fetch('api/tailscale/install', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ auth_key: authKey })
@@ -308,7 +308,7 @@ async function saveAndStart() {
     try {
         // Save config
         console.log("Fetching /api/config...");
-        const response = await fetch('/api/config', {
+        const response = await fetch('api/config', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(config)
@@ -420,7 +420,7 @@ async function connectTailscale() {
         console.log('Calling /api/tailscale/install...');
         
         // Start installation
-        const response = await fetch('/api/tailscale/install', {
+        const response = await fetch('api/tailscale/install', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -440,7 +440,7 @@ async function connectTailscale() {
         console.log('Saving config...');
         
         // Save the key to config immediately
-        await fetch('/api/config/update', {
+        await fetch('api/config/update', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -474,7 +474,7 @@ async function connectTailscale() {
 function skipTailscale() {
     console.log('=== skipTailscale called - going to step2 (Location)');
     // Save that Tailscale is disabled
-    fetch('/api/config/update', {
+    fetch('api/config/update', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
@@ -504,7 +504,7 @@ async function pollTailscaleProgress() {
         console.log(`[Tailscale Poll] Attempt ${attempts}/${maxAttempts}`);
         
         try {
-            const response = await fetch('/api/tailscale/progress');
+            const response = await fetch('api/tailscale/progress');
             const data = await response.json();
             
             console.log('[Tailscale Poll] Progress data:', data);

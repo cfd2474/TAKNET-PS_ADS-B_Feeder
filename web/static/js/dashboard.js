@@ -115,7 +115,7 @@ async function restartService() {
     showStatus('Restarting service...', 'info');
 
     try {
-        const response = await fetch('/api/service/restart', {
+        const response = await fetch('api/service/restart', {
             method: 'POST',
         });
 
@@ -401,7 +401,7 @@ function openConnectionQualityModal() {
         btn.disabled = true;
         btn.textContent = '⏳ Testing…';
     }
-    fetchWithTimeout('/api/network-quality', {}, 30000)
+    fetchWithTimeout('api/network-quality', {}, 30000)
         .then((resp) => {
             if (!resp.ok) throw new Error(String(resp.status));
             return resp.json();
@@ -621,7 +621,7 @@ function initMobileFeederPolling() {
 
     async function poll() {
         try {
-            const resp = await fetchWithTimeout('/api/mobile/status', {}, 6000);
+            const resp = await fetchWithTimeout('api/mobile/status', {}, 6000);
             if (!resp.ok) return;
             const data = await resp.json();
             if (!data.success || !data.mobile_mode_enabled) return;

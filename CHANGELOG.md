@@ -1,3 +1,9 @@
+## v3.0.38 — 2026-04-10
+
+### Changed
+- Fixed Mixed Content and tunnel routing by migrating to path-relative URLs
+
+---
 ## v3.0.37 — 2026-04-10
 
 ### Changed
