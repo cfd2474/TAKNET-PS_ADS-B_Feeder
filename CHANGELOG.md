@@ -1,3 +1,9 @@
+## v3.0.45 — 2026-04-10
+
+### Changed
+- UI: hide System Events card if empty
+
+---
 ## v3.0.44 — 2026-04-10
 
 ### Changed
