@@ -1,3 +1,9 @@
+## v3.0.42 — 2026-04-10
+
+### Changed
+- Fixed tunnel CSP injection by disabling local compression (accept-encoding stripping)
+
+---
 ## v3.0.41 — 2026-04-10
 
 ### Changed

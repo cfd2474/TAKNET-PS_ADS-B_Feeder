@@ -275,11 +275,21 @@ def inject_csp_to_html(resp_body, headers):
     csp_tag = b'<meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">'
     
     # Search for <head> (case-insensitive)
-    idx = resp_body.lower().find(b"<head>")
+    lower_body = resp_body.lower()
+    idx = lower_body.find(b"<head>")
     if idx != -1:
         # Insert exactly after the <head> tag
         split_point = idx + 6
         return resp_body[:split_point] + b"\n    " + csp_tag + resp_body[split_point:]
+
+    # Fallback: Search for the opening <html tag and insert after it in a new head if head is missing
+    html_idx = lower_body.find(b"<html")
+    if html_idx != -1:
+        # Find the end of the <html> tag
+        close_idx = resp_body.find(b">", html_idx)
+        if close_idx != -1:
+            split_point = close_idx + 1
+            return resp_body[:split_point] + b"\n<head>\n    " + csp_tag + b"\n</head>" + resp_body[split_point:]
         
     return resp_body
 
@@ -311,6 +321,10 @@ def _strip_outbound_headers(headers):
             continue
         # Never forward a potentially stale content-length; urllib will compute as needed.
         if kl == "content-length":
+            continue
+        # Strip accept-encoding to ensure we get plain text (no gzip) from local backend.
+        # This allows us to inject the CSP meta tag into HTML responses.
+        if kl == "accept-encoding":
             continue
         out[k] = v
     return out
