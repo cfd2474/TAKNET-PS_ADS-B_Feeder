@@ -1,11 +1,11 @@
 {
-  "version": "3.0.36",
+  "version": "3.0.37",
   "release_date": "2026-04-10",
-  "release_name": "1",
+  "release_name": "2",
   "download_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh",
   "changelog_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/CHANGELOG.md",
   "minimum_version": "2.40.0",
   "breaking_changes": false,
-  "release_notes": "Aggregator-required tunnel protocol and ID mapping fixes",
+  "release_notes": "Fixed tunnel client to handle quoted values in .env file",
   "update_priority": 3
 }

@@ -1,0 +1,29 @@
+#!/usr/bin/expect -f
+set timeout 120
+spawn ssh -o StrictHostKeyChecking=no remote@100.85.99.37
+expect {
+    "password:" {
+        send "adsb\n"
+        exp_continue
+    }
+    "Please do the SSO login" {
+        send_user "\n>>> PLEASE AUTHORIZE SSO IN YOUR BROWSER NOW (10s PAUSE) <<<\n"
+        sleep 10
+        exp_continue
+    }
+    -re {[\$#] } {
+        send_user "Logged in successfully.\n"
+    }
+}
+send "sudo journalctl -u tunnel-client -n 50 --no-pager\n"
+expect {
+    "password for remote:" {
+        send "adsb\n"
+        exp_continue
+    }
+    -re {[\$#] }
+}
+send "sudo cat /opt/adsb/config/.env\n"
+expect -re {[\$#] }
+send "exit\n"
+expect eof

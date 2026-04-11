@@ -62,7 +62,7 @@ def read_env():
             line = line.strip()
             if line and not line.startswith("#") and "=" in line:
                 key, _, value = line.partition("=")
-                out[key.strip()] = value.strip()
+                out[key.strip()] = value.strip().strip("'\"")
     return out
 
 

@@ -1,3 +1,9 @@
+## v3.0.37 — 2026-04-10
+
+### Changed
+- Fixed tunnel client to handle quoted values in .env file
+
+---
 ## v3.0.36 — 2026-04-10
 
 ### Changed

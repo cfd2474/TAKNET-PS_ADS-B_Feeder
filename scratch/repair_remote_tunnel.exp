@@ -1,0 +1,33 @@
+#!/usr/bin/expect -f
+set timeout 120
+spawn ssh -o StrictHostKeyChecking=no remote@100.85.99.37
+expect {
+    "password:" {
+        send "adsb\n"
+        exp_continue
+    }
+    "Please do the SSO login" {
+        send_user "\n>>> AUTHORIZE SSO NOW (10s PAUSE) <<<\n"
+        sleep 10
+        exp_continue
+    }
+    -re {[\$#] } {
+        send_user "Connected.\n"
+    }
+}
+send "sudo sed -i 's/\"adsb.tak-solutions.com\"/adsb.tak-solutions.com/g' /opt/adsb/config/.env\n"
+expect {
+    "password for remote:" {
+        send "adsb\n"
+        exp_continue
+    }
+    -re {[\$#] }
+}
+send "sudo systemctl restart tunnel-client\n"
+expect -re {[\$#] }
+# Give it a few seconds to try connecting
+sleep 5
+send "sudo journalctl -u tunnel-client -n 20 --no-pager\n"
+expect -re {[\$#] }
+send "exit\n"
+expect eof
