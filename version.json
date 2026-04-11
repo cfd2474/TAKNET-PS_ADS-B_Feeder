@@ -1,11 +1,11 @@
 {
-  "version": "3.0.38",
+  "version": "3.0.39",
   "release_date": "2026-04-10",
   "release_name": "2",
   "download_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh",
   "changelog_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/CHANGELOG.md",
   "minimum_version": "2.40.0",
   "breaking_changes": false,
-  "release_notes": "Fixed Mixed Content and tunnel routing by migrating to path-relative URLs",
+  "release_notes": "Resolved Mixed Content with CSP and fixed tunnel routing 404s",
   "update_priority": 3
 }

@@ -1,3 +1,9 @@
+## v3.0.39 — 2026-04-10
+
+### Changed
+- Resolved Mixed Content with CSP and fixed tunnel routing 404s
+
+---
 ## v3.0.38 — 2026-04-10
 
 ### Changed
