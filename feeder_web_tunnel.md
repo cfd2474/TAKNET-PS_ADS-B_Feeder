@@ -1,6 +1,6 @@
 # TAKNET-PS Feeder Web Tunnel Documentation
 
-This document serves as the definitive technical reference for the **Web Tunnel** protocol used to proxy data between the TAKNET-PS Aggregator and individual Feeders. It provides the exact specifications for connection, registration, and message routing.
+This document serves as the definitive technical reference for the **Web Tunnel** protocol used to proxy data between the TAKNET-PS Aggregator and individual Feeders. It provides the exact specifications for connection, registration, and message routing as of **v3.0.44**.
 
 ## 1. Architecture Overview
 
@@ -32,28 +32,30 @@ The first message sent by the Feeder **must** be a `register` type JSON object.
 {
   "type": "register",
   "feeder_id": "sanitized-id-string",
-  "host": "127.0.0.1:8080"
+  "host": "100.85.x.x:8080"
 }
 ```
 
 *   **`feeder_id`**: The unique identifier derived from the Feeder's configuration. It must follow the strict sanitization logic defined in Section 4.
-*   **`host`**: (Recommended) The local `host:port` the feeder's web stack listens on (e.g., its NetBird IP). The Aggregator uses this string to populate the `Host` header when proxying, ensuring correct internal routing on the feeder side.
+*   **`host`**: (Recommended) The primary IP/hostname and port the feeder's web stack listens on. The Aggregator uses this string to populate the `Host` header when proxying, ensuring correct internal routing on the feeder side.
 
 ---
 
 ## 4. Deterministic ID Sanitization
 
-The Aggregator and Feeder must use the **exact same algorithm** to derive the `feeder_id`. This prevents "Feeder Offline" errors caused by mismatched keys in the routing table.
+The Aggregator and Feeder must use the **exact same algorithm** to derive the `feeder_id`. The SPEC for v3.0.44 onwards is:
 
 ### The Algorithm
-1.  **Split by Piper**: If the source string contains a `|` (common in `MLAT_SITE_NAME`), only the part **before** the first piper is used.
-2.  **Normalization**: Convert the entire string to lowercase. Replace all **Spaces** and **Underscores** with a single hyphen (`-`).
-3.  **Strict Filtering**: Replace any character that is **NOT** a lowercase letter (`a-z`), a number (`0-9`), a hyphen (`-`), or an underscore (`_`) with a hyphen.
-4.  **Deduping**: Collapse multiple consecutive hyphens into a single hyphen (e.g., `--` -> `-`).
-5.  **Trimming**: Strip any leading or trailing hyphens from the final string.
+1.  **Split by Separator**: If the source string contains an MLAT separator (` | v` or `___v`), only the part **before** the separator is used. (Do not split by single pipers `|` if they appear inside the name).
+2.  **Normalization**: Convert the entire string to lowercase.
+3.  **Basic Replacement**: Replace all **Spaces** with a single hyphen (`-`).
+4.  **Preservation**: **Underscores (`_`) must be preserved**. Do not convert them to hyphens.
+5.  **Strict Filtering**: Replace any character that is **NOT** a lowercase letter (`a-z`), a number (`0-9`), a hyphen (`-`), or an underscore (`_`) with a hyphen.
+6.  **Deduping**: Collapse multiple consecutive hyphens into a single hyphen (e.g., `--` -> `-`).
+7.  **Trimming**: Strip any leading or trailing hyphens from the final string.
 
-**Example:** `"My Feeder | v1.0"` → `"my-feeder"`  
-**Example:** `"Feeder_Site_#1"` → `"feeder-site-1"`
+**Example:** `"My Feeder | v3.0"` → `"my-feeder"`  
+**Example:** `"Feeder_Site_#1"` → `"feeder_site_1"`
 
 ---
 
@@ -69,8 +71,8 @@ When a user visits `https://aggregator/feeder/<id>/path`, the Feeder receives a 
   "path": "/api/status",
   "headers": {
     "X-Tunnel-Target": "dashboard",
-    "Accept-Encoding": "identity",
-    "Host": "127.0.0.1:8080"
+    "Accept-Encoding": "gzip",
+    "Host": "100.85.x.x:8080"
   },
   "body": "base64_encoded_body_or_empty_string"
 }
@@ -84,51 +86,54 @@ The Feeder must process the request and respond within **30 seconds**:
   "id": "uuid-v4-request-identifier",
   "status": 200,
   "headers": {
-    "Content-Type": "application/json"
+    "Content-Type": "text/html",
+    "Content-Security-Policy": "upgrade-insecure-requests"
   },
   "body": "base64_encoded_body_or_empty_string"
 }
 ```
 
-> [!NOTE]
-> **Base64 Encoding**: All message bodies (HTML, JSON, Images, JS) must be Base64 encoded in both directions to ensure binary safety and transmission through JSON.
-
 ---
 
 ## 6. Target-Based Routing (`X-Tunnel-Target`)
 
-The Aggregator injects an `X-Tunnel-Target` header into every request. The Feeder Client use this to determine the local backend port:
+The Aggregator injects an `X-Tunnel-Target` header into every request. The Feeder Client uses this to determine the local backend port:
 
 | Target | Description | Preferred Local Destination |
 | :--- | :--- | :--- |
 | `dashboard` | Feeder management UI and APIs | `http://127.0.0.1:5000` |
 | `tar1090` | Map and data statistics stack | `http://127.0.0.1:8080` |
 
-If the header is missing, the Feeder should infer the target based on the path (e.g., paths starting with `/data/` or `/graphs1090/` typically target `tar1090` on port 8080).
+If the header is missing, the Feeder infers the target based on the path (e.g., paths starting with `/data/`, `/graphs1090/`, or `/tar1090/` target `tar1090` on port 8080).
 
 ---
 
-## 7. Path Mapping & Rewriting
+## 7. Content Security Policy (Global Header Injection)
 
-### Prefix Stripping
-The Aggregator handles URL prefixing. A request for `/feeder/my-id/api/config` arrives at the Feeder Client with a tunneled `path` of `/api/config`. The Feeder Client does **not** need to handle the `/feeder/<id>/` prefix in its internal routing.
+To resolve "Mixed Content" blockers for services that request resources over plain HTTP (like `tar1090` or `graphs1090`), the Feeder Client **must** inject the following header into **every tunneled response**:
 
-### Content Rewriting
-The Aggregator performs real-time rewriting of HTML/JS/CSS to ensure that absolute links (e.g., `/static/style.css`) are updated to work through the tunnel (e.g., `/feeder/id/static/style.css`).
-- To facilitate this, the Aggregator requests `Accept-Encoding: identity`. 
-- Feeders **must** return uncompressed bodies or the Aggregator will attempt to decompress them for rewriting.
+`Content-Security-Policy: upgrade-insecure-requests`
+
+This instruction tells the browser to automatically upgrade all insecure resource requests (CSS/JS/Images) to HTTPS before they leave the browser. By using a header-level policy, the Feeder ensures compatibility even for:
+- **Cached Responses (304)**: The browser continues to honor the security policy.
+- **Compressed Traffic (Gzip)**: No HTML parsing or body-rewriting is required.
 
 ---
 
 ## 8. Heartbeat & Reliability
 
-### 8.1 JSON Pings
-In addition to standard WebSocket ping frames, the server sends a JSON message: `{"type": "ping"}`. The Feeder must respond with `{"type": "pong"}` to maintain the application-level keep-alive.
+### 8.1 Idle Pongs
+The Feeder Client maintains connection health by sending a JSON message: `{"type": "pong"}` if the connection has been idle for 30 seconds. This prevents intermediate firewall or VPN idle-timeouts.
 
-### 8.2 Reconnection Logic
-If the connection is lost, the Feeder Client should implement an exponential backoff (e.g., 5s starting, doubling up to a max of 300s) to avoid slamming the Tunnel Service during aggregator restarts.
+### 8.2 JSON Pings
+The server may send a JSON message: `{"type": "ping"}`. The Feeder must respond with `{"type": "pong"}` to maintain the application-level keep-alive.
 
-### 8.3 Status Codes Reference
+### 8.3 Reconnection Logic
+If the connection is lost, the Feeder Client implements an exponential backoff (e.g., 5s starting, doubling up to a max of 300s) to avoid slamming the Tunnel Service.
+
+---
+
+## 9. Status Codes Reference
 - **4000**: Registration error (Timeout or invalid first message).
 - **4001**: Duplicate connection (Connection replaced by a newer one with same ID).
 - **503 (Aggregator Response)**: Feeder is currently offline (No WebSocket registered).

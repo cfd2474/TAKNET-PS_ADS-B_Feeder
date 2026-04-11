@@ -12,9 +12,9 @@ sudo journalctl -u tunnel-client -n 100 --no-pager
 
 Look for:
 
-- **`tunnel_client: Connecting to wss://...`** — URL should be your aggregator (e.g. `wss://adsb.tak-solutions.com/tunnel`). If wrong, fix `TUNNEL_AGGREGATOR_URL` or `TAKNET_PS_SERVER_HOST_FALLBACK` in `/opt/adsb/config/.env`.
-- **`tunnel_client: Connect failed: ...`** — Connection refused, DNS error, TLS error, or timeout. Fix network/firewall or aggregator URL.
-- **`tunnel_client: Registered; connected and waiting for requests`** — Client thinks it’s connected. If aggregator still says not connected, the problem is on the aggregator (not accepting WebSocket, wrong path, or not storing the feeder).
+- **`tunnel_client: Registered; connected and waiting for requests`** — Client thinks it’s connected. If aggregator still says not connected, the problem is likely on the aggregator side.
+- **`tunnel-proxy: id=... path=/... target=... status=...`** — Shows live request flow. If you don't see these when visiting the tunnel URL, the Aggregator is not correctly routing requests to your feeder.
+- **`[tunnel-csp] Injected...`** — (Legacy feature in v3.0.41-43). v3.0.44 now uses header-based injection which is quieter but more robust.
 - **`tunnel_client: Connection closed by server or network`** — Aggregator or network closed the connection; check aggregator logs and network.
 
 ---
@@ -77,6 +77,12 @@ cat /opt/adsb/var/tunnel-status.json
 
 **Settings:** Dashboard → Settings → **Restart tunnel service** (or batch restart with “Remote access tunnel”).
 
+## 7. Mixed Content / Page Loading Issues
+
+If the page loads but is missing CSS, JS, or images:
+- **Hard Refresh**: Modern browsers cache insecure responses. Perform a **Hard Refresh** (`Cmd+Shift+R` or `Ctrl+F5`) to force the browser to pick up the new **Content-Security-Policy** header introduced in v3.0.44.
+- **Check Headers**: Inspect the response in your browser's Network tab. You should see `Content-Security-Policy: upgrade-insecure-requests`.
+
 ---
 
 ## Summary
@@ -87,4 +93,4 @@ cat /opt/adsb/var/tunnel-status.json
 | Log: "Connect failed: ..." (TLS/SSL) | Certificate or SNI issue on aggregator |
 | Log: "Registered; connected" but aggregator says offline | Aggregator not storing or listing the feeder; fix aggregator |
 | Status file: "connected": false, "error": "..." | Use the error message; fix URL or network |
-| No "Registered" in logs, no connect error | Client may be exiting before connect; check full journalctl for Python errors |
+| Page loads but "Mixed Content" blocks | Browser cache. Perform a **Hard Refresh**. |

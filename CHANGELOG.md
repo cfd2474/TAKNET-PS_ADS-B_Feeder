@@ -1,25 +1,30 @@
 ## v3.0.44 — 2026-04-10
 
 ### Changed
-- Implemented robust header-based CSP injection for universal protocol upgrades
+- **Header-Based CSP**: Pivoted to a robust, global `Content-Security-Policy: upgrade-insecure-requests` injection at the HTTP header level. This provides a universal fix for Mixed Content errors across all services, including Maps and Statistics, and correctly handles cached (304) and compressed (Gzip) traffic.
+- **ID Sanitization**: Standardized naming logic to strictly preserve underscores (only spaces converted to hyphens).
+- **Security**: Added `ProxyFix` middleware to the Flask web app to correctly propagate HTTPS protocols from the tunnel proxy.
+- **Performance**: Restored full Gzip compression support for the web tunnel.
 
 ---
 ## v3.0.43 — 2026-04-10
 
 ### Changed
-- Hardened CSP injection with regex and logging
+- **Regex Injection**: Hardened the then-current HTML CSP injection logic using case-insensitive regular expressions to handle indented tags (common on the Statistics page).
+- **Audit Logging**: Added `[tunnel-csp]` and `[tunnel-proxy]` tags to system journal logs for better diagnostic visibility.
+- **Protocol**: Increased WebSocket heartbeat stability with proactive 30s pongs.
 
 ---
 ## v3.0.42 — 2026-04-10
 
 ### Changed
-- Fixed tunnel CSP injection by disabling local compression (accept-encoding stripping)
+- **Compression Fix**: Temporarily disabled local compression (`accept-encoding` stripping) to allow reliable HTML parsing for the (now retired) body-injection CSP method.
 
 ---
 ## v3.0.41 — 2026-04-10
 
 ### Changed
-- Implemented universal tunnel-level CSP injection to fix Mixed Content on Maps and Stats
+- **Universal CSP**: Implemented the first iteration of tunnel-level CSP injection to resolve browser security blocks on tar1090 (Maps) and graphs1090 (Stats).
 
 ---
 ## v3.0.40 — 2026-04-10

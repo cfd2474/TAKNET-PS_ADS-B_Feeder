@@ -530,13 +530,18 @@ See **[CHANGELOG.md](CHANGELOG.md)** for the full release list. Highlights of re
 
 - **Dashboard** — Loads status via a single aggregate API (`/api/dashboard/bootstrap`); connection quality is on-demand (button + modal), not a live poll.
 - **Remote tunnel** — Routes dashboard vs map stack via `X-Tunnel-Target` on the aggregator; feeder registers with `host` for proxying.
+- **Secure Tunnel Access** — v3.0.44 implements global `Content-Security-Policy: upgrade-insecure-requests` headers for tunneled traffic, ensuring perfect cross-protocol loading for Maps and Statistics without manual HTML modification.
 - **Tunnel service** — `ensure-tunnel-client.sh` enables/starts the client when aggregator URL is configured; **Settings** can restart the tunnel.
 
-### v2.59.44 — Tunnel log visibility
-- **Tunnel client** — Flushes stderr after each log; service sets `PYTHONUNBUFFERED=1` so journalctl shows output immediately.
+### v3.0.44 — Universal CSP Stability
+- **Tunnel security** — Implements header-based `Content-Security-Policy: upgrade-insecure-requests` for all responses. This is a global, robust fix for Mixed Content errors across all proxied services (Maps, Stats, Dashboard).
+- **ID Sanitization** — Updated to strictly preserve underscores (only spaces → hyphens). 
+- **Flask Security** — Added `ProxyFix` middleware to correctly detect HTTPS protocols when running behind the Aggregator's proxy, ensuring Dashboard links generate correctly.
+- **Performance** — Restored full Gzip support for tunnel traffic.
 
-### v2.59.43 — Tunnel troubleshooting
-- **Tunnel client** — Logs connect/register/errors to journalctl; writes `/opt/adsb/var/tunnel-status.json`; `docs/TROUBLESHOOT-TUNNEL.md` for feeder-side diagnostics.
+### v3.0.41/42 — Compression support & CSP middleware
+- **Tunnel client** — Implemented temporary HTML-injection CSP middleware (deprecated in v3.0.44 in favor of headers).
+- **Stability** — Added 30-second proactive JSON pongs to keep the WebSocket connection alive on idle networks.
 
 ### v2.59.42 — Reboot message visibility
 - **Settings** — Reboot Device success message shown in a white box for readability.

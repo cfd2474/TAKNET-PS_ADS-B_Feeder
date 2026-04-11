@@ -1,0 +1,55 @@
+#!/usr/bin/expect -f
+set timeout 120
+
+# Read local contents
+set f1 [open "scripts/tunnel_client.py" r]
+set script_content [read $f1]
+close $f1
+
+set f2 [open "VERSION" r]
+set version_content [read $f2]
+close $f2
+
+spawn ssh -o StrictHostKeyChecking=no remote@100.85.99.37
+expect {
+    "password:" {
+        send "adsb\n"
+        exp_continue
+    }
+    "Please do the SSO login" {
+        send_user "\n>>> AUTHORIZE SSO NOW (10s PAUSE) <<<\n"
+        sleep 10
+        exp_continue
+    }
+    -re {[\$#] } {
+        send_user "Connected.\n"
+    }
+}
+
+# Transfer tunnel_client.py
+send "cat > ~/tunnel_client.py <<'EOF_TUNNEL'\n"
+send "$script_content"
+send "\nEOF_TUNNEL\n"
+expect -re {[\$#] }
+
+# Transfer VERSION
+send "cat > ~/VERSION <<'EOF_VERSION'\n"
+send "$version_content"
+send "\nEOF_VERSION\n"
+expect -re {[\$#] }
+
+# Elevate and move
+send "echo 'adsb' | sudo -S mv ~/tunnel_client.py /opt/adsb/scripts/tunnel_client.py\n"
+expect -re {[\$#] }
+send "echo 'adsb' | sudo -S mv ~/VERSION /opt/adsb/VERSION\n"
+expect -re {[\$#] }
+
+# Restart and Verify
+send "echo 'adsb' | sudo -S systemctl restart tunnel-client\n"
+expect -re {[\$#] }
+sleep 2
+send "curl -I http://localhost:8080/graphs1090/\n"
+expect -re {[\$#] }
+
+send "exit\n"
+expect eof
