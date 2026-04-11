@@ -1182,5 +1182,23 @@
             initDashboard();
         });
     </script>
+
+    <!-- Refresh Modal -->
+    <div id="refreshModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 10000; align-items: center; justify-content: center; backdrop-filter: blur(4px);">
+        <div style="background: white; padding: 40px; border-radius: 16px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.2); max-width: 90%; width: 400px;">
+            <div style="margin-bottom: 25px;">
+                <div style="width: 50px; height: 50px; border: 4px solid #f3f3f3; border-top: 4px solid #3b82f6; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto;"></div>
+            </div>
+            <h3 style="margin: 0 0 10px 0; font-weight: 600; color: #1e293b;">Refreshing Dashboard</h3>
+            <p style="margin: 0; color: #64748b; font-size: 0.95em;">Syncing real-time feed status...</p>
+        </div>
+    </div>
+
+    <style>
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
 </body>
 </html>

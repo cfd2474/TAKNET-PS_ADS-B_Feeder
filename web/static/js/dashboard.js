@@ -560,25 +560,10 @@ function renderSystemHealth(data) {
         const check = document.getElementById(`${svc}-check`);
         if (!check) return;
         
-        // Find or create health badge
-        let badge = check.parentElement.querySelector('.health-badge');
-        if (!badge) {
-            badge = document.createElement('div');
-            badge.className = 'health-badge';
-            badge.style.marginTop = '4px';
-            check.parentElement.appendChild(badge);
-        }
-        
-        const failCount = failures[svc] || 0;
-        if (failCount > 0) {
-            badge.textContent = `Retrying ${failCount}/3`;
-            badge.className = 'health-badge health-starting';
-            badge.style.fontSize = '0.65em';
-        } else {
-            // If it's healthy, we'll let the existing "Data/MLAT" logic show its status,
-            // or we could show "Healthy" badge. For now, let's keep it clean.
-            badge.textContent = '';
-            badge.className = 'health-badge';
+        // Remove any existing health badges as we now only show status in events log
+        const badge = check.parentElement.querySelector('.health-badge');
+        if (badge) {
+            badge.remove();
         }
     });
 }
@@ -688,17 +673,23 @@ function initMobileFeederPolling() {
 }
 
 async function refreshDashboard() {
-    if (typeof showStatus === 'function') {
-        showStatus('Refreshing dashboard...', 'info');
+    const modal = document.getElementById('refreshModal');
+    if (modal) {
+        modal.style.display = 'flex';
     }
+    
     try {
         await pollDashboard();
-        if (typeof showStatus === 'function') {
-            showStatus('✓ Dashboard refreshed', 'success');
-        }
     } catch (e) {
         if (typeof showStatus === 'function') {
-            showStatus('Error: ' + e.message, 'error');
+            showStatus('Error refreshing: ' + e.message, 'error');
+        }
+    } finally {
+        if (modal) {
+            // Minimal delay for visual continuity
+            setTimeout(() => {
+                modal.style.display = 'none';
+            }, 300);
         }
     }
 }

@@ -1,3 +1,9 @@
+## v3.0.33 — 2026-04-10
+
+### Changed
+- Implemented refresh modal and removed retrying badges from status table
+
+---
 ## v3.0.32 — 2026-04-10
 
 ### Changed
