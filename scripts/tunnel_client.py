@@ -67,22 +67,30 @@ def read_env():
 
 
 def sanitize_feeder_id(raw_name):
-    """Strictly sanitize ID to match Aggregator expectations:
-    1. Extract part before piper |
-    2. Lowercase and replace spaces/underscores with dashes
-    3. Replace any non-alphanumeric (except - and _) with dashes
+    """Strictly sanitize ID to match Aggregator expectations (version 2):
+    1. Extract part before version separators ' | v' or '___v'
+    2. Lowercase and replace spaces with dashes (preserve underscores)
+    3. Replace any char NOT in [a-z0-9_-] with a dash
     4. Collapse multiple dashes and strip them
     """
     if not raw_name:
         return "feeder"
-    # 1. Take part before versioning pip |
-    s = raw_name.split("|")[0].strip()
-    # 2. Lowercase and initial dash conversion
-    s = s.lower().replace(" ", "-").replace("_", "-")
-    # 3. Replace any char NOT in [a-z0-9_-] with a dash
+    
+    # 1. Extract only the name before version separators
+    for sep in (" | v", "___v"):
+        if sep in raw_name:
+            raw_name = raw_name.split(sep, 1)[0]
+            break
+            
+    # 2. Lowercase and replace spaces with hyphens (Aggregator preserves underscores)
+    s = raw_name.strip().lower().replace(" ", "-")
+    
+    # 3. Strict character filtering (Preserve underscores)
     s = re.sub(r"[^a-z0-9\-_]", "-", s)
+    
     # 4. Collapse multiple consecutive dashes into one
     s = re.sub(r"-+", "-", s)
+    
     # 5. Strip leading and trailing dashes
     return s.strip("-")
 
@@ -339,7 +347,15 @@ def run_once(ws_url, feeder_id):
         log(f"Registered; connected and waiting for requests (host={host_value})")
         write_status(True, feeder_id=feeder_id)
         while True:
-            raw = ws.recv()
+            try:
+                # Use a timeout so we can send proactive pongs to keep the connection alive
+                ws.settimeout(30.0)
+                raw = ws.recv()
+            except (socket.timeout, websocket.WebSocketTimeoutException):
+                # Proactively send a pong if no activity for 30s
+                ws.send(json.dumps({"type": "pong"}))
+                continue
+
             if not raw:
                 return True
             try:
@@ -347,9 +363,8 @@ def run_once(ws_url, feeder_id):
             except json.JSONDecodeError:
                 continue
             t = msg.get("type")
-            if t == "ping":
-                ws.send(json.dumps({"type": "pong"}))
-                continue
+            # Note: Server uses standard WS pings; we send proactive JSON pongs above.
+            # Do not handle "ping" JSON messages as the server no longer sends them.
             if t == "request":
                 req_id = msg.get("id")
                 method = msg.get("method", "GET")

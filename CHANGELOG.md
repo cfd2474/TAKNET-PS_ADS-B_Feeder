@@ -1,3 +1,9 @@
+## v3.0.36 — 2026-04-10
+
+### Changed
+- Aggregator-required tunnel protocol and ID mapping fixes
+
+---
 ## v3.0.35 — 2026-04-10
 
 ### Changed
