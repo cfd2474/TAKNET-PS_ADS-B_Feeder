@@ -570,13 +570,16 @@ function renderSystemHealth(data) {
 
 function renderSystemEvents(data) {
     const container = document.getElementById('event-log');
+    const card = document.getElementById('system-events-card');
     if (!container || !data || !data.success) return;
     
     const events = data.events || [];
     if (events.length === 0) {
-        container.innerHTML = '<div style="padding: 20px; text-align: center; color: #94a3b8;">No events recorded yet.</div>';
+        if (card) card.style.display = 'none';
         return;
     }
+    
+    if (card) card.style.display = 'block';
     
     container.innerHTML = events.map(ev => `
         <div class="event-item">
