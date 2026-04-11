@@ -250,6 +250,40 @@ def strip_feeder_prefix(path):
     return "/" + "/".join(parts[2:]) + q
 
 
+def inject_csp_to_html(resp_body, headers):
+    """If the response is HTML, inject the CSP upgrade-insecure-requests meta tag.
+    
+    This ensures that resources (CSS/JS) requested by the browser over the tunnel
+    are upgraded to HTTPS, preventing Mixed Content blockers.
+    """
+    if not resp_body:
+        return resp_body
+    
+    content_type = ""
+    for k, v in headers.items():
+        if k.lower() == "content-type":
+            content_type = v.lower()
+            break
+            
+    if "text/html" not in content_type:
+        return resp_body
+        
+    # Check if already has CSP to avoid double injection
+    if b'upgrade-insecure-requests' in resp_body:
+        return resp_body
+        
+    csp_tag = b'<meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">'
+    
+    # Search for <head> (case-insensitive)
+    idx = resp_body.lower().find(b"<head>")
+    if idx != -1:
+        # Insert exactly after the <head> tag
+        split_point = idx + 6
+        return resp_body[:split_point] + b"\n    " + csp_tag + resp_body[split_point:]
+        
+    return resp_body
+
+
 def infer_target(path, headers):
     """Infer which local backend should receive a tunneled request."""
     hdrs = headers or {}
@@ -308,11 +342,15 @@ def forward_request(method, path, headers, body_b64):
             status = resp.getcode()
             resp_headers = dict(resp.headers)
             resp_body = resp.read()
+            # Inject CSP for tunneled HTML content
+            resp_body = inject_csp_to_html(resp_body, resp_headers)
     except urllib.error.HTTPError as e:
         status = e.code
         resp_headers = dict(e.headers) if e.headers else {}
         try:
             resp_body = e.read()
+            # Inject CSP even for error pages if they are HTML
+            resp_body = inject_csp_to_html(resp_body, resp_headers)
         except Exception:
             resp_body = b""
     except Exception as e:

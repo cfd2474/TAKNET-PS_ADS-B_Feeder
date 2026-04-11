@@ -1,11 +1,11 @@
 {
-  "version": "3.0.40",
+  "version": "3.0.41",
   "release_date": "2026-04-10",
   "release_name": "2",
   "download_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh",
   "changelog_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/CHANGELOG.md",
   "minimum_version": "2.40.0",
   "breaking_changes": false,
-  "release_notes": "Made CSP conditional to restore direct IP access while maintaining tunnel security",
+  "release_notes": "Implemented universal tunnel-level CSP injection to fix Mixed Content on Maps and Stats",
   "update_priority": 3
 }

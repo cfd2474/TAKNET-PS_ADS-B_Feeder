@@ -1,3 +1,9 @@
+## v3.0.41 — 2026-04-10
+
+### Changed
+- Implemented universal tunnel-level CSP injection to fix Mixed Content on Maps and Stats
+
+---
 ## v3.0.40 — 2026-04-10
 
 ### Changed

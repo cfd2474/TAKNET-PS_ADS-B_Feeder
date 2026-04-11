@@ -28,6 +28,8 @@ The system consists of three components:
 ### Registration (Crucial)
 Immediately upon connecting, the Feeder **must** send a `register` message. If the first message is not `register`, or if it lacks a `feeder_id`, the server will close the connection.
 
+**Message Frame Type**: The `register` message (and all subsequent messages) **must be sent as a WebSocket TEXT frame**. Binary frames are ignored or may cause connection closure by the server.
+
 **Register Message Format:**
 ```json
 {
@@ -37,8 +39,29 @@ Immediately upon connecting, the Feeder **must** send a `register` message. If t
 }
 ```
 
-*   **`feeder_id`**: The unique identifier for the feeder (used in the URL `/feeder/<feeder_id>/`).
+*   **`feeder_id`**: The unique identifier for the feeder (must match the ID the Aggregator expects). See [ID Sanitization](#id-sanitization) below.
 *   **`host`**: (Recommended) The local `host:port` the feeder's web stack listens on (e.g., NetBird IP). The Aggregator uses this for the `Host` header to ensure correct routing on the feeder side.
+
+### ID Sanitization
+The Aggregator applies a strict sanitization process to derive the `feeder_id`. The Feeder Client **must** use the same logic to ensure the `register` ID matches the one the dashboard generates.
+
+**Sanitization Algorithm (Pseudo-python):**
+```python
+import re
+
+def sanitize_feeder_id(raw_name):
+    # 1. Lowercase and replace spaces with dashes
+    s = raw_name.lower().replace(" ", "-")
+    # 2. Replace any character NOT in [a-z0-9_-] with a dash
+    s = re.sub(r"[^a-z0-9\-_]", "-", s)
+    # 3. Collapse multiple consecutive dashes into one
+    s = re.sub(r"-+", "-", s)
+    # 4. Strip leading and trailing dashes
+    return s.strip("-")
+```
+
+> [!IMPORTANT]
+> If your MLAT Site Name is `My Feeder | v1.0`, the `raw_name` used for sanitization should be the part BEFORE the version pip (`My Feeder`). The resulting `feeder_id` would be `my-feeder`.
 
 ---
 
@@ -117,16 +140,24 @@ The Aggregator includes an `X-Tunnel-Target` header to help the Feeder route the
 - **Timeouts**: 
     - Registration must occur within **30 seconds** of connection.
     - Proxied requests timeout after **30 seconds**.
-- **Normalization**: The Aggregator may try alternate `feeder_id` formats (changing `_` to `-`) to find the tunnel connection.
+- **Normalization**: The Aggregator may try alternate `feeder_id` formats (changing `_` to `-`) when looking up proxied paths, but the **Registration ID** should strive for an exact match to avoid overhead.
 
 ---
 
-## 8. Error Codes
+## 8. Error Codes & Troubleshooting
 
-- **4000**: Registration error (Missing `feeder_id` or invalid first message).
-- **4001**: Duplicate connection (New connection with the same `feeder_id` replaced the old one).
-- **503 (HTTP)**: Feeder is offline (No active WebSocket for that `feeder_id`).
-- **504 (HTTP)**: Feeder response timeout (Feeder did not send `response` message within 30s).
+### WebSocket Close Codes
+- **4000**: Registration error (Missing `feeder_id` or invalid first message). Check that you are sending the `register` message immediately after `on_open`.
+- **4001**: Duplicate connection. A new connection with the same `feeder_id` has replaced the old one.
+
+### Troubleshooting "Not Connected"
+If the Aggregator Dashboard shows the feeder as offline or returns a **503 Feeder Offline** error:
+
+1.  **Verify `feeder_id` Case**: Ensure the ID sent in the `register` message is **strictly lowercase**.
+2.  **Verify Frame Type**: Ensure your WebSocket client is sending a **Text Frame**, not a Binary Frame.
+3.  **Check WebSocket URL**: Ensure you are connecting to `wss://<domain>/tunnel` (no trailing slash).
+4.  **Register Timeout**: You have **30 seconds** from the moment the TCP/TLS connection is established to send the `register` JSON message.
+5.  **JSON Structure**: Ensure types are strings and matches the spec exactly. No extra fields should be required, but `type` and `feeder_id` are mandatory.
 
 ---
 
