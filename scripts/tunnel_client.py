@@ -250,60 +250,6 @@ def strip_feeder_prefix(path):
     return "/" + "/".join(parts[2:]) + q
 
 
-def inject_csp_to_html(resp_body, headers):
-    """If the response is HTML, inject the CSP upgrade-insecure-requests meta tag.
-    
-    This ensures that resources (CSS/JS) requested by the browser over the tunnel
-    are upgraded to HTTPS, preventing Mixed Content blockers.
-    """
-    if not resp_body:
-        return resp_body
-    
-    content_type = ""
-    for k, v in headers.items():
-        if k.lower() == "content-type":
-            content_type = v.lower()
-            break
-            
-    if "text/html" not in content_type:
-        return resp_body
-        
-    # Check if already has CSP to avoid double injection
-    if b'upgrade-insecure-requests' in resp_body:
-        return resp_body
-        
-    csp_tag = b'<meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">'
-    
-    # Securely inject after <head> using regex (handles casing, spaces, attributes)
-    try:
-        new_body, count = re.subn(
-            b'(<head[^>]*>)', 
-            rb'\1\n    ' + csp_tag, 
-            resp_body, 
-            count=1, 
-            flags=re.IGNORECASE
-        )
-        if count > 0:
-            log(f"[tunnel-csp] Injected upgrade-insecure-requests into {content_type}")
-            return new_body
-            
-        # Fallback: Inject after <html> if <head> is missing
-        new_body, count = re.subn(
-            b'(<html[^>]*>)', 
-            rb'\1\n<head>\n    ' + csp_tag + b'\n</head>', 
-            resp_body, 
-            count=1, 
-            flags=re.IGNORECASE
-        )
-        if count > 0:
-            log(f"[tunnel-csp] Injected upgrade-insecure-requests (new head) into {content_type}")
-            return new_body
-    except Exception as e:
-        log(f"[tunnel-csp] Error during injection: {e}")
-        
-    return resp_body
-
-
 def infer_target(path, headers):
     """Infer which local backend should receive a tunneled request."""
     hdrs = headers or {}
@@ -331,10 +277,6 @@ def _strip_outbound_headers(headers):
             continue
         # Never forward a potentially stale content-length; urllib will compute as needed.
         if kl == "content-length":
-            continue
-        # Strip accept-encoding to ensure we get plain text (no gzip) from local backend.
-        # This allows us to inject the CSP meta tag into HTML responses.
-        if kl == "accept-encoding":
             continue
         out[k] = v
     return out
@@ -366,15 +308,11 @@ def forward_request(method, path, headers, body_b64):
             status = resp.getcode()
             resp_headers = dict(resp.headers)
             resp_body = resp.read()
-            # Inject CSP for tunneled HTML content
-            resp_body = inject_csp_to_html(resp_body, resp_headers)
     except urllib.error.HTTPError as e:
         status = e.code
         resp_headers = dict(e.headers) if e.headers else {}
         try:
             resp_body = e.read()
-            # Inject CSP even for error pages if they are HTML
-            resp_body = inject_csp_to_html(resp_body, resp_headers)
         except Exception:
             resp_body = b""
     except Exception as e:
@@ -388,6 +326,11 @@ def forward_request(method, path, headers, body_b64):
         if kl in SKIP_HEADERS or kl == "content-length":
             continue
         out_headers[k] = v
+    
+    # Inject CSP at the header level for ALL responses to ensure Mixed Content 
+    # upgrades work even for cached (304), compressed (gzip), or weirdly formatted pages.
+    out_headers["Content-Security-Policy"] = "upgrade-insecure-requests"
+    
     body_b64_out = base64.b64encode(resp_body).decode("ascii") if resp_body else ""
     return status, out_headers, body_b64_out, target, upstream_base, path
 

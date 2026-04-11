@@ -1,0 +1,29 @@
+#!/usr/bin/expect -f
+set timeout 120
+spawn ssh -o StrictHostKeyChecking=no remote@100.85.99.37
+expect {
+    "password:" {
+        send "adsb\n"
+        exp_continue
+    }
+}
+expect -re {[\$#] }
+# Verify VERSION
+send "cat /opt/adsb/VERSION\n"
+expect -re {[\$#] }
+
+# Test injection logic using curl against localhost:8080 - we need to mimic the tunnel_client request.
+# But wait, the tunnel_client is the one doing the injection. I can't easily trigger a tunneled request from the remote shell.
+# However, I can check the logs for ANY request that happened since restart.
+
+send "sudo journalctl -u tunnel-client -n 50 --no-pager | grep \"tunnel-csp\"\n"
+expect {
+    "password for remote:" {
+        send "adsb\n"
+        exp_continue
+    }
+    -re {[\$#] }
+}
+
+send "exit\n"
+expect eof

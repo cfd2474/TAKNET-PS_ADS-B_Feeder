@@ -1,3 +1,9 @@
+## v3.0.44 — 2026-04-10
+
+### Changed
+- Implemented robust header-based CSP injection for universal protocol upgrades
+
+---
 ## v3.0.43 — 2026-04-10
 
 ### Changed
