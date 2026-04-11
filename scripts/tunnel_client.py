@@ -14,6 +14,7 @@ import sys
 import time
 import urllib.request
 import urllib.error
+import re
 from pathlib import Path
 
 # Port where map (tar1090) and stats (graphs1090) are served; aggregator uses Host header for proxy
@@ -65,6 +66,27 @@ def read_env():
     return out
 
 
+def sanitize_feeder_id(raw_name):
+    """Strictly sanitize ID to match Aggregator expectations:
+    1. Extract part before piper |
+    2. Lowercase and replace spaces/underscores with dashes
+    3. Replace any non-alphanumeric (except - and _) with dashes
+    4. Collapse multiple dashes and strip them
+    """
+    if not raw_name:
+        return "feeder"
+    # 1. Take part before versioning pip |
+    s = raw_name.split("|")[0].strip()
+    # 2. Lowercase and initial dash conversion
+    s = s.lower().replace(" ", "-").replace("_", "-")
+    # 3. Replace any char NOT in [a-z0-9_-] with a dash
+    s = re.sub(r"[^a-z0-9\-_]", "-", s)
+    # 4. Collapse multiple consecutive dashes into one
+    s = re.sub(r"-+", "-", s)
+    # 5. Strip leading and trailing dashes
+    return s.strip("-")
+
+
 def get_config():
     """Return (tunnel_url, feeder_id). If tunnel_url is falsy, tunnel is disabled.
     Default: use TAKNET_PS_SERVER_HOST_FALLBACK (public) so tunnel works without NetBird.
@@ -85,14 +107,15 @@ def get_config():
     # Append /tunnel if no path
     if url.rstrip("/").endswith(("com", "net", "org")) or "/" not in url.split("//", 1)[-1]:
         url = url.rstrip("/") + "/tunnel"
-    feeder_id = (env.get("TUNNEL_FEEDER_ID") or env.get("MLAT_SITE_NAME") or "").strip()
-    if not feeder_id:
+        
+    raw_id = (env.get("TUNNEL_FEEDER_ID") or env.get("MLAT_SITE_NAME") or "").strip()
+    if not raw_id:
         try:
-            feeder_id = socket.gethostname() or "feeder"
+            raw_id = socket.gethostname() or "feeder"
         except Exception:
-            feeder_id = "feeder"
-    # Sanitize for URL path: replace spaces and underscores with dashes for aggregator compliance
-    feeder_id = feeder_id.replace(" ", "-").replace("_", "-").lower()
+            raw_id = "feeder"
+            
+    feeder_id = sanitize_feeder_id(raw_id)
     return url, feeder_id
 
 

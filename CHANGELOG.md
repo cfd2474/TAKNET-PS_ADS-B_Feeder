@@ -1,3 +1,9 @@
+## v3.0.35 — 2026-04-10
+
+### Changed
+- Strict Web Tunnel ID sanitization and compliance
+
+---
 ## v3.0.34 — 2026-04-10
 
 ### Changed
