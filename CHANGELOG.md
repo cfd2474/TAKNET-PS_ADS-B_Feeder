@@ -1,3 +1,9 @@
+## v3.0.32 — 2026-04-10
+
+### Changed
+- Fixed refresh button and added status cache-busting
+
+---
 ## v3.0.31 — 2026-04-10
 
 ### Changed

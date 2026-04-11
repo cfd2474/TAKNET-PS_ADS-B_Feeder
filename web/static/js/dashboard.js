@@ -30,8 +30,9 @@ const BOOTSTRAP_FETCH_MS = 90000;
 
 async function fetchBootstrap() {
     const t0 = performance.now();
+    const t = Date.now();
     const attempt = async () => {
-        const resp = await fetchWithTimeout('/api/dashboard/bootstrap', {}, BOOTSTRAP_FETCH_MS);
+        const resp = await fetchWithTimeout(`/api/dashboard/bootstrap?t=${t}`, {}, BOOTSTRAP_FETCH_MS);
         if (!resp.ok) {
             throw new Error(`bootstrap ${resp.status}`);
         }
@@ -512,7 +513,8 @@ async function pollSystemHealth() {
     if (healthPollInFlight) return;
     healthPollInFlight = true;
     try {
-        const resp = await fetch('/api/system/health');
+        const t = Date.now();
+        const resp = await fetch(`/api/system/health?t=${t}`);
         if (resp.ok) {
             const data = await resp.json();
             renderSystemHealth(data);
@@ -528,7 +530,8 @@ async function pollSystemEvents() {
     if (eventsPollInFlight) return;
     eventsPollInFlight = true;
     try {
-        const resp = await fetch('/api/system/events');
+        const t = Date.now();
+        const resp = await fetch(`/api/system/events?t=${t}`);
         if (resp.ok) {
             const data = await resp.json();
             renderSystemEvents(data);
@@ -684,4 +687,21 @@ function initMobileFeederPolling() {
     setInterval(poll, 5000);
 }
 
+async function refreshDashboard() {
+    if (typeof showStatus === 'function') {
+        showStatus('Refreshing dashboard...', 'info');
+    }
+    try {
+        await pollDashboard();
+        if (typeof showStatus === 'function') {
+            showStatus('✓ Dashboard refreshed', 'success');
+        }
+    } catch (e) {
+        if (typeof showStatus === 'function') {
+            showStatus('Error: ' + e.message, 'error');
+        }
+    }
+}
+
+window.refreshDashboard = refreshDashboard;
 window.initDashboard = initDashboard;

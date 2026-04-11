@@ -3987,7 +3987,9 @@ def api_dashboard_bootstrap():
     except Exception:
         results['airplaneslive_stats'] = {'enabled': True, 'success': False}
 
-    return jsonify(results)
+    response = jsonify(results)
+    response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+    return response
 
 @app.route('/api/service/<service_name>/state', methods=['GET'])
 def api_service_state(service_name):
@@ -5127,21 +5129,25 @@ def get_update_status():
 def api_system_health():
     """Return current system health and failure state"""
     state = load_health_state()
-    return jsonify({
+    response = jsonify({
         'success': True,
         'manual_correction_required': state.get('manual_correction_required', False),
         'reboot_count': state.get('reboot_count', 0),
         'consecutive_failures': state.get('consecutive_failures', {})
     })
+    response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+    return response
 
 @app.route('/api/system/events')
 def api_system_events():
     """Return recent health and system events"""
     state = load_health_state()
-    return jsonify({
+    response = jsonify({
         'success': True,
         'events': state.get('events', [])
     })
+    response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+    return response
 
 @app.route('/api/system/reboot', methods=['POST'])
 def api_system_reboot():
@@ -5285,7 +5291,8 @@ if __name__ == '__main__':
                                         state['manual_correction_required'] = True
                                         save_health_state(state)
                     elif health == 'healthy':
-                        current_failures[svc] = 0
+                        if svc in current_failures:
+                            del current_failures[svc]
                         state[f'{svc}_restarts'] = 0
                     else:
                         # Starting or unknown - don't increment failure yet
