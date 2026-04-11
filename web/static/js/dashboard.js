@@ -494,9 +494,14 @@ async function pollDashboard() {
         return;
     }
     pollInFlight = true;
-    const data = await fetchBootstrap();
-    applyBootstrap(data);
-    pollInFlight = false;
+    try {
+        const data = await fetchBootstrap();
+        applyBootstrap(data);
+    } catch (e) {
+        console.error('Error polling dashboard:', e);
+    } finally {
+        pollInFlight = false;
+    }
     
     // Also poll health and events
     pollSystemHealth();

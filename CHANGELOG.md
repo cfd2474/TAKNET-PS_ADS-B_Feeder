@@ -1,3 +1,9 @@
+## v3.0.31 — 2026-04-10
+
+### Changed
+- Fixed dashboard refresh button and improved watchdog state persistence
+
+---
 ## v3.0.30 — 2026-04-10
 
 ### Changed

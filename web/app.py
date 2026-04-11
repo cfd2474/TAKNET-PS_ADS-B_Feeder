@@ -5237,32 +5237,26 @@ if __name__ == '__main__':
                         health = 'unknown'
 
                     if health == 'unhealthy':
-                        # Double-check if data is actually flowing before incrementing failure
+                        # Functional override: check if data is actually flowing before considering it a failure
                         is_actually_feeding = False
                         try:
                             if svc == 'fr24':
-                                stats = build_fr24_stats()
-                                is_actually_feeding = stats.get('data_feed_active', False)
+                                is_actually_feeding = build_fr24_stats().get('data_feed_active', False)
                             elif svc == 'piaware':
-                                stats = build_piaware_stats()
-                                is_actually_feeding = stats.get('data_feed_active', False)
+                                is_actually_feeding = build_piaware_stats().get('data_feed_active', False)
                             elif svc == 'adsbhub':
-                                stats = build_adsbhub_stats()
-                                is_actually_feeding = stats.get('data_feed_active', False)
+                                is_actually_feeding = build_adsbhub_stats().get('data_feed_active', False)
                         except Exception:
                             pass
 
                         if is_actually_feeding:
-                            # Data is flowing, so the Docker health check must be brittle or lagging.
-                            # Force status to healthy to clear 'Retrying' badges and reset counters.
                             health = 'healthy'
-                            current_failures[svc] = 0
-                            state[f'{svc}_restarts'] = 0
-                        else:
-                            any_unhealthy = True
-                            all_checked_healthy = False
-                            count = current_failures.get(svc, 0) + 1
-                            current_failures[svc] = count
+
+                    if health == 'unhealthy':
+                        any_unhealthy = True
+                        all_checked_healthy = False
+                        count = current_failures.get(svc, 0) + 1
+                        current_failures[svc] = count
                         
                         if count >= FAILURE_THRESHOLD:
                             # Time to take action
