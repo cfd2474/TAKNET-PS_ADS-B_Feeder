@@ -274,22 +274,32 @@ def inject_csp_to_html(resp_body, headers):
         
     csp_tag = b'<meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">'
     
-    # Search for <head> (case-insensitive)
-    lower_body = resp_body.lower()
-    idx = lower_body.find(b"<head>")
-    if idx != -1:
-        # Insert exactly after the <head> tag
-        split_point = idx + 6
-        return resp_body[:split_point] + b"\n    " + csp_tag + resp_body[split_point:]
-
-    # Fallback: Search for the opening <html tag and insert after it in a new head if head is missing
-    html_idx = lower_body.find(b"<html")
-    if html_idx != -1:
-        # Find the end of the <html> tag
-        close_idx = resp_body.find(b">", html_idx)
-        if close_idx != -1:
-            split_point = close_idx + 1
-            return resp_body[:split_point] + b"\n<head>\n    " + csp_tag + b"\n</head>" + resp_body[split_point:]
+    # Securely inject after <head> using regex (handles casing, spaces, attributes)
+    try:
+        new_body, count = re.subn(
+            b'(<head[^>]*>)', 
+            rb'\1\n    ' + csp_tag, 
+            resp_body, 
+            count=1, 
+            flags=re.IGNORECASE
+        )
+        if count > 0:
+            log(f"[tunnel-csp] Injected upgrade-insecure-requests into {content_type}")
+            return new_body
+            
+        # Fallback: Inject after <html> if <head> is missing
+        new_body, count = re.subn(
+            b'(<html[^>]*>)', 
+            rb'\1\n<head>\n    ' + csp_tag + b'\n</head>', 
+            resp_body, 
+            count=1, 
+            flags=re.IGNORECASE
+        )
+        if count > 0:
+            log(f"[tunnel-csp] Injected upgrade-insecure-requests (new head) into {content_type}")
+            return new_body
+    except Exception as e:
+        log(f"[tunnel-csp] Error during injection: {e}")
         
     return resp_body
 

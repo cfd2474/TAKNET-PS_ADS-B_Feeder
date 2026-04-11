@@ -1,3 +1,9 @@
+## v3.0.43 — 2026-04-10
+
+### Changed
+- Hardened CSP injection with regex and logging
+
+---
 ## v3.0.42 — 2026-04-10
 
 ### Changed

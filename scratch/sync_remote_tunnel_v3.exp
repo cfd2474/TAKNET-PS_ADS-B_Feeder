@@ -1,0 +1,40 @@
+#!/usr/bin/expect -f
+set timeout 120
+
+# Read the local script content
+set f [open "scripts/tunnel_client.py" r]
+set script_content [read $f]
+close $f
+
+spawn ssh -o StrictHostKeyChecking=no remote@100.85.99.37
+expect {
+    "password:" {
+        send "adsb\n"
+        exp_continue
+    }
+    "Please do the SSO login" {
+        send_user "\n>>> AUTHORIZE SSO NOW (10s PAUSE) <<<\n"
+        sleep 10
+        exp_continue
+    }
+    -re {[\$#] } {
+        send_user "Connected.\n"
+    }
+}
+
+# Write and move in one go using sudo -S
+send "echo 'adsb' | sudo -S tee /opt/adsb/scripts/tunnel_client.py > /dev/null <<'EOF_TUNNEL'\n"
+send "$script_content"
+send "\nEOF_TUNNEL\n"
+expect -re {[\$#] }
+
+# Restart service
+send "echo 'adsb' | sudo -S systemctl restart tunnel-client\n"
+expect -re {[\$#] }
+
+# Verify version
+send "cat /opt/adsb/VERSION\n"
+expect -re {[\$#] }
+
+send "exit\n"
+expect eof

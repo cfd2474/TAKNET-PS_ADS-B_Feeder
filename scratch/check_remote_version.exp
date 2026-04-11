@@ -1,0 +1,25 @@
+#!/usr/bin/expect -f
+set timeout 120
+spawn ssh -o StrictHostKeyChecking=no remote@100.85.99.37
+expect {
+    "password:" {
+        send "adsb\n"
+        exp_continue
+    }
+    "Please do the SSO login" {
+        send_user "\n>>> AUTHORIZE SSO NOW (10s PAUSE) <<<\n"
+        sleep 10
+        exp_continue
+    }
+    -re {[\$#] } {
+        send_user "Connected.\n"
+    }
+}
+send "cat /opt/adsb/VERSION\n"
+expect -re {[\$#] }
+send "grep \"inject_csp\" /opt/adsb/scripts/tunnel_client.py\n"
+expect -re {[\$#] }
+send "grep \"accept-encoding\" /opt/adsb/scripts/tunnel_client.py\n"
+expect -re {[\$#] }
+send "exit\n"
+expect eof

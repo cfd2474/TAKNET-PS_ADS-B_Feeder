@@ -1,0 +1,41 @@
+#!/usr/bin/expect -f
+set timeout 120
+spawn scp -o StrictHostKeyChecking=no scripts/tunnel_client.py remote@100.85.99.37:/tmp/tunnel_client.py
+expect {
+    "password:" {
+        send "adsb\n"
+        exp_continue
+    }
+    "Please do the SSO login" {
+        send_user "\n>>> AUTHORIZE SSO NOW (10s PAUSE) <<<\n"
+        sleep 10
+        exp_continue
+    }
+}
+expect eof
+
+spawn ssh -o StrictHostKeyChecking=no remote@100.85.99.37
+expect {
+    "password:" {
+        send "adsb\n"
+        exp_continue
+    }
+    "Please do the SSO login" {
+        send_user "\n>>> AUTHORIZE SSO NOW (10s PAUSE) <<<\n"
+        sleep 10
+        exp_continue
+    }
+}
+expect -re {[\$#] }
+send "sudo mv /tmp/tunnel_client.py /opt/adsb/scripts/tunnel_client.py\n"
+expect {
+    "password for remote:" {
+        send "adsb\n"
+        exp_continue
+    }
+    -re {[\$#] }
+}
+send "sudo systemctl restart tunnel-client\n"
+expect -re {[\$#] }
+send "exit\n"
+expect eof

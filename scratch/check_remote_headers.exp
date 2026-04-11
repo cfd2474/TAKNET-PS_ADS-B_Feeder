@@ -1,0 +1,25 @@
+#!/usr/bin/expect -f
+set timeout 120
+spawn ssh -o StrictHostKeyChecking=no remote@100.85.99.37
+expect {
+    "password:" {
+        send "adsb\n"
+        exp_continue
+    }
+    "Please do the SSO login" {
+        send_user "\n>>> AUTHORIZE SSO NOW (10s PAUSE) <<<\n"
+        sleep 10
+        exp_continue
+    }
+    -re {[\$#] } {
+        send_user "Connected.\n"
+    }
+}
+send "curl -I http://localhost:8080/graphs1090/\n"
+expect -re {[\$#] }
+send "curl -I http://localhost:8080/\n"
+expect -re {[\$#] }
+send "curl -s http://localhost:8080/graphs1090/ | head -n 20\n"
+expect -re {[\$#] }
+send "exit\n"
+expect eof
