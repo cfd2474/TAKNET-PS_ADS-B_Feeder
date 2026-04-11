@@ -28,6 +28,13 @@ app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1, x_for=1, x_port=1)
 app.config['TEMPLATES_AUTO_RELOAD'] = True
 app.jinja_env.auto_reload = True
 
+@app.context_processor
+def inject_tunnel_status():
+    """Inject is_tunneled boolean into all templates for conditional UI/Security."""
+    # Presence of X-Tunnel-Target indicates request is from the aggregator tunnel client
+    is_tunneled = 'X-Tunnel-Target' in request.headers
+    return dict(is_tunneled=is_tunneled)
+
 # Version information - read from VERSION file
 def get_version():
     """Read version from VERSION file"""

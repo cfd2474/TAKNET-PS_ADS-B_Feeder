@@ -1,3 +1,9 @@
+## v3.0.40 — 2026-04-10
+
+### Changed
+- Made CSP conditional to restore direct IP access while maintaining tunnel security
+
+---
 ## v3.0.39 — 2026-04-10
 
 ### Changed
