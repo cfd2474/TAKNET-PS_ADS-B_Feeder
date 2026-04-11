@@ -29,7 +29,8 @@ except ImportError:
 ENV_FILE = Path("/opt/adsb/config/.env")
 STATUS_FILE = Path("/opt/adsb/var/tunnel-status.json")
 LOCAL_HOST = "127.0.0.1"
-LOCAL_PORT = 80
+# Local Flask app runs on 5000; hitting it directly avoids nginx proxying issues for tunneled requests
+LOCAL_PORT = 5000
 # Local tar1090/graphs1090 stack (map/stats) served on 8080
 TAR1090_HOST = "127.0.0.1"
 TAR1090_PORT = WEB_UI_PORT
@@ -90,8 +91,8 @@ def get_config():
             feeder_id = socket.gethostname() or "feeder"
         except Exception:
             feeder_id = "feeder"
-    # Sanitize for URL path: replace spaces with dashes
-    feeder_id = feeder_id.replace(" ", "-").lower()
+    # Sanitize for URL path: replace spaces and underscores with dashes for aggregator compliance
+    feeder_id = feeder_id.replace(" ", "-").replace("_", "-").lower()
     return url, feeder_id
 
 

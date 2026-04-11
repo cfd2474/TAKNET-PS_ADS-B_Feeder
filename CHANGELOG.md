@@ -1,3 +1,9 @@
+## v3.0.34 — 2026-04-10
+
+### Changed
+- Web Tunnel compliance: normalized feeder_id and synchronized dashboard port
+
+---
 ## v3.0.33 — 2026-04-10
 
 ### Changed
