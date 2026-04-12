@@ -309,10 +309,10 @@
                         </small>
                     </div>
                     
-                    <!-- Smart Single Field -->
+                    <!-- Smart Single Field (1090 MHz) -->
                     <div class="config-section">
                         <label class="config-label" for="fr24-key-or-email">
-                            Sharing Key or Email
+                            Sharing Key or Email (1090 MHz)
                         </label>
                         <input 
                             type="text" 
@@ -322,7 +322,24 @@
                             value="{{ fr24_key }}"
                         >
                         <p class="config-hint">
-                            Already have a key? Paste it here. Need a key? Enter your email and we'll register you.
+                            Already have an ADS-B key? Paste it here. Need one? Enter your email and we'll register you.
+                        </p>
+                    </div>
+
+                    <!-- UAT Field (978 MHz) -->
+                    <div class="config-section">
+                        <label class="config-label" for="fr24-key-uat">
+                            UAT Sharing Key (978 MHz - Optional)
+                        </label>
+                        <input 
+                            type="text" 
+                            id="fr24-key-uat" 
+                            class="config-input" 
+                            placeholder="Enter 978 MHz sharing key (optional)"
+                            value="{{ fr24_key_uat }}"
+                        >
+                        <p class="config-hint">
+                            If you have a separate sharing key for UAT (978 MHz), enter it here.
                         </p>
                     </div>
                     
@@ -785,10 +802,14 @@
             showStatusModal('Starting FR24 feed...');
             
             try {
+                const fr24KeyUat = document.getElementById('fr24-key-uat').value.trim();
                 const response = await fetch('/api/feeds/fr24/setup', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ feeder_id: sharingKey })
+                    body: JSON.stringify({ 
+                        feeder_id: sharingKey,
+                        feeder_id_uat: fr24KeyUat
+                    })
                 });
                 
                 const data = await response.json();

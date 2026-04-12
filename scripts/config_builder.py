@@ -437,6 +437,8 @@ def build_config(env_vars):
     
     # 978 MHz UAT Input (if dump978 enabled)
     if env_vars.get('DUMP978_ENABLED', 'false').lower() == 'true':
+        # Use type uat_in for raw dump978 output on port 30978
+        # readsb will blend this into the main aircraft list automatically
         config_parts.append("uat_in,dump978,30978,uat_in")
         print("✓ 978 MHz UAT (dump978 container)")
     
@@ -491,9 +493,10 @@ def build_dump978_service(env_vars):
         ])
     else:
         # RTL-SDR: Map USB bus and use device index
+        # Modern images prefer DUMP978_RTLSDR_DEVICE for specific SDR selection
         service['devices'] = ['/dev/bus/usb:/dev/bus/usb']
         service['environment'].extend([
-            f'DUMP978_DEVICE={sdr_978_path}',
+            f'DUMP978_RTLSDR_DEVICE={sdr_978_path}',
             f'DUMP978_SDR_GAIN={sdr_978_gain}',
             'DUMP978_SDR_AGC=off',
             'DUMP978_JSON_STDOUT=true'
@@ -686,6 +689,8 @@ def build_docker_compose(env_vars):
             'TAR1090_FLIGHTAWARELINKS=true',
             'TAR1090_SITESHOW=true',
             f'ULTRAFEEDER_CONFIG={ultrafeeder_config}',
+            f'URL_978=http://dump978/skyaware978' if env_vars.get("DUMP978_ENABLED", "false").lower() == "true" else "UAT_DISABLED=true",
+            f'ENABLE_978={"yes" if env_vars.get("DUMP978_ENABLED", "false").lower() == "true" else "no"}',
             'PROMETHEUS_ENABLE=true'
         ],
         'devices': ['/dev/bus/usb:/dev/bus/usb'],
@@ -775,6 +780,11 @@ def build_docker_compose(env_vars):
         if fr24_key:
             fr24_env.insert(2, f'FR24KEY={fr24_key}')
         
+        # Add UAT key if provided (from FR24_KEY_UAT in .env)
+        fr24_key_uat = env_vars.get('FR24_KEY_UAT', '').strip()
+        if fr24_key_uat:
+            fr24_env.append(f'FR24KEY_UAT={fr24_key_uat}')
+        
         compose['services']['fr24'] = {
             'image': 'ghcr.io/sdr-enthusiasts/docker-flightradar24:latest',
             'container_name': 'fr24',
@@ -825,7 +835,9 @@ def build_docker_compose(env_vars):
                 'MLAT_RESULTS=yes',
                 f'LAT={feeder_lat}',
                 f'LON={feeder_long}',
-                f'ALT={feeder_alt_m}'
+                f'ALT={feeder_alt_m}',
+                f'UAT_RECEIVER_TYPE={"relay" if env_vars.get("DUMP978_ENABLED", "false").lower() == "true" else "none"}',
+                f'UAT_RECEIVER_HOST={"dump978" if env_vars.get("DUMP978_ENABLED", "false").lower() == "true" else "none"}'
             ],
             'tmpfs': [
                 '/run:exec,size=64M',

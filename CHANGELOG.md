@@ -1,3 +1,14 @@
+## v3.0.46 — 2026-04-12
+
+### Added
+- **FR24 UAT Key Support**: Added a dedicated field in the UI and backend support for optional FlightRadar24 UAT sharing keys (FR24KEY_UAT).
+
+### Changed
+- **UAT Restoration**: Fixed 978 MHz UAT data transmission by updating `dump978` to use `DUMP978_RTLSDR_DEVICE` for RTL-SDRs.
+- **Data Blending**: Consolidated ADS-B and UAT data into a single unified stream to ensure complete tracking on the TAKNET-PS aggregator.
+- **UI Integration**: Added `URL_978` and `ENABLE_978` to Ultrafeeder for local map visualization of UAT aircraft.
+
+---
 ## v3.0.45 — 2026-04-10
 
 ### Changed

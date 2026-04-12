@@ -1485,12 +1485,15 @@ def api_fr24_setup():
     try:
         data = request.json
         feeder_id = data.get('feeder_id', '').strip()
+        feeder_id_uat = data.get('feeder_id_uat', '').strip()
         
         if not feeder_id:
             return jsonify({'success': False, 'message': 'Feeder ID is required'})
         
-        # Update .env with FR24 key
+        # Update .env with FR24 keys
         update_env_var('FR24_KEY', feeder_id)
+        if feeder_id_uat:
+            update_env_var('FR24_KEY_UAT', feeder_id_uat)
         update_env_var('FR24_ENABLED', 'true')
         
         # Rebuild config to write FR24KEY actual value into docker-compose.yml
@@ -2310,6 +2313,7 @@ def feeds_account_required():
     
     return render_template('feeds-account-required.html', 
                          fr24_key=fr24_key,
+                         fr24_key_uat=env.get('FR24_KEY_UAT', ''),
                          fr24_enabled=fr24_enabled,
                          fr24_status=fr24_status,
                          piaware_feeder_id=piaware_feeder_id,
