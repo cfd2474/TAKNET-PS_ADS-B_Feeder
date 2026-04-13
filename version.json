@@ -1,11 +1,11 @@
 {
-  "version": "3.0.61",
+  "version": "3.0.62",
   "release_date": "2026-04-13",
-  "release_name": "Recursive Proxy Support",
+  "release_name": "Aggregator Verification",
   "download_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh",
   "changelog_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/CHANGELOG.md",
   "minimum_version": "2.40.0",
   "breaking_changes": false,
-  "release_notes": "Upgraded the community feeder proxy to a recursive implementation. This version correctly handles sub-paths for assets (CSS, JS, images) and rewrites HTML links for airplanes.live, ensuring a functional and styled dashboard even when viewed remotely.",
+  "release_notes": "Implemented native backend status checks for community aggregators. The dashboard now displays a 'Verified' checkmark next to each service (adsb.lol, adsb.fi, airplanes.live, adsbexchange) if the backend confirms the aggregator is receiving data from the feeder's IP.",
   "update_priority": 3
 }

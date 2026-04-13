@@ -1,3 +1,9 @@
+## v3.0.62 — 2026-04-13
+
+### Added
+- **Native Aggregator Verification**: Implemented a server-side status check for community aggregators (**adsb.lol**, **adsb.fi**, **airplanes.live**, **adsbexchange**). The dashboard now displays a **✅ Verified** badge next to each service name if the feeder's backend confirms the aggregator is successfully receiving data from its IP. This provides a robust "Source of Truth" even when external dashboards are unreachable.
+
+---
 ## v3.0.61 — 2026-04-13
 
 ### Fixed
