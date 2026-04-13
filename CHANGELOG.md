@@ -1,3 +1,9 @@
+## v3.0.64 — 2026-04-13
+
+### Fixed
+- **Dashboard 500 Error**: Emergency hotfix to restore critical module imports (`socket`, `urllib.request`, `uuid`) that were accidentally removed during the v3.0.63 cleanup. This resolves the Internal Server Error when loading the dashboard.
+
+---
 ## v3.0.63 — 2026-04-13
 
 ### Fixed

@@ -1,11 +1,11 @@
 {
-  "version": "3.0.63",
+  "version": "3.0.64",
   "release_date": "2026-04-13",
-  "release_name": "Proxy Base Fix",
+  "release_name": "Emergency Hotfix",
   "download_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh",
   "changelog_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/CHANGELOG.md",
   "minimum_version": "2.40.0",
   "breaking_changes": false,
-  "release_notes": "Refined the community feeder proxy to include <base> tag injection. This fixes background AJAX/Fetch status checks for airplanes.live by correctly routing all sub-resource requests through the feeder backend. Removed experimental aggregator status verification in favor of local service health reporting.",
+  "release_notes": "Emergency hotfix to resolve a 500 Internal Server Error on the dashboard caused by missing dependencies in the v3.0.63 cleanup.",
   "update_priority": 3
 }
