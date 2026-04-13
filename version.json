@@ -1,11 +1,11 @@
 {
-  "version": "3.0.62",
+  "version": "3.0.63",
   "release_date": "2026-04-13",
-  "release_name": "Aggregator Verification",
+  "release_name": "Proxy Base Fix",
   "download_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh",
   "changelog_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/CHANGELOG.md",
   "minimum_version": "2.40.0",
   "breaking_changes": false,
-  "release_notes": "Implemented native backend status checks for community aggregators. The dashboard now displays a 'Verified' checkmark next to each service (adsb.lol, adsb.fi, airplanes.live, adsbexchange) if the backend confirms the aggregator is receiving data from the feeder's IP.",
+  "release_notes": "Refined the community feeder proxy to include <base> tag injection. This fixes background AJAX/Fetch status checks for airplanes.live by correctly routing all sub-resource requests through the feeder backend. Removed experimental aggregator status verification in favor of local service health reporting.",
   "update_priority": 3
 }

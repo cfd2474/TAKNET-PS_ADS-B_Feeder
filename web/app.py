@@ -14,75 +14,6 @@ import json
 import concurrent.futures
 import threading
 import time
-import uuid
-import socket
-import urllib.request
-import urllib.parse
-import time
-
-# Global cache for aggregator status to avoid rate limiting (in-memory)
-AGGREGATOR_STATUS_CACHE = {}
-# Cache duration in seconds (2 minutes for external status)
-AGGREGATOR_CACHE_TTL = 120
-
-def check_one_aggregator_status(service, feeder_uuid=None):
-    """
-    Check the aggregator's view of the feeder by performing a server-side fetch.
-    Returns: 'running', 'stopped', or 'unknown'
-    """
-    now = time.time()
-    if service in AGGREGATOR_STATUS_CACHE:
-        entry = AGGREGATOR_STATUS_CACHE[service]
-        if now - entry['timestamp'] < AGGREGATOR_CACHE_TTL:
-            return entry['status']
-
-    urls = {
-        'adsblol': 'https://api.adsb.lol/0/me',
-        'adsbfi': 'https://api.adsb.fi/v1/myip',
-        'airplaneslive': 'https://airplanes.live/myfeed/',
-        'adsbx': f'https://www.adsbexchange.com/api/feeders/?feed={feeder_uuid}' if feeder_uuid else 'https://www.adsbexchange.com/myip/'
-    }
-    
-    if service not in urls:
-        return 'unknown'
-        
-    status = 'stopped'
-    try:
-        url = urls[service]
-        # Use a realistic User-Agent
-        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'}
-        req = urllib.request.Request(url, headers=headers)
-        with urllib.request.urlopen(req, timeout=5) as response:
-            content = response.read().decode('utf-8', errors='ignore')
-            
-            if service == 'adsblol':
-                if '{"connected":' in content.lower() or '"stats":' in content.lower():
-                    status = 'running'
-            
-            elif service == 'adsbfi':
-                if '"active":true' in content.lower() or '"found":true' in content.lower():
-                    status = 'running'
-                
-            elif service == 'airplaneslive':
-                # Parse HTML for success indicators
-                if 'Beast: Connected' in content or 'MLAT: Connected' in content:
-                    status = 'running'
-                elif 'no beast connection found' in content.lower():
-                    status = 'stopped'
-                elif 'Feed Information' in content:
-                    # If we see the header but the JS check hasn't run, 
-                    # we can't be sure, but usually 'checking for feeder stats' is a good sign
-                    status = 'running' if 'checking for feeder' in content.lower() else 'stopped'
-                
-            elif service == 'adsbx':
-                if '"uuid":' in content.lower() or 'online' in content.lower():
-                    status = 'running'
-                
-    except Exception:
-        status = 'unknown'
-        
-    AGGREGATOR_STATUS_CACHE[service] = {'status': status, 'timestamp': now}
-    return status
 from werkzeug.middleware.proxy_fix import ProxyFix
 
 app = Flask(__name__)
@@ -2308,7 +2239,15 @@ def stats_proxy(service, path=''):
             if 'text/html' in mime_type:
                 html = content.decode('utf-8', errors='ignore')
                 
-                # Rewrite URLs to go back through our proxy
+                # 1. Inject base tag to fix background AJAX and relative path resolution
+                # This is critical for airplaneslive status checks
+                base_tag = f'<base href="/stats/proxy/{service}/">'
+                if '<head>' in html:
+                    html = html.replace('<head>', f'<head>{base_tag}')
+                else:
+                    html = f'{base_tag}{html}'
+
+                # 2. Rewrite URLs to go back through our proxy
                 if service == 'airplaneslive':
                     # Replace absolute https://airplanes.live with /stats/proxy/airplaneslive
                     html = html.replace('https://airplanes.live', f'/stats/proxy/{service}')
@@ -4141,17 +4080,13 @@ def api_dashboard_bootstrap():
             # Proxy through feeder to use feeder's public IP
             stats_url = "/stats/proxy/airplaneslive"
             
-        # Fetch remote aggregator status (as seen by the service)
-        remote_status = check_one_aggregator_status(service_name, feeder_uuid)
-            
         return {
             'enabled': True,
             'success': True,
             'data_feed_active': is_active,
             'mlat_active': is_active,
             'mlat_enabled': service_name != 'adsbhub',
-            'stats_url': stats_url,
-            'remote_status': remote_status
+            'stats_url': stats_url
         }
 
     results = {}

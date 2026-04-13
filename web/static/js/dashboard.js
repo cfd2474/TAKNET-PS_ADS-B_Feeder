@@ -277,20 +277,6 @@ function applySingleFeedStats(prefix, stats) {
     } else {
         mlatCol.innerHTML = '<span style="color: #94a3b8; font-size: 0.8em; cursor: help;" title="MLAT not available in this container by design">n/a</span>';
     }
-
-    // Update verified status badge from backend check
-    const verifiedEl = document.getElementById(`${prefix}-verified`);
-    if (verifiedEl) {
-        if (stats.remote_status === 'running') {
-            verifiedEl.innerHTML = '<span style="color: #10b981; font-size: 0.9em; margin-left: 5px; cursor: help;" title="Aggregator Verified: Receiving Data ✅">✅</span>';
-        } else if (stats.remote_status === 'stopped') {
-            verifiedEl.innerHTML = '<span style="color: #ef4444; font-size: 0.9em; margin-left: 5px; cursor: help;" title="Aggregator Verified: No Data Detected ❌">❌</span>';
-        } else if (stats.remote_status === 'unknown') {
-            verifiedEl.innerHTML = '<span style="color: #94a3b8; font-size: 0.9em; margin-left: 5px; cursor: help;" title="Aggregator Verified: Status Unknown ❓">❓</span>';
-        } else {
-            verifiedEl.innerHTML = '';
-        }
-    }
 }
 
 function applyFeedStats(feedStats) {

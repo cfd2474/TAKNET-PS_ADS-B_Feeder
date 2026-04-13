@@ -1,3 +1,12 @@
+## v3.0.63 — 2026-04-13
+
+### Fixed
+- **Airplanes.Live Proxy**: Implemented `<base>` tag injection in the recursive proxy. This resolves the "No beast connection found" error by ensuring that background AJAX/Fetch requests for status data are correctly routed through the feeder's proxy, allowing the aggregator to see the feeder's public IP.
+
+### Changed
+- **Removed Aggregator Verification**: Removed the experimental "Verified" badge system in favor of existing local service health monitoring to eliminate confusing false-negative indicators.
+
+---
 ## v3.0.62 — 2026-04-13
 
 ### Added
