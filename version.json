@@ -1,11 +1,11 @@
 {
-  "version": "3.0.56",
+  "version": "3.0.57",
   "release_date": "2026-04-13",
-  "release_name": "Network Status Enhancement",
+  "release_name": "ADSBExchange Link Reversal",
   "download_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh",
   "changelog_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/CHANGELOG.md",
   "minimum_version": "2.40.0",
   "breaking_changes": false,
-  "release_notes": "Added the feeder's public IP address to the Network Status section of the dashboard for easier identification and external stats confirmation.",
+  "release_notes": "Reverted ADSBExchange link to the UUID-based pattern (?feed=UUID) for improved statistics reliability.",
   "update_priority": 3
 }

@@ -1,3 +1,9 @@
+## v3.0.57 — 2026-04-13
+
+### Changed
+- **ADSBExchange Link**: Reverted ADSBExchange stats link to the UUID-based pattern (`https://www.adsbexchange.com/api/feeders/?feed={uuid}`) for improved reliability over the IP-based detection page.
+
+---
 ## v3.0.56 — 2026-04-13
 
 ### Added

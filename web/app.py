@@ -3995,8 +3995,8 @@ def api_dashboard_bootstrap():
         link_id = feeder_uuid if feeder_uuid else feeder_id
         
         if service_name == 'adsbx':
-            # v3.0.04 pattern: https://www.adsbexchange.com/myip/
-            stats_url = "https://www.adsbexchange.com/myip/"
+            # Reverted to UUID pattern: https://www.adsbexchange.com/api/feeders/?feed=UUID
+            stats_url = f"https://www.adsbexchange.com/api/feeders/?feed={link_id}"
         elif service_name == 'adsbfi':
             # v3.0.04 pattern: https://api.adsb.fi/v1/myip
             stats_url = "https://api.adsb.fi/v1/myip"
