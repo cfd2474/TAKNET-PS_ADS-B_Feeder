@@ -1,3 +1,9 @@
+## v3.0.56 — 2026-04-13
+
+### Added
+- **Dashboard Network Stats**: Added the feeder's public IP address to the Network Status section of the dashboard for easier identification and external stats verification.
+
+---
 ## v3.0.55 — 2026-04-13
 
 ### Changed

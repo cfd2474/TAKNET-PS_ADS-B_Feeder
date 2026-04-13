@@ -78,6 +78,11 @@ function renderNetworkStatus(networkStatus) {
             statusText.style.color = '#ef4444';
         }
     }
+
+    const publicIpCell = document.getElementById('public-ip-cell');
+    if (publicIpCell && networkStatus.public_ip) {
+        publicIpCell.textContent = networkStatus.public_ip;
+    }
 }
 
 const CORE_SERVICE_LABELS = {

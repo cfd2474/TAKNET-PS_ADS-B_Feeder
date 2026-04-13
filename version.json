@@ -1,11 +1,11 @@
 {
-  "version": "3.0.55",
+  "version": "3.0.56",
   "release_date": "2026-04-13",
-  "release_name": "Legacy Link Restoration",
+  "release_name": "Network Status Enhancement",
   "download_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh",
   "changelog_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/CHANGELOG.md",
   "minimum_version": "2.40.0",
   "breaking_changes": false,
-  "release_notes": "Restored community feeder links for ADSBExchange, adsb.fi, adsb.lol, and Airplanes.Live to their legacy v3.0.04 patterns as confirmed working.",
+  "release_notes": "Added the feeder's public IP address to the Network Status section of the dashboard for easier identification and external stats confirmation.",
   "update_priority": 3
 }

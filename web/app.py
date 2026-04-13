@@ -3811,9 +3811,23 @@ def api_dashboard_bootstrap():
                 s.close()
             return ip
 
+        def get_public_ip():
+            try:
+                # Use a reliable service for public IP detection
+                with urllib.request.urlopen('https://api.ipify.org', timeout=3) as response:
+                    return response.read().decode('utf-8').strip()
+            except Exception:
+                try:
+                    # Fallback
+                    with urllib.request.urlopen('https://ifconfig.me/ip', timeout=3) as response:
+                        return response.read().decode('utf-8').strip()
+                except Exception:
+                    return 'Unknown'
+
         return {
             'internet': check_internet(),
             'ip_address': get_primary_ip(),
+            'public_ip': get_public_ip(),
             'hostname': socket.gethostname(),
         }
 

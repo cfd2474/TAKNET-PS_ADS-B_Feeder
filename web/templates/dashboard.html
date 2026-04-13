@@ -164,6 +164,11 @@
                             </td>
                         </tr>
                         <tr>
+                            <td style="padding: 6px 12px; color: #6b7280;">Public IP</td>
+                            <td id="public-ip-cell" style="padding: 6px 12px; font-weight: 500; color: #374151; font-family: monospace;">{{ network_info.public_ip or 'Loading...' }}</td>
+                            <td colspan="2"></td>
+                        </tr>
+                        <tr>
                             <td style="padding: 6px 12px; color: #6b7280;">Connection Quality</td>
                             <td colspan="3" style="padding: 6px 12px;">
                                 <button type="button" id="btn-connection-quality" class="btn btn-sm" style="background: #6366f1;">
