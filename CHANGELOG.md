@@ -1,3 +1,10 @@
+## v3.0.52 — 2026-04-13
+
+### Fixed
+- **Community Feed Status**: Resolved the "disconnected" issue for accountless feeders (adsbx, adsbfi, adsblol, airplaneslive) by implementing missing backend status logic.
+- **Feeder-Specific Links**: Restored direct links to user-specific statistics pages on community networks by deriving the feeder ID from the `MLAT_SITE_NAME` configuration.
+
+---
 ## v3.0.51 — 2026-04-13
 
 ### Fixed

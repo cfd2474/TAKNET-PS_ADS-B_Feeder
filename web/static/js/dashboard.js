@@ -260,6 +260,12 @@ function applySingleFeedStats(prefix, stats) {
         check.setAttribute('data-status', 'good');
     }
 
+    // Update dynamic stats link if provided
+    const link = document.getElementById(`${prefix}-link`);
+    if (link && stats.stats_url) {
+        link.href = stats.stats_url;
+    }
+
     dataCol.textContent = dataActive ? '+' : '-';
     if (mlatEnabled) {
         mlatCol.textContent = mlatActive ? '+' : '-';

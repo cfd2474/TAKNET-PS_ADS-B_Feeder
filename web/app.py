@@ -3963,6 +3963,37 @@ def api_dashboard_bootstrap():
             'mlat_enabled': False
         }
 
+    def build_community_stats(service_name):
+        env = read_env()
+        enabled_var = f"{service_name.upper()}_ENABLED"
+        if env.get(enabled_var, 'false').lower() != 'true':
+            return {'enabled': False, 'success': False}
+
+        feeder_id = (env.get('MLAT_SITE_NAME') or env.get('TUNNEL_FEEDER_ID') or socket.gethostname() or 'feeder').strip()
+        
+        # All these feeders are integrated into ultrafeeder. 
+        # If ultrafeeder is running and the feeder is enabled, it's 'active'.
+        is_active = get_service_state('ultrafeeder') == 'running'
+        
+        stats_url = '#'
+        if service_name == 'adsbx':
+            stats_url = f"https://www.adsbexchange.com/?feeder={feeder_id}"
+        elif service_name == 'adsbfi':
+            stats_url = f"https://www.adsb.fi/stats/{feeder_id}"
+        elif service_name == 'adsblol':
+            stats_url = f"https://www.adsb.lol/stats/{feeder_id}"
+        elif service_name == 'airplaneslive':
+            stats_url = f"https://www.airplanes.live/stats/{feeder_id}"
+            
+        return {
+            'enabled': True,
+            'success': True,
+            'data_feed_active': is_active,
+            'mlat_active': is_active,
+            'mlat_enabled': service_name != 'adsbhub',
+            'stats_url': stats_url
+        }
+
     results = {}
     # Run only request-context-free checks in threads (Flask views need main thread)
     with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:

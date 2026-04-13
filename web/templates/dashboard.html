@@ -365,7 +365,7 @@
                                 <td style="text-align: center;"><span class="feed-check" id="adsbfi-check" data-status="unknown">✓</span></td>
                                 <td style="text-align: center;" id="adsbfi-data">.</td>
                                 <td style="text-align: center;" id="adsbfi-mlat">.</td>
-                                <td style="text-align: center;"><a href="https://www.adsb.fi" class="feed-link" target="_blank" title="View adsb.fi Stats">🔗</a></td>
+                                <td style="text-align: center;"><a href="https://www.adsb.fi" class="feed-link" id="adsbfi-link" target="_blank" title="View adsb.fi Stats">🔗</a></td>
                             </tr>
                             {% endif %}
                             
@@ -375,7 +375,7 @@
                                 <td style="text-align: center;"><span class="feed-check" id="adsblol-check" data-status="unknown">✓</span></td>
                                 <td style="text-align: center;" id="adsblol-data">.</td>
                                 <td style="text-align: center;" id="adsblol-mlat">.</td>
-                                <td style="text-align: center;"><a href="https://www.adsb.lol" class="feed-link" target="_blank" title="View adsb.lol Stats">🔗</a></td>
+                                <td style="text-align: center;"><a href="https://www.adsb.lol" class="feed-link" id="adsblol-link" target="_blank" title="View adsb.lol Stats">🔗</a></td>
                             </tr>
                             {% endif %}
                             
@@ -385,7 +385,7 @@
                                 <td style="text-align: center;"><span class="feed-check" id="adsbx-check" data-status="unknown">✓</span></td>
                                 <td style="text-align: center;" id="adsbx-data">.</td>
                                 <td style="text-align: center;" id="adsbx-mlat">.</td>
-                                <td style="text-align: center;"><a href="https://www.adsbexchange.com" class="feed-link" target="_blank" title="View ADSBexchange Stats">🔗</a></td>
+                                <td style="text-align: center;"><a href="https://www.adsbexchange.com" class="feed-link" id="adsbx-link" target="_blank" title="View ADSBexchange Stats">🔗</a></td>
                             </tr>
                             {% endif %}
                             
@@ -395,7 +395,7 @@
                                 <td style="text-align: center;"><span class="feed-check" id="airplaneslive-check" data-status="unknown">✓</span></td>
                                 <td style="text-align: center;" id="airplaneslive-data">.</td>
                                 <td style="text-align: center;" id="airplaneslive-mlat">.</td>
-                                <td style="text-align: center;"><a href="https://www.airplanes.live" class="feed-link" target="_blank" title="View Airplanes.Live Stats">🔗</a></td>
+                                <td style="text-align: center;"><a href="https://www.airplanes.live" class="feed-link" id="airplaneslive-link" target="_blank" title="View Airplanes.Live Stats">🔗</a></td>
                             </tr>
                             {% endif %}
                             
@@ -1156,8 +1156,14 @@
                     url = `http://${hostname}:8082/`;
                     break;
                 default:
-                    console.error('Unknown feed type:', feedType);
-                    return;
+                    // Try to get from dynamic link if available
+                    const link = document.getElementById(`${feedType}-link`);
+                    if (link && link.href && link.href !== '#' && !link.href.startsWith('javascript:')) {
+                        url = link.href;
+                    } else {
+                        console.error('Unknown feed type or missing link:', feedType);
+                        return;
+                    }
             }
             
             window.open(url, '_blank');
