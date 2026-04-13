@@ -3984,11 +3984,14 @@ def api_dashboard_bootstrap():
             # Use user-provided pattern: https://www.adsbexchange.com/api/feeders/?feed=UUID
             stats_url = f"https://www.adsbexchange.com/api/feeders/?feed={link_id}"
         elif service_name == 'adsbfi':
-            stats_url = f"https://www.adsb.fi/stats/{link_id}"
+            # User provided: https://adsb.fi/ (detects by IP)
+            stats_url = "https://adsb.fi/"
         elif service_name == 'adsblol':
-            stats_url = f"https://www.adsb.lol/stats/{link_id}"
+            # User provided: https://my.adsb.lol (detects by IP)
+            stats_url = "https://my.adsb.lol"
         elif service_name == 'airplaneslive':
-            stats_url = f"https://www.airplanes.live/stats/{link_id}"
+            # User provided: https://airplanes.live/myfeed/ (detects by IP)
+            stats_url = "https://airplanes.live/myfeed/"
             
         return {
             'enabled': True,

@@ -1,3 +1,9 @@
+## v3.0.54 — 2026-04-13
+
+### Changed
+- **Community Feed Links**: Refined the links for adsb.fi, adsb.lol, and Airplanes.Live to use their respective IP-based "My Feed" detection pages (`https://adsb.fi/`, `https://my.adsb.lol`, and `https://airplanes.live/myfeed/`).
+
+---
 ## v3.0.53 — 2026-04-13
 
 ### Fixed
