@@ -74,25 +74,7 @@
             </div>
             {% endif %}
 
-            <!-- Floating Core Status Indicator (Top Right) -->
-            <div style="position: fixed; top: 20px; right: 20px; z-index: 100; background: white; border-radius: 12px; padding: 15px 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); border-left: 4px solid #3b82f6;">
-                <div style="display: flex; align-items: center; gap: 10px;">
-                    <span style="font-size: 1.2em;">🔧</span>
-                    <div>
-                        <div style="font-size: 0.75em; color: #6b7280; margin-bottom: 2px;">Core Service</div>
-                        <div id="floating-container-status">
-                            {% if docker.get('ultrafeeder') %}
-                                <div style="display: flex; align-items: center; gap: 8px;">
-                                    <span class="status-dot {% if 'Up' in docker.get('ultrafeeder') %}active{% else %}inactive{% endif %}"></span>
-                                    <span style="font-weight: 600; font-size: 0.9em;" id="ultrafeeder-check">ultrafeeder</span>
-                                </div>
-                            {% else %}
-                                <span style="font-size: 0.85em; color: #ef4444;">Not running</span>
-                            {% endif %}
-                        </div>
-                    </div>
-                </div>
-            </div>
+
 
             <!-- Power Warning Banner -->
             <div id="power-warning-banner" style="display: none; padding: 15px 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
@@ -239,6 +221,21 @@
                             <td style="padding: 6px 12px; font-family: monospace; font-weight: 500; color: #374151;">{{ config.get('FEEDER_LONG', 'Not set') }}</td>
                             <td style="padding: 6px 12px; color: #6b7280;">Timezone</td>
                             <td style="padding: 6px 12px; font-weight: 500; color: #374151;">{{ config.get('FEEDER_TZ', 'UTC') }}</td>
+                        </tr>
+
+                        <!-- Core Services Section -->
+                        <tr style="background: #f9fafb;">
+                            <td colspan="4" style="padding: 8px 12px; font-weight: 600; color: #374151; border-left: 3px solid #3b82f6; border-top: 1px solid #e5e7eb;">
+                                ⚙️ Core Services status
+                            </td>
+                        </tr>
+                        <tr>
+                            <td colspan="4" style="padding: 10px 12px;">
+                                <div id="core-services-container" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; padding: 4px 0;">
+                                    <!-- Populated by JS -->
+                                    <div style="color: #9ca3af; font-style: italic; font-size: 0.85em;">Loading service status...</div>
+                                </div>
+                            </td>
                         </tr>
 
                         <!-- SDR Devices Section -->
@@ -553,6 +550,20 @@
         .health-unhealthy { background: #fee2e2; color: #991b1b; }
         .health-starting { background: #fef9c3; color: #854d0e; }
         .health-unknown { background: #f1f5f9; color: #475569; }
+        
+        /* Service Status Dots */
+        .status-dot.active { 
+            background: #10b981; 
+            box-shadow: 0 0 8px rgba(16, 185, 129, 0.4);
+        }
+        .status-dot.inactive { 
+            background: #ef4444; 
+            box-shadow: 0 0 8px rgba(239, 68, 68, 0.4);
+        }
+        .status-dot.starting { 
+            background: #f59e0b; 
+            box-shadow: 0 0 8px rgba(245, 158, 11, 0.4);
+        }
     </style>
 
     <div class="last-updated" id="lastUpdated">

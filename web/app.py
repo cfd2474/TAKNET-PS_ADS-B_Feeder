@@ -357,7 +357,7 @@ def get_docker_status():
     """Get Docker container status"""
     try:
         result = subprocess.run(
-            ['docker', 'ps', '--format', '{{.Names}}\t{{.Status}}'],
+            ['docker', 'ps', '-a', '--format', '{{.Names}}\t{{.Status}}'],
             capture_output=True, text=True, timeout=5
         )
         if result.returncode == 0:
@@ -3762,13 +3762,17 @@ def api_dashboard_bootstrap():
         ultrafeeder_running = get_service_state('ultrafeeder')
         service_states = {
             'ultrafeeder': ultrafeeder_running,
-            'fr24': get_service_state('fr24') if env.get('FR24_ENABLED') == 'true' else None,
-            'piaware': get_service_state('piaware') if env.get('PIAWARE_ENABLED') == 'true' else None,
-            'adsbx': ultrafeeder_running if env.get('ADSBX_ENABLED') == 'true' else None,
-            'adsbfi': ultrafeeder_running if env.get('ADSBFI_ENABLED') == 'true' else None,
-            'adsblol': ultrafeeder_running if env.get('ADSBLOL_ENABLED') == 'true' else None,
-            'airplaneslive': ultrafeeder_running if env.get('AIRPLANESLIVE_ENABLED') == 'true' else None,
-            'adsbhub': ultrafeeder_running if env.get('ADSBHUB_ENABLED') == 'true' else None,
+            'dump978': get_service_state('dump978'),
+            'fr24': get_service_state('fr24'),
+            'piaware': get_service_state('piaware'),
+            'adsbx': get_service_state('adsbx'),
+            'adsbfi': get_service_state('adsbfi'),
+            'adsblol': get_service_state('adsblol'),
+            'airplaneslive': get_service_state('airplaneslive'),
+            'adsbhub': get_service_state('adsbhub'),
+            'autoheal': get_service_state('autoheal'),
+            'mobile_mode_gps': get_service_state('mobile-mode-gps') if env.get('FEEDER_DEPLOYMENT_MODE') == 'mobile' else None,
+            'tunnel_client': 'running' if tunnel_status['running'] else 'stopped'
         }
         return {
             'docker': docker_status,

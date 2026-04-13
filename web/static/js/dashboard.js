@@ -80,32 +80,68 @@ function renderNetworkStatus(networkStatus) {
     }
 }
 
+const CORE_SERVICE_LABELS = {
+    'ultrafeeder': 'ADS-B Engine (ultrafeeder)',
+    'dump978': 'UAT Receiver (dump978)',
+    'fr24': 'FlightRadar24',
+    'piaware': 'FlightAware',
+    'adsbx': 'ADSBexchange',
+    'adsbfi': 'adsb.fi',
+    'adsblol': 'adsb.lol',
+    'airplaneslive': 'Airplanes.Live',
+    'adsbhub': 'ADSBHub',
+    'autoheal': 'Watchdog',
+    'mobile_mode_gps': 'Mobile GPS',
+    'tunnel_client': 'Remote Access (tunnel)'
+};
+
 function renderCoreStatus(status) {
-    if (!status || !status.docker) return;
-    const ultrafeeder = status.docker.ultrafeeder;
-    if (!ultrafeeder) return;
-    const isRunning = ultrafeeder.includes('Up');
-
-    const container = document.getElementById('container-status');
-    if (container) {
-        container.innerHTML = `
-            <div class="status-item">
-                <span class="status-dot ${isRunning ? 'active' : 'inactive'}"></span>
-                <span>ultrafeeder</span>
-                <span class="status-text">${ultrafeeder}</span>
+    if (!status || !status.service_states) return;
+    
+    const container = document.getElementById('core-services-container');
+    if (!container) return;
+    
+    const states = status.service_states;
+    let html = '';
+    
+    // Order the services for display
+    const orderedKeys = [
+        'ultrafeeder', 'dump978', 'fr24', 'piaware', 
+        'adsbx', 'adsbfi', 'adsblol', 'airplaneslive', 'adsbhub',
+        'autoheal', 'tunnel_client', 'mobile_mode_gps'
+    ];
+    
+    orderedKeys.forEach(key => {
+        const state = states[key];
+        if (state === undefined || state === null) return;
+        
+        const label = CORE_SERVICE_LABELS[key] || key;
+        const isRunning = state === 'running';
+        const isStarting = state === 'starting' || state === 'downloading';
+        
+        let statusClass = 'inactive';
+        let statusText = 'Stopped';
+        
+        if (isRunning) {
+            statusClass = 'active';
+            statusText = 'Running';
+        } else if (isStarting) {
+            statusClass = 'starting';
+            statusText = state.charAt(0).toUpperCase() + state.slice(1);
+        }
+        
+        html += `
+            <div style="display: flex; align-items: center; gap: 8px; background: #f8fafc; padding: 10px 12px; border-radius: 8px; border: 1px solid #e2e8f0;">
+                <span class="status-dot ${statusClass}" title="${state}"></span>
+                <div style="flex: 1;">
+                    <div style="font-weight: 600; font-size: 0.85em; color: #334155; line-height: 1.2;">${label}</div>
+                    <div style="font-size: 0.75em; color: #64748b; margin-top: 2px;">${statusText}</div>
+                </div>
             </div>
         `;
-    }
-
-    const floating = document.getElementById('floating-container-status');
-    if (floating) {
-        floating.innerHTML = `
-            <div style="display: flex; align-items: center; gap: 8px;">
-                <span class="status-dot ${isRunning ? 'active' : 'inactive'}"></span>
-                <span style="font-weight: 600; font-size: 0.9em;">ultrafeeder</span>
-            </div>
-        `;
-    }
+    });
+    
+    container.innerHTML = html;
 }
 
 

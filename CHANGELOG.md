@@ -1,3 +1,14 @@
+## v3.0.50 — 2026-04-13
+
+### Added
+- **Core Services Dashboard**: Implemented a comprehensive 'Core Services' status section on the dashboard for real-time monitoring of all critical system containers and services.
+- **Project Rules**: Established new persistent coding rules in `.antigravity/project_rules.md` for synchronized versioning and documentation standards.
+
+### Changed
+- Dashboard: Removed the redundant floating status indicator to declutter the UI.
+- Backend: Updated Docker status tracking to include stopped containers for better visibility into offline services.
+
+---
 ## v3.0.49 — 2026-04-12
 
 ### Changed
