@@ -2202,44 +2202,67 @@ def api_adsbhub_status():
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)})
 
-@app.route('/stats/proxy/<service>')
-def stats_proxy(service):
-    """Proxy community stats links through the feeder's IP to handle remote viewing"""
-    urls = {
-        'adsblol': 'https://api.adsb.lol/0/me',
-        'adsbfi': 'https://api.adsb.fi/v1/myip',
-        'airplaneslive': 'https://airplanes.live/myfeed/'
+@app.route('/stats/proxy/<service>', defaults={'path': ''})
+@app.route('/stats/proxy/<service>/<path:path>')
+def stats_proxy(service, path=''):
+    """Proxy community stats links through the feeder's IP with recursive asset support"""
+    # Mapping of service keys to their base host and default page
+    config = {
+        'adsblol': {'host': 'https://api.adsb.lol', 'index': '/0/me'},
+        'adsbfi': {'host': 'https://api.adsb.fi', 'index': '/v1/myip'},
+        'airplaneslive': {'host': 'https://airplanes.live', 'index': '/myfeed/'}
     }
     
-    if service not in urls:
+    if service not in config:
         return f"Service {service} not supported for proxying.", 404
         
     try:
-        url = urls[service]
-        # Set a User-Agent to look like a browser to avoid bot blocks
+        cfg = config[service]
+        # Construct the target URL
+        if not path:
+            target_url = cfg['host'] + cfg['index']
+        else:
+            # Ensure path starts with /
+            clean_path = path if path.startswith('/') else '/' + path
+            target_url = cfg['host'] + clean_path
+
+        # Set headers to look like a real browser to avoid bot blocks
         headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+            'Accept': '*/*',
+            'Cache-Control': 'no-cache'
         }
-        req = urllib.request.Request(url, headers=headers)
-        with urllib.request.urlopen(req, timeout=8) as response:
+        
+        req = urllib.request.Request(target_url, headers=headers)
+        with urllib.request.urlopen(req, timeout=12) as response:
             content = response.read()
             mime_type = response.info().get_content_type()
             
-            # For HTML content (airplaneslive), inject a base tag so relative assets load from the source
+            # For HTML content, perform recursive rewriting
             if 'text/html' in mime_type:
-                html_content = content.decode('utf-8', errors='ignore')
-                # Inject base tag at the start of head
-                if '<head>' in html_content:
-                    # Clean up existing base tags if any
-                    html_content = re.sub(r'<base\s+href="[^"]*">', '', html_content)
-                    html_content = html_content.replace('<head>', f'<head><base href="{url}">')
-                else:
-                    html_content = f'<base href="{url}">{html_content}'
-                return html_content
+                html = content.decode('utf-8', errors='ignore')
                 
-            return content, 200, {'Content-Type': mime_type}
+                # Rewrite URLs to go back through our proxy
+                if service == 'airplaneslive':
+                    # Replace absolute https://airplanes.live with /stats/proxy/airplaneslive
+                    html = html.replace('https://airplanes.live', f'/stats/proxy/{service}')
+                    # Replace root-relative paths (/css/...) with /stats/proxy/airplaneslive/css/...
+                    # Use negative lookahead to avoid double-prefixing already proxied links
+                    html = re.sub(r'href="/(?!stats/)', f'href="/stats/proxy/{service}/', html)
+                    html = re.sub(r'src="/(?!stats/)', f'src="/stats/proxy/{service}/', html)
+                    
+                return html
+                
+            # For other assets (CSS/JS/Images), serve with correct MIME and allow CORS
+            asset_headers = {
+                'Content-Type': mime_type,
+                'Access-Control-Allow-Origin': '*',
+                'Cache-Control': 'public, max-age=3600'
+            }
+            return content, 200, asset_headers
+            
     except Exception as e:
-        return f"Error proxying {service}: {str(e)}", 500
+        return f"Error proxying {service} (path: {path}): {str(e)}", 500
 
 @app.route('/api/feeds/adsbhub/toggle', methods=['POST'])
 def api_adsbhub_toggle():

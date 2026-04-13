@@ -1,3 +1,9 @@
+## v3.0.61 — 2026-04-13
+
+### Fixed
+- **Recursive Proxy Fix**: Upgraded the feeder status proxy to handle sub-paths and asset rewriting. This fixes the broken CSS/JS on the **airplanes.live** status page by routing all sub-resource requests back through the feeder, effectively bypassing CORS restrictions and ensuring a functional remote dashboard.
+
+---
 ## v3.0.60 — 2026-04-13
 
 ### Added
