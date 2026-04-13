@@ -127,6 +127,23 @@ def get_config():
     return url, feeder_id
 
 
+def get_feeder_software_version():
+    """Read feeder software version for sending to aggregator during tunnel register."""
+    # Priority: /opt/adsb/VERSION, then local VERSION file in repo root
+    for path in [
+        Path("/opt/adsb/VERSION"),
+        Path(__file__).resolve().parent.parent / "VERSION",
+    ]:
+        if path.exists():
+            try:
+                v = path.read_text().strip()
+                if v:
+                    return v
+            except OSError:
+                continue
+    return "unknown"
+
+
 def get_web_host():
     """Return host:port for this device's web UI (map/stats on 8080). Prefer NetBird IP so
     aggregator proxy works over VPN; else primary interface IP. No scheme, no path.
@@ -347,9 +364,15 @@ def run_once(ws_url, feeder_id):
         return True
     try:
         host_value = get_web_host()
-        register_msg = {"type": "register", "feeder_id": feeder_id, "host": host_value}
+        version_value = get_feeder_software_version()
+        register_msg = {
+            "type": "register",
+            "feeder_id": feeder_id,
+            "host": host_value,
+            "version": version_value,
+        }
         ws.send(json.dumps(register_msg))
-        log(f"Registered; connected and waiting for requests (host={host_value})")
+        log(f"Registered; connected and waiting for requests (host={host_value}, version={version_value})")
         write_status(True, feeder_id=feeder_id)
         while True:
             try:

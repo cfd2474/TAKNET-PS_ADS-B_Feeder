@@ -1,3 +1,9 @@
+## v3.0.47 — 2026-04-12
+
+### Changed
+- Updated tunnel_client.py to report software version during registration for better dashboard accuracy.
+
+---
 ## v3.0.46 — 2026-04-12
 
 ### Added
