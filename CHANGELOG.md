@@ -1,3 +1,9 @@
+## v3.0.48 — 2026-04-12
+
+### Changed
+- Added dynamic version monitoring to tunnel_client.py to trigger automatic reconnection when software version changes.
+
+---
 ## v3.0.47 — 2026-04-12
 
 ### Changed

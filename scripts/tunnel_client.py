@@ -374,12 +374,22 @@ def run_once(ws_url, feeder_id):
         ws.send(json.dumps(register_msg))
         log(f"Registered; connected and waiting for requests (host={host_value}, version={version_value})")
         write_status(True, feeder_id=feeder_id)
+        last_version_check = time.time()
         while True:
             try:
-                # Use a timeout so we can send proactive pongs to keep the connection alive
+                # Use a timeout so we can send proactive pongs and check for version updates
                 ws.settimeout(30.0)
                 raw = ws.recv()
             except (socket.timeout, websocket.WebSocketTimeoutException):
+                # Every 5 minutes, see if software version changed
+                now = time.time()
+                if now - last_version_check > 300:
+                    last_version_check = now
+                    new_ver = get_feeder_software_version()
+                    if new_ver != version_value:
+                        log(f"Software version updated: {version_value} -> {new_ver}. Reconnecting...")
+                        return True
+
                 # Proactively send a pong if no activity for 30s
                 ws.send(json.dumps({"type": "pong"}))
                 continue
