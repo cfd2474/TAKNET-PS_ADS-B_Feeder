@@ -2202,6 +2202,45 @@ def api_adsbhub_status():
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)})
 
+@app.route('/stats/proxy/<service>')
+def stats_proxy(service):
+    """Proxy community stats links through the feeder's IP to handle remote viewing"""
+    urls = {
+        'adsblol': 'https://api.adsb.lol/0/me',
+        'adsbfi': 'https://api.adsb.fi/v1/myip',
+        'airplaneslive': 'https://airplanes.live/myfeed/'
+    }
+    
+    if service not in urls:
+        return f"Service {service} not supported for proxying.", 404
+        
+    try:
+        url = urls[service]
+        # Set a User-Agent to look like a browser to avoid bot blocks
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+        }
+        req = urllib.request.Request(url, headers=headers)
+        with urllib.request.urlopen(req, timeout=8) as response:
+            content = response.read()
+            mime_type = response.info().get_content_type()
+            
+            # For HTML content (airplaneslive), inject a base tag so relative assets load from the source
+            if 'text/html' in mime_type:
+                html_content = content.decode('utf-8', errors='ignore')
+                # Inject base tag at the start of head
+                if '<head>' in html_content:
+                    # Clean up existing base tags if any
+                    html_content = re.sub(r'<base\s+href="[^"]*">', '', html_content)
+                    html_content = html_content.replace('<head>', f'<head><base href="{url}">')
+                else:
+                    html_content = f'<base href="{url}">{html_content}'
+                return html_content
+                
+            return content, 200, {'Content-Type': mime_type}
+    except Exception as e:
+        return f"Error proxying {service}: {str(e)}", 500
+
 @app.route('/api/feeds/adsbhub/toggle', methods=['POST'])
 def api_adsbhub_toggle():
     """Toggle ADSBHub feed enabled/disabled"""
@@ -4004,23 +4043,14 @@ def api_dashboard_bootstrap():
             # Reverted to UUID pattern: https://www.adsbexchange.com/api/feeders/?feed=UUID
             stats_url = f"https://www.adsbexchange.com/api/feeders/?feed={link_id}"
         elif service_name == 'adsbfi':
-            # Support remote viewing via UUID if available
-            if feeder_uuid:
-                stats_url = f"https://adsb.fi/stats/{feeder_uuid}"
-            else:
-                # v3.0.04 pattern: https://api.adsb.fi/v1/myip
-                stats_url = "https://api.adsb.fi/v1/myip"
+            # Proxy through feeder to use feeder's public IP
+            stats_url = "/stats/proxy/adsbfi"
         elif service_name == 'adsblol':
-            # Support remote viewing via UUID if available
-            if feeder_uuid:
-                stats_url = f"https://adsb.lol/stats/{feeder_uuid}"
-            else:
-                # v3.0.04 pattern: https://api.adsb.lol/0/me
-                stats_url = "https://api.adsb.lol/0/me"
+            # Proxy through feeder to use feeder's public IP
+            stats_url = "/stats/proxy/adsblol"
         elif service_name == 'airplaneslive':
-            # airplanes.live is strictly IP-based for the anonymous 'myfeed' view
-            # v3.0.04 pattern: https://airplanes.live/myfeed/
-            stats_url = "https://airplanes.live/myfeed/"
+            # Proxy through feeder to use feeder's public IP
+            stats_url = "/stats/proxy/airplaneslive"
             
         return {
             'enabled': True,

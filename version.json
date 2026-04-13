@@ -1,11 +1,11 @@
 {
-  "version": "3.0.59",
+  "version": "3.0.60",
   "release_date": "2026-04-13",
-  "release_name": "Remote Stats Support",
+  "release_name": "Feeder Proxy Support",
   "download_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh",
   "changelog_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/CHANGELOG.md",
   "minimum_version": "2.40.0",
   "breaking_changes": false,
-  "release_notes": "Implemented UUID-based deep links for adsb.fi and adsb.lol to enable remote statistics viewing, bypassing IP-detection limitations. Airplanes.live remains IP-based as per community standards.",
+  "release_notes": "Implemented server-side proxying for community feeder status links (adsb.lol, adsb.fi, airplanes.live). This allows remote dashboard users to view statistics even when the aggregator relies on the source IP for identification, by routing the request through the feeder's own backend.",
   "update_priority": 3
 }

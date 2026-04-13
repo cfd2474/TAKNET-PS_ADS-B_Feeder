@@ -1,3 +1,9 @@
+## v3.0.60 — 2026-04-13
+
+### Added
+- **Feeder Status Proxy**: Implemented a server-side proxy for community feeder status links (**adsb.lol**, **adsb.fi**, **airplanes.live**). This ensures that remote dashboard users see statistics correctly identified by the feeder's public IP, by routing the status request through the feeder's own backend.
+
+---
 ## v3.0.59 — 2026-04-13
 
 ### Added
