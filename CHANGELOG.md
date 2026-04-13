@@ -1,3 +1,11 @@
+## v3.0.51 — 2026-04-13
+
+### Fixed
+- **Dashboard Stabilization**: Resolved a `NameError` in the bootstrap API that caused the dashboard to hang during initialization.
+- **Performance**: Optimized Docker status polling by fetching all container states in a single call and reusing them across service health checks, significantly reducing dashboard load time and CPU overhead.
+- **UI Error Handling**: Added robust error detection and reporting to the dashboard's core services grid to prevent silent failures.
+
+---
 ## v3.0.50 — 2026-04-13
 
 ### Added

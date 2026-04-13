@@ -1,11 +1,11 @@
 {
-  "version": "3.0.50",
+  "version": "3.0.51",
   "release_date": "2026-04-13",
-  "release_name": "Core Services Dashboard",
+  "release_name": "Dashboard Stabilization",
   "download_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh",
   "changelog_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/CHANGELOG.md",
   "minimum_version": "2.40.0",
   "breaking_changes": false,
-  "release_notes": "Added 'Core Services' status section to the system dashboard for improved monitoring of all feeders and receivers. Removed redundant floating status indicator.",
+  "release_notes": "Fixed dashboard initialization hang by resolving NameError in bootstrap API and optimized service status polling efficiency to prevent redundant Docker calls.",
   "update_priority": 3
 }

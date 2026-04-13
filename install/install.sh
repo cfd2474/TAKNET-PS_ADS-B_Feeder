@@ -1,10 +1,10 @@
 #!/bin/bash
-# TAKNET-PS-ADSB-Feeder One-Line Installer v3.0.50
+# TAKNET-PS-ADSB-Feeder One-Line Installer v3.0.51
 # Support: help@tak-solutions.com
 # repo: cfd2474/TAKNET-PS_ADS-B_Feeder
 # License: MIT
 
-# v3.0.50 - Apr 13, 2026
+# v3.0.51 - Apr 13, 2026
 # Optimized for Raspberry Pi 4/5
 
 # Default (main):

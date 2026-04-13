@@ -500,7 +500,7 @@ service_state_cache = {}
 service_state_cache_time = {}
 SERVICE_STATE_CACHE_DURATION = 2  # seconds
 
-def get_service_state(service_name):
+def get_service_state(service_name, docker_status_all=None):
     """Get detailed service state: downloading, starting, running, stopped, or not_installed"""
     global service_progress, service_state_cache, service_state_cache_time
     
@@ -520,8 +520,9 @@ def get_service_state(service_name):
                 service_state_cache_time[service_name] = current_time
                 return state
     
-    # Single atomic Docker check - get ALL container statuses at once
-    docker_status_all = get_docker_status_all()
+    # Single atomic Docker check - get ALL container statuses at once (if not provided)
+    if docker_status_all is None:
+        docker_status_all = get_docker_status_all()
     container_name = service_name
     
     # Check if container exists and get its status
@@ -3759,20 +3760,28 @@ def api_dashboard_bootstrap():
                     parts = part.split(',')
                     if len(parts) >= 2:
                         feeds.append(parts[1])
-        ultrafeeder_running = get_service_state('ultrafeeder')
+        # Tunnel client status check
+        tunnel_running = False
+        try:
+            res = subprocess.run(['systemctl', 'is-active', 'tunnel-client'], capture_output=True, text=True, timeout=1)
+            tunnel_running = (res.returncode == 0 and res.stdout.strip() == 'active')
+        except Exception:
+            pass
+
+        ultrafeeder_running = get_service_state('ultrafeeder', docker_status)
         service_states = {
             'ultrafeeder': ultrafeeder_running,
-            'dump978': get_service_state('dump978'),
-            'fr24': get_service_state('fr24'),
-            'piaware': get_service_state('piaware'),
-            'adsbx': get_service_state('adsbx'),
-            'adsbfi': get_service_state('adsbfi'),
-            'adsblol': get_service_state('adsblol'),
-            'airplaneslive': get_service_state('airplaneslive'),
-            'adsbhub': get_service_state('adsbhub'),
-            'autoheal': get_service_state('autoheal'),
-            'mobile_mode_gps': get_service_state('mobile-mode-gps') if env.get('FEEDER_DEPLOYMENT_MODE') == 'mobile' else None,
-            'tunnel_client': 'running' if tunnel_status['running'] else 'stopped'
+            'dump978': get_service_state('dump978', docker_status),
+            'fr24': get_service_state('fr24', docker_status),
+            'piaware': get_service_state('piaware', docker_status),
+            'adsbx': get_service_state('adsbx', docker_status),
+            'adsbfi': get_service_state('adsbfi', docker_status),
+            'adsblol': get_service_state('adsblol', docker_status),
+            'airplaneslive': get_service_state('airplaneslive', docker_status),
+            'adsbhub': get_service_state('adsbhub', docker_status),
+            'autoheal': get_service_state('autoheal', docker_status),
+            'mobile_mode_gps': get_service_state('mobile-mode-gps', docker_status) if env.get('FEEDER_DEPLOYMENT_MODE') == 'mobile' else None,
+            'tunnel_client': 'running' if tunnel_running else 'stopped'
         }
         return {
             'docker': docker_status,

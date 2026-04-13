@@ -96,7 +96,18 @@ const CORE_SERVICE_LABELS = {
 };
 
 function renderCoreStatus(status) {
-    if (!status || !status.service_states) return;
+    if (!status) return;
+    
+    if (status.error) {
+        console.error('Core status error:', status.error);
+        const container = document.getElementById('core-services-container');
+        if (container) {
+            container.innerHTML = `<div style="color: #ef4444; font-size: 0.85em; padding: 10px;">⚠️ Error loading services: ${status.error}</div>`;
+        }
+        return;
+    }
+
+    if (!status.service_states) return;
     
     const container = document.getElementById('core-services-container');
     if (!container) return;
