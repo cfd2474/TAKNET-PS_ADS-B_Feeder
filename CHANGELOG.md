@@ -1,3 +1,10 @@
+## v3.0.53 — 2026-04-13
+
+### Fixed
+- **Community Feeder Links**: Switched to using the unique `FEEDER_UUID` for status links to prevent 404 errors on adsb.lol, adsb.fi, and Airplanes.Live.
+- **ADSBExchange Link Pattern**: Updated the ADSBExchange link to use the correct API pattern: `https://www.adsbexchange.com/api/feeders/?feed={uuid}`.
+
+---
 ## v3.0.52 — 2026-04-13
 
 ### Fixed

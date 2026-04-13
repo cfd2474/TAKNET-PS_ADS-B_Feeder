@@ -3970,20 +3970,25 @@ def api_dashboard_bootstrap():
             return {'enabled': False, 'success': False}
 
         feeder_id = (env.get('MLAT_SITE_NAME') or env.get('TUNNEL_FEEDER_ID') or socket.gethostname() or 'feeder').strip()
+        feeder_uuid = env.get('FEEDER_UUID', '').strip()
         
         # All these feeders are integrated into ultrafeeder. 
         # If ultrafeeder is running and the feeder is enabled, it's 'active'.
         is_active = get_service_state('ultrafeeder') == 'running'
         
         stats_url = '#'
+        # Use UUID if available for community stats links to prevent 404s
+        link_id = feeder_uuid if feeder_uuid else feeder_id
+        
         if service_name == 'adsbx':
-            stats_url = f"https://www.adsbexchange.com/?feeder={feeder_id}"
+            # Use user-provided pattern: https://www.adsbexchange.com/api/feeders/?feed=UUID
+            stats_url = f"https://www.adsbexchange.com/api/feeders/?feed={link_id}"
         elif service_name == 'adsbfi':
-            stats_url = f"https://www.adsb.fi/stats/{feeder_id}"
+            stats_url = f"https://www.adsb.fi/stats/{link_id}"
         elif service_name == 'adsblol':
-            stats_url = f"https://www.adsb.lol/stats/{feeder_id}"
+            stats_url = f"https://www.adsb.lol/stats/{link_id}"
         elif service_name == 'airplaneslive':
-            stats_url = f"https://www.airplanes.live/stats/{feeder_id}"
+            stats_url = f"https://www.airplanes.live/stats/{link_id}"
             
         return {
             'enabled': True,
