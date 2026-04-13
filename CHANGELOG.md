@@ -1,3 +1,9 @@
+## v3.0.59 — 2026-04-13
+
+### Added
+- **Remote Stats Support**: Implemented UUID-based deep links for **adsb.fi** and **adsb.lol**. This allows users to view their statistics even when accessing the dashboard remotely (e.g., via tunnel), by using the feeder's unique ID instead of browser IP detection.
+
+---
 ## v3.0.58 — 2026-04-13
 
 ### Fixed

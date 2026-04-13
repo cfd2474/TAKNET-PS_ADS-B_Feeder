@@ -4004,12 +4004,21 @@ def api_dashboard_bootstrap():
             # Reverted to UUID pattern: https://www.adsbexchange.com/api/feeders/?feed=UUID
             stats_url = f"https://www.adsbexchange.com/api/feeders/?feed={link_id}"
         elif service_name == 'adsbfi':
-            # v3.0.04 pattern: https://api.adsb.fi/v1/myip
-            stats_url = "https://api.adsb.fi/v1/myip"
+            # Support remote viewing via UUID if available
+            if feeder_uuid:
+                stats_url = f"https://adsb.fi/stats/{feeder_uuid}"
+            else:
+                # v3.0.04 pattern: https://api.adsb.fi/v1/myip
+                stats_url = "https://api.adsb.fi/v1/myip"
         elif service_name == 'adsblol':
-            # v3.0.04 pattern: https://api.adsb.lol/0/me
-            stats_url = "https://api.adsb.lol/0/me"
+            # Support remote viewing via UUID if available
+            if feeder_uuid:
+                stats_url = f"https://adsb.lol/stats/{feeder_uuid}"
+            else:
+                # v3.0.04 pattern: https://api.adsb.lol/0/me
+                stats_url = "https://api.adsb.lol/0/me"
         elif service_name == 'airplaneslive':
+            # airplanes.live is strictly IP-based for the anonymous 'myfeed' view
             # v3.0.04 pattern: https://airplanes.live/myfeed/
             stats_url = "https://airplanes.live/myfeed/"
             
