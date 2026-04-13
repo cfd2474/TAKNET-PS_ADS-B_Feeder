@@ -1,3 +1,9 @@
+## v3.0.58 — 2026-04-13
+
+### Fixed
+- **Service Status Indicators**: Fixed bug where community feeders (adsbx, adsbfi, etc.) were incorrectly showing as "Stopped" on the dashboard. They now correctly link to the `ultrafeeder` container status and show as "Running" when the engine is active.
+
+---
 ## v3.0.57 — 2026-04-13
 
 ### Changed

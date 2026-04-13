@@ -3768,16 +3768,22 @@ def api_dashboard_bootstrap():
         except Exception:
             pass
 
+        def get_comm_state(name):
+            stats = build_community_stats(name)
+            if not stats.get('enabled', False):
+                return 'not_installed'
+            return 'running' if stats.get('data_feed_active', False) else 'stopped'
+
         ultrafeeder_running = get_service_state('ultrafeeder', docker_status)
         service_states = {
             'ultrafeeder': ultrafeeder_running,
             'dump978': get_service_state('dump978', docker_status),
             'fr24': get_service_state('fr24', docker_status),
             'piaware': get_service_state('piaware', docker_status),
-            'adsbx': get_service_state('adsbx', docker_status),
-            'adsbfi': get_service_state('adsbfi', docker_status),
-            'adsblol': get_service_state('adsblol', docker_status),
-            'airplaneslive': get_service_state('airplaneslive', docker_status),
+            'adsbx': get_comm_state('adsbx'),
+            'adsbfi': get_comm_state('adsbfi'),
+            'adsblol': get_comm_state('adsblol'),
+            'airplaneslive': get_comm_state('airplaneslive'),
             'adsbhub': get_service_state('adsbhub', docker_status),
             'autoheal': get_service_state('autoheal', docker_status),
             'mobile_mode_gps': get_service_state('mobile-mode-gps', docker_status) if env.get('FEEDER_DEPLOYMENT_MODE') == 'mobile' else None,

@@ -1,11 +1,11 @@
 {
-  "version": "3.0.57",
+  "version": "3.0.58",
   "release_date": "2026-04-13",
-  "release_name": "ADSBExchange Link Reversal",
+  "release_name": "Service Status Fix",
   "download_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh",
   "changelog_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/CHANGELOG.md",
   "minimum_version": "2.40.0",
   "breaking_changes": false,
-  "release_notes": "Reverted ADSBExchange link to the UUID-based pattern (?feed=UUID) for improved statistics reliability.",
+  "release_notes": "Fixed dashboard status indicators for community feeders by correctly linking them to the ultrafeeder service state. Enabled feeders will now correctly show as 'Running' when ultrafeeder is active.",
   "update_priority": 3
 }
