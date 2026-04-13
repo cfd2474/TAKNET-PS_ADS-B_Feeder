@@ -3981,16 +3981,16 @@ def api_dashboard_bootstrap():
         link_id = feeder_uuid if feeder_uuid else feeder_id
         
         if service_name == 'adsbx':
-            # Use user-provided pattern: https://www.adsbexchange.com/api/feeders/?feed=UUID
-            stats_url = f"https://www.adsbexchange.com/api/feeders/?feed={link_id}"
+            # v3.0.04 pattern: https://www.adsbexchange.com/myip/
+            stats_url = "https://www.adsbexchange.com/myip/"
         elif service_name == 'adsbfi':
-            # User provided: https://adsb.fi/ (detects by IP)
-            stats_url = "https://adsb.fi/"
+            # v3.0.04 pattern: https://api.adsb.fi/v1/myip
+            stats_url = "https://api.adsb.fi/v1/myip"
         elif service_name == 'adsblol':
-            # User provided: https://my.adsb.lol (detects by IP)
-            stats_url = "https://my.adsb.lol"
+            # v3.0.04 pattern: https://api.adsb.lol/0/me
+            stats_url = "https://api.adsb.lol/0/me"
         elif service_name == 'airplaneslive':
-            # User provided: https://airplanes.live/myfeed/ (detects by IP)
+            # v3.0.04 pattern: https://airplanes.live/myfeed/
             stats_url = "https://airplanes.live/myfeed/"
             
         return {

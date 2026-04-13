@@ -1,3 +1,9 @@
+## v3.0.55 — 2026-04-13
+
+### Changed
+- **Community Feed Links**: Restored the legacy link patterns for ADSBExchange, adsb.fi, adsb.lol, and Airplanes.Live as confirmed working in version 3.0.04.
+
+---
 ## v3.0.54 — 2026-04-13
 
 ### Changed
