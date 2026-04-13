@@ -35,12 +35,14 @@ Immediately upon connecting, the Feeder **must** send a `register` message. If t
 {
   "type": "register",
   "feeder_id": "92882-test_test_test",
-  "host": "100.85.149.249:8080"
+  "host": "100.85.149.249:8080",
+  "version": "3.0.49"
 }
 ```
 
-*   **`feeder_id`**: The unique identifier for the feeder (must match the ID the Aggregator expects). See [ID Sanitization](#id-sanitization) below.
+*   **`feeder_id`**: The unique identifier for the feeder (must match the ID the Aggregator expects). This should be a "clean" name **without version data**. See [ID Sanitization](#id-sanitization) below.
 *   **`host`**: (Recommended) The local `host:port` the feeder's web stack listens on (e.g., NetBird IP). The Aggregator uses this for the `Host` header to ensure correct routing on the feeder side.
+*   **`version`**: The current software version of the feeder. The Aggregator uses this for tracking and update alerts.
 
 ### ID Sanitization
 The Aggregator applies a strict sanitization process to derive the `feeder_id`. The Feeder Client **must** use the same logic to ensure the `register` ID matches the one the dashboard generates.

@@ -1,3 +1,9 @@
+## v3.0.49 — 2026-04-12
+
+### Changed
+- Removed redundant version data from feeder and MLAT names; aggregator now processes version explicitly via the new registration field.
+
+---
 ## v3.0.48 — 2026-04-12
 
 ### Changed

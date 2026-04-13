@@ -639,9 +639,9 @@ def build_docker_compose(env_vars):
     feeder_uuid = env_vars.get('FEEDER_UUID', '')
     mlat_site_name = env_vars.get('MLAT_SITE_NAME', 'feeder')
     ultrafeeder_config = env_vars.get('ULTRAFEEDER_CONFIG', '')
-    # Send software version to aggregator via MLAT client name (parseable: "name | vX.Y.Z")
+    # Send software version to aggregator via MLAT client name
     software_version = get_feeder_software_version(env_vars)
-    mlat_user = f"{mlat_site_name} | v{software_version}"
+    mlat_user = mlat_site_name
     
     # Phase B: Smart SDR configuration
     sdr_config = build_sdr_configuration(env_vars)
