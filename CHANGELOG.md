@@ -1,3 +1,9 @@
+## v3.0.66 — 2026-04-14
+
+### Fixed
+- **Airplanes.Live API Proxy Exception**: Extended the deep recursive proxy to explicitly route the API subdomain (`api.airplanes.live`) requests through the feeder. This fixes the final missing link for remote status checking where JavaScript `fetch()` calls to the API were still bypassing the proxy and testing the user's remote IP instead of the feeder.
+
+---
 ## v3.0.65 — 2026-04-14
 
 ### Fixed

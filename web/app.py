@@ -2212,7 +2212,8 @@ def stats_proxy(service, path=''):
     config = {
         'adsblol': {'host': 'https://api.adsb.lol', 'index': '/0/me'},
         'adsbfi': {'host': 'https://api.adsb.fi', 'index': '/v1/myip'},
-        'airplaneslive': {'host': 'https://airplanes.live', 'index': '/myfeed/'}
+        'airplaneslive': {'host': 'https://airplanes.live', 'index': '/myfeed/'},
+        'airplaneslive_api': {'host': 'https://api.airplanes.live', 'index': '/feed-status'}
     }
     
     if service not in config:
@@ -2269,7 +2270,8 @@ def stats_proxy(service, path=''):
 
                     # Deep string replacement for absolute URLs (affects HTML, JS, and JSON)
                     if service == 'airplaneslive':
-                        # Catch both https and non-https just in case
+                        # Replace the API subdomain first so it doesn't get partially matched
+                        text = text.replace('https://api.airplanes.live', '/stats/proxy/airplaneslive_api')
                         text = text.replace('https://airplanes.live', f'/stats/proxy/{service}')
                         text = text.replace('//airplanes.live', f'/stats/proxy/{service}')
                     
