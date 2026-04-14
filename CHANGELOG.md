@@ -1,3 +1,10 @@
+## v3.0.76 — 2026-04-14
+
+### Fixed
+- **UAT Master Gate**: Resolved a condition where the `dump978` container would persist after being disabled. Tightened logic in `config_builder.py` to ensure the `DUMP978_ENABLED` switch is the primary gating criterion.
+- **Cleanup Standardization**: Improved variable cleanup in `app.py` to clear both legacy and modern device variable mappings upon unforcing UAT.
+
+---
 ## v3.0.75 — 2026-04-14
 
 ### Fixed

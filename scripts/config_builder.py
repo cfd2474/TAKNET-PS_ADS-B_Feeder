@@ -455,10 +455,11 @@ def build_dump978_service(env_vars):
     sdr_978_path = env_vars.get('SDR_978_PATH', env_vars.get('DUMP978_DEVICE', '1'))
     sdr_978_gain = env_vars.get('SDR_978_GAIN', env_vars.get('DUMP978_GAIN', 'autogain'))
     
+    enabled = env_vars.get('DUMP978_ENABLED', 'false').lower() == 'true'
     force_override = env_vars.get('DUMP978_FORCE_OVERRIDE', 'false').lower() == 'true'
     
-    # Don't create service if 978 not configured AND not forced
-    if (not sdr_978_device or sdr_978_device == 'disabled') and not force_override:
+    # Don't create service if 978 explicitly disabled AND not forced
+    if not enabled and not force_override:
         return None
     
     # If forced but still no device index, default to 1

@@ -3586,6 +3586,7 @@ def api_force_dump978():
             if not physical_sdr_present:
                 # It was a purely virtual toggle, so we should actually disable and cleanup
                 env['DUMP978_ENABLED'] = 'false'
+                env['DUMP978_DEVICE'] = 'disabled'
                 env['SDR_978_DEVICE'] = 'disabled'
                 env['SDR_978_PATH'] = 'disabled'
                 
