@@ -1,3 +1,9 @@
+## v3.0.69 — 2026-04-14
+
+### Changed
+- **Aggregator Upstream Error Reporting**: Improved the exception handling in the `stats_proxy` functionality to surface explicit `HTTPError` messages and target APIs directly to the user dashboard. This prevents intermittent upstream service failures (e.g. from `api.adsb.lol`) from appearing as localized application issues in the UI console.
+
+---
 ## v3.0.68 — 2026-04-14
 
 ### Added

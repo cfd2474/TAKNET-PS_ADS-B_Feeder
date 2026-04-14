@@ -2291,8 +2291,16 @@ def stats_proxy(service, path=''):
             }
             return content, 200, asset_headers
             
+    except urllib.error.HTTPError as e:
+        status_code = e.code if e.code else 502
+        error_body = e.read().decode('utf-8', errors='ignore') if hasattr(e, 'read') else str(e)
+        return (
+            f"Upstream Error: The aggregator ({target_url}) returned HTTP {status_code}: {e.reason}.<br><br>"
+            f"This indicates their stats server is currently experiencing an outage or rejected the connection.<br><br>"
+            f"Server Response:<br> <pre>{error_body}</pre>"
+        ), 502
     except Exception as e:
-        return f"Error proxying {service} (path: {path}): {str(e)}", 500
+        return f"Proxy Configuration Error routing {service} to {target_url}: {str(e)}", 500
 
 @app.route('/api/feeds/adsbhub/toggle', methods=['POST'])
 def api_adsbhub_toggle():

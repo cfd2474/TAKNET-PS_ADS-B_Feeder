@@ -1,11 +1,11 @@
 {
-  "version": "3.0.68",
+  "version": "3.0.69",
   "release_date": "2026-04-14",
-  "release_name": "UAT Override UI",
+  "release_name": "Aggregator Upstream Error Reporting",
   "download_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh",
   "changelog_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/CHANGELOG.md",
   "minimum_version": "2.40.0",
   "breaking_changes": false,
-  "release_notes": "Added a dedicated UI toggle switch in the 'SDR Devices' settings page to force enable the dump978 (UAT) daemon, even when no local UAT radio is connected. Useful for network-based UAT receive environments.",
+  "release_notes": "Improved the stats proxy error reporting functionality to distinctly identify HTTP upstream server outage states, particularly for intermittent aggregator API downtime instances on remote services.",
   "update_priority": 3
 }
