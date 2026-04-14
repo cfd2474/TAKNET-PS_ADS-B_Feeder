@@ -1,11 +1,11 @@
 {
-  "version": "3.0.78",
+  "version": "3.0.79",
   "release_date": "2026-04-14",
-  "release_name": "UI Countdown Refinement",
+  "release_name": "Asynchronous Cleanup Stability",
   "download_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh",
   "changelog_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/CHANGELOG.md",
   "minimum_version": "2.40.0",
   "breaking_changes": false,
-  "release_notes": "Polished the service restart reporting. Standardized the 10-second redirect countdown across all restart flows and updated the UI messaging to clearly communicate the initialization delay.",
+  "release_notes": "Optimized the UAT override toggle by making the container cleanup background-async. This eliminates the 10-second delay previously experienced when unchecking the 'Force Enable UAT' option.",
   "update_priority": 3
 }

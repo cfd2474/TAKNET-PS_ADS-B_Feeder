@@ -1,3 +1,9 @@
+## v3.0.79 — 2026-04-14
+
+### Fixed
+- **UAT Toggle Responsiveness**: Made the container cleanup process asynchronous. This removes the 10-second UI delay when unchecking the "Force Enable UAT" option, allowing the confirmation modal to appear immediately.
+
+---
 ## v3.0.78 — 2026-04-14
 
 ### Changed

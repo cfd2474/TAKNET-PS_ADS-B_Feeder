@@ -3592,10 +3592,10 @@ def api_force_dump978():
                 
                 print("ℹ Force override removed and no physical SDR found; disabling UAT")
                 
-                # Explicitly stop the virtual container
+                # Explicitly stop the virtual container in the background (non-blocking)
                 try:
-                    subprocess.run(['docker', 'compose', 'stop', 'dump978'], cwd='/opt/adsb/config', timeout=10)
-                    subprocess.run(['docker', 'compose', 'rm', '-f', 'dump978'], cwd='/opt/adsb/config', timeout=10)
+                    subprocess.Popen(['docker', 'compose', 'stop', '-t', '1', 'dump978'], cwd='/opt/adsb/config')
+                    subprocess.Popen(['docker', 'compose', 'rm', '-f', 'dump978'], cwd='/opt/adsb/config')
                 except Exception:
                     pass
             else:
