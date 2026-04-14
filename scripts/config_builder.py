@@ -449,10 +449,11 @@ def build_dump978_service(env_vars):
     Build dump978 service configuration
     Supports both RTL-SDR and FTDI UATRadio hardware
     """
-    sdr_978_device = env_vars.get('SDR_978_DEVICE', '')
+    # Try both naming conventions
+    sdr_978_device = env_vars.get('SDR_978_DEVICE', env_vars.get('DUMP978_DEVICE', ''))
     sdr_978_type = env_vars.get('SDR_978_TYPE', 'rtlsdr')
-    sdr_978_path = env_vars.get('SDR_978_PATH', '1')
-    sdr_978_gain = env_vars.get('SDR_978_GAIN', 'autogain')
+    sdr_978_path = env_vars.get('SDR_978_PATH', env_vars.get('DUMP978_DEVICE', '1'))
+    sdr_978_gain = env_vars.get('SDR_978_GAIN', env_vars.get('DUMP978_GAIN', 'autogain'))
     
     force_override = env_vars.get('DUMP978_FORCE_OVERRIDE', 'false').lower() == 'true'
     
@@ -460,6 +461,12 @@ def build_dump978_service(env_vars):
     if (not sdr_978_device or sdr_978_device == 'disabled') and not force_override:
         return None
     
+    # If forced but still no device index, default to 1
+    if not sdr_978_device or sdr_978_device == 'disabled':
+        sdr_978_device = '1'
+        if sdr_978_path == 'disabled' or not sdr_978_path:
+            sdr_978_path = '1'
+
     # Get values from env_vars
     feeder_tz = env_vars.get('FEEDER_TZ', 'UTC')
     feeder_lat = env_vars.get('FEEDER_LAT', '')
@@ -479,8 +486,8 @@ def build_dump978_service(env_vars):
         'tmpfs': [
             '/run:exec,size=64M',
             '/var/log'
-        ],
-        'profiles': ['dump978']
+        ]
+        # Profile removed to ensure it always starts when enabled/forced
     }
     
     # Device mapping differs for RTL-SDR vs FTDI

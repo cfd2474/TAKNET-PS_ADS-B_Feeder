@@ -1,11 +1,11 @@
 {
-  "version": "3.0.71",
+  "version": "3.0.72",
   "release_date": "2026-04-14",
-  "release_name": "UAT Force Persistence Fix",
+  "release_name": "UAT Deployment Stability Fix",
   "download_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh",
   "changelog_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/CHANGELOG.md",
   "minimum_version": "2.40.0",
   "breaking_changes": false,
-  "release_notes": "Resolved a persistence issue where the 'Force Enable UAT' override would reset to disabled when saving other configuration settings. Fixed the whitelist synchronization between the UI and backend, and ensured the dump978 service is built even without a local SDR assignment when forced.",
+  "release_notes": "Resolved a final deployment blocker where the 'Force Enable UAT' container would fail to start due to Docker profile suppression and variable naming mismatches. Standardized UAT service definitions to ensure consistent container creation even without a physical SDR assigned.",
   "update_priority": 3
 }

@@ -2964,7 +2964,8 @@ CONFIG_WHITELIST = {
     'FR24_ENABLED', 'FR24_KEY', 'FR24_SHARING_KEY',
     'ADSBFI_ENABLED', 'ADSBLOL_ENABLED', 'ADSBX_ENABLED', 'AIRPLANESLIVE_ENABLED', 'ADSBHUB_ENABLED', 'PIAWARE_ENABLED',
     'PIAWARE_FEEDER_ID', 'ADSBHUB_STATION_KEY',
-    'DUMP978_ENABLED', 'DUMP978_FORCE_OVERRIDE', 'SDR_978_DEVICE', 'SDR_978_TYPE', 'SDR_978_PATH', 'SDR_978_GAIN',
+    'DUMP978_ENABLED', 'DUMP978_FORCE_OVERRIDE', 'DUMP978_DEVICE', 'DUMP978_GAIN', 
+    'SDR_978_DEVICE', 'SDR_978_TYPE', 'SDR_978_PATH', 'SDR_978_GAIN',
     'NETBIRD_ENABLED', 'NETBIRD_SETUP_KEY', 'NETBIRD_MANAGEMENT_URL',
     'TAILSCALE_AUTH_KEY', 'TAILSCALE_HOSTNAME',
     'FEEDER_UUID'
@@ -3561,6 +3562,18 @@ def api_force_dump978():
         if force:
             env['DUMP978_ENABLED'] = 'true'
             env['DUMP978_FORCE_OVERRIDE'] = 'true'
+            
+            # Ensure compatible keys for config_builder
+            if not env.get('DUMP978_DEVICE') or env.get('DUMP978_DEVICE') == 'disabled':
+                env['DUMP978_DEVICE'] = '1'
+            if not env.get('DUMP978_GAIN'):
+                env['DUMP978_GAIN'] = 'autogain'
+                
+            env['SDR_978_DEVICE'] = env['DUMP978_DEVICE']
+            env['SDR_978_PATH'] = env['DUMP978_DEVICE']
+            env['SDR_978_GAIN'] = env['DUMP978_GAIN']
+            env['SDR_978_TYPE'] = 'rtlsdr'
+            print("ℹ Forced UAT on via override")
         else:
             # Disable only if no SDR is natively configured for 978
             sdr_978_installed = env.get('SDR_978_DEVICE') is not None and env.get('SDR_978_DEVICE') != ''

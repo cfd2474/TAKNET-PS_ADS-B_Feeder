@@ -1,3 +1,10 @@
+## v3.0.72 — 2026-04-14
+
+### Fixed
+- **UAT Deployment Stability**: Fixed a final blocker where the `dump978` container failed to start during system boots and UI restarts due to Docker profile suppression.
+- **Variable Compatibility**: Standardized internal naming between `DUMP978_DEVICE` and `SDR_978_DEVICE` across the configuration builder to ensure hardware-less force-enable mode works as intended.
+
+---
 ## v3.0.71 — 2026-04-14
 
 ### Fixed
