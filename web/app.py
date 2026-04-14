@@ -2204,8 +2204,8 @@ def api_adsbhub_status():
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)})
 
-@app.route('/stats/proxy/<service>', defaults={'path': ''})
-@app.route('/stats/proxy/<service>/<path:path>')
+@app.route('/api/stats/proxy/<service>', defaults={'path': ''})
+@app.route('/api/stats/proxy/<service>/<path:path>')
 def stats_proxy(service, path=''):
     """Proxy community stats links through the feeder's IP with recursive asset support"""
     # Mapping of service keys to their base host and default page
@@ -2261,7 +2261,7 @@ def stats_proxy(service, path=''):
                     
                     # For HTML, inject <base> tag first
                     if 'text/html' in mime_type:
-                        base_proxy = f'{prefix}/stats/proxy/{service}'
+                        base_proxy = f'{prefix}/api/stats/proxy/{service}'
                         base_tag = f'<base href="{base_proxy}/">'
                         if '<head>' in text:
                             text = text.replace('<head>', f'<head>{base_tag}')
@@ -2276,7 +2276,7 @@ def stats_proxy(service, path=''):
                     # This ensures that even nested API calls or links in JSON avoid bypassing the tunnel
                     for svc_key, svc_cfg in config.items():
                         target_host = svc_cfg['host']
-                        proxy_path = f'{prefix}/stats/proxy/{svc_key}'
+                        proxy_path = f'{prefix}/api/stats/proxy/{svc_key}'
                         
                         # Handle https://host, http://host, and //host
                         text = text.replace(f'{target_host}', f'{proxy_path}')
@@ -4181,13 +4181,13 @@ def api_dashboard_bootstrap():
             stats_url = f"https://www.adsbexchange.com/api/feeders/?feed={link_id}"
         elif service_name == 'adsbfi':
             # Proxy through feeder to use feeder's public IP
-            stats_url = f"{prefix}/stats/proxy/adsbfi"
+            stats_url = f"{prefix}/api/stats/proxy/adsbfi"
         elif service_name == 'adsblol':
             # Proxy through feeder to use feeder's public IP
-            stats_url = f"{prefix}/stats/proxy/adsblol"
+            stats_url = f"{prefix}/api/stats/proxy/adsblol"
         elif service_name == 'airplaneslive':
             # Proxy through feeder to use feeder's public IP
-            stats_url = f"{prefix}/stats/proxy/airplaneslive"
+            stats_url = f"{prefix}/api/stats/proxy/airplaneslive"
             
         return {
             'enabled': True,

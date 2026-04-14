@@ -1,3 +1,9 @@
+## v3.0.82 — 2026-04-14
+
+### Fixed
+- **Tunnel Routing Persistence**: Migrated the `stats_proxy` routes to the `/api/` namespace. This ensures the TAKNET-PS tunnel aggregator correctly identifies and forwards traffic to the feeder's web engine, resolving 404 errors for the proxied community stats links.
+
+---
 ## v3.0.81 — 2026-04-14
 
 ### Fixed
