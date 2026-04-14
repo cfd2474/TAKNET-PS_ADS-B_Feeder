@@ -1,11 +1,11 @@
 {
-  "version": "3.0.76",
+  "version": "3.0.77",
   "release_date": "2026-04-14",
-  "release_name": "UAT Master Gate Fix",
+  "release_name": "UI & Shutdown Polish",
   "download_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh",
   "changelog_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/CHANGELOG.md",
   "minimum_version": "2.40.0",
   "breaking_changes": false,
-  "release_notes": "Resolved an issue where the 'Force Enable UAT' container would persist after being disabled. Tightened the logic synchronization between the backend and configuration builder to ensure the DUMP978_ENABLED master switch is strictly followed.",
+  "release_notes": "Polished the service restart workflow by adding a 10-second dashboard redirect countdown, allowing containers more time to initialize. Fixed a remaining edge case in UAT hardware detection where empty serial strings prevented the dump978 container from stopping correctly.",
   "update_priority": 3
 }

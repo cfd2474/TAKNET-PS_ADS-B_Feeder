@@ -1865,12 +1865,21 @@
                         if (data.status === 'complete' || data.progress >= 100) {
                             clearInterval(restartPollInterval);
                             statusDiv.textContent = '✅ Ultrafeeder restarted successfully!';
-                            logDiv.innerHTML += '\n\n✅ Complete! Redirecting to dashboard...';
                             
-                            // Redirect to dashboard after 2 seconds
-                            setTimeout(() => {
-                                window.location.href = '/dashboard';
-                            }, 2000);
+                            // 10-second countdown before redirect
+                            let countdown = 10;
+                            logDiv.innerHTML += `\n\n✅ Complete! Redirecting to dashboard in <span id="redirect-timer">${countdown}</span> seconds...`;
+                            
+                            const countdownInterval = setInterval(() => {
+                                countdown--;
+                                const timerSpan = document.getElementById('redirect-timer');
+                                if (timerSpan) timerSpan.textContent = countdown;
+                                
+                                if (countdown <= 0) {
+                                    clearInterval(countdownInterval);
+                                    window.location.href = '/dashboard';
+                                }
+                            }, 1000);
                         }
                     }
                 } catch (error) {

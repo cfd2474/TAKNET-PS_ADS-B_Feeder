@@ -1,3 +1,12 @@
+## v3.0.77 — 2026-04-14
+
+### Changed
+- **Restart Countdown**: Added a 10-second redirect countdown to the service restart modal to ensure containers are fully ready before returning to the dashboard.
+
+### Fixed
+- **UAT Hardware Detection**: Fixed an edge case where empty `SDR_978_SERIAL` strings (leftover from previous radio configurations) were treated as "active hardware," preventing the UAT container from shutting down properly when the override was unchecked.
+
+---
 ## v3.0.76 — 2026-04-14
 
 ### Fixed

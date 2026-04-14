@@ -3580,8 +3580,8 @@ def api_force_dump978():
             
             # CRITICAL: Check if a physical SDR is assigned to 978 before disabling.
             # Physical SDR assignments (via the radio table) always set 'SDR_978_SERIAL'.
-            # Virtual 'Force' toggles never set this variable.
-            physical_sdr_present = 'SDR_978_SERIAL' in env
+            # Virtual 'Force' toggles never set this variable. We check if it has a non-empty value.
+            physical_sdr_present = bool(env.get('SDR_978_SERIAL', '').strip())
             
             if not physical_sdr_present:
                 # It was a purely virtual toggle, so we should actually disable and cleanup
