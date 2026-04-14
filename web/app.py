@@ -3502,8 +3502,12 @@ def api_configure_sdrs():
         
         # Disable 978 MHz if not configured
         if sdr_978 is None:
-            env['DUMP978_ENABLED'] = 'false'
-            print("ℹ 978 MHz UAT disabled (no SDR assigned)")
+            if env.get('DUMP978_FORCE_OVERRIDE', 'false') != 'true':
+                env['DUMP978_ENABLED'] = 'false'
+                print("ℹ 978 MHz UAT disabled (no SDR assigned)")
+            else:
+                env['DUMP978_ENABLED'] = 'true'
+                print("ℹ 978 MHz UAT kept enabled due to force override")
         
         # Write environment
         write_env(env)
@@ -3532,6 +3536,31 @@ def api_configure_sdrs():
             'success': False,
             'message': str(e)
         }), 500
+
+@app.route('/api/sdrs/force-dump978', methods=['POST'])
+def api_force_dump978():
+    """Toggle the dump978 daemon force override"""
+    try:
+        data = request.json
+        force = data.get('force', False)
+        env = read_env()
+        
+        if force:
+            env['DUMP978_ENABLED'] = 'true'
+            env['DUMP978_FORCE_OVERRIDE'] = 'true'
+        else:
+            # Disable only if no SDR is natively configured for 978
+            sdr_978_installed = env.get('SDR_978_DEVICE') is not None and env.get('SDR_978_DEVICE') != ''
+            if not sdr_978_installed:
+                env['DUMP978_ENABLED'] = 'false'
+            env['DUMP978_FORCE_OVERRIDE'] = 'false'
+            
+        write_env(env)
+        if rebuild_config():
+            return jsonify({'success': True})
+        return jsonify({'success': False, 'message': 'Failed to rebuild cluster config'}), 500
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
 
 @app.route('/api/sdrs/current-config', methods=['GET'])
 def api_get_current_sdr_config():

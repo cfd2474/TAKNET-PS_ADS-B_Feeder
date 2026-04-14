@@ -1,3 +1,9 @@
+## v3.0.68 — 2026-04-14
+
+### Added
+- **UAT (dump978) Override**: Added a new UI toggle switch within the SDR Devices section of the settings page. Users receiving UAT data from network sources can now force the `dump978-fa` daemon to run silently in the background, circumventing the standard behavior which safely disables it when a direct, local UAT radio is not explicitly selected in the table.
+
+---
 ## v3.0.67 — 2026-04-14
 
 ### Fixed

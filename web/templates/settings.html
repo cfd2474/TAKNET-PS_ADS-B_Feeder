@@ -250,7 +250,19 @@
                 <h3>📡 SDR Devices</h3>
                 <p>Configure Software Defined Radio receivers</p>
                 
-                <button class="btn btn-secondary" onclick="detectSDRDevices()" id="detectSDRBtn" style="margin-top: 15px;">
+                <div style="margin: 15px 0; padding: 15px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px;">
+                    <label style="display: flex; align-items: center; cursor: pointer; user-select: none;">
+                        <input type="checkbox" id="force_dump978" style="width: 18px; height: 18px; margin-right: 10px;" 
+                               {% if config.get('DUMP978_FORCE_OVERRIDE', 'false') == 'true' %}checked{% endif %}
+                               onchange="toggleForceDump978(this.checked)">
+                        <strong style="color: #374151; font-size: 1.05em;">Force Enable UAT (dump978)</strong>
+                    </label>
+                    <p style="margin: 5px 0 0 28px; color: #6b7280; font-size: 0.85em; line-height: 1.4;">
+                        Overrides SDR scanning and keeps <strong>dump978-fa</strong> running even if no local UAT radio is assigned above. Useful when receiving UAT data from a networked source.
+                    </p>
+                </div>
+                
+                <button class="btn btn-secondary" onclick="detectSDRDevices()" id="detectSDRBtn">
                     🔍 Detect Devices
                 </button>
                 
@@ -1917,6 +1929,31 @@
             status.textContent = message;
             status.className = type;
             status.style.display = 'block';
+        }
+        
+        async function toggleForceDump978(enabled) {
+            try {
+                const response = await fetch('/api/sdrs/force-dump978', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ force: enabled })
+                });
+                
+                const result = await response.json();
+                if (result.success) {
+                    showStatus('✓ Override updated. Restarting services...', 'success');
+                    
+                    // Trigger a restart to apply the new dump978 backend block
+                    document.getElementById('saveConfirmModal').style.display = 'flex';
+                    const feederNameSpan = document.getElementById('savedFeederName');
+                    feederNameSpan.textContent = document.getElementById('site_name').value.trim() || 'Feeder';
+                    
+                } else {
+                    showStatus('✗ Failed to update override: ' + result.message, 'error');
+                }
+            } catch (error) {
+                showStatus('✗ Error updating override.', 'error');
+            }
         }
         
         // SDR Configuration Functions
