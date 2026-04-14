@@ -4157,7 +4157,7 @@ def api_dashboard_bootstrap():
             'mlat_enabled': False
         }
 
-    def build_community_stats(service_name, prefix):
+    def build_community_stats(service_name, prefix=''):
         env = read_env()
         enabled_var = f"{service_name.upper()}_ENABLED"
         if env.get(enabled_var, 'false').lower() != 'true':
@@ -4235,19 +4235,19 @@ def api_dashboard_bootstrap():
     except Exception as e:
         results['adsbhub_stats'] = {'enabled': True, 'success': False, 'error': str(e)}
     try:
-        results['adsbfi_stats'] = build_community_stats('adsbfi')
+        results['adsbfi_stats'] = build_community_stats('adsbfi', prefix)
     except Exception:
         results['adsbfi_stats'] = {'enabled': True, 'success': False}
     try:
-        results['adsblol_stats'] = build_community_stats('adsblol')
+        results['adsblol_stats'] = build_community_stats('adsblol', prefix)
     except Exception:
         results['adsblol_stats'] = {'enabled': True, 'success': False}
     try:
-        results['adsbx_stats'] = build_community_stats('adsbx')
+        results['adsbx_stats'] = build_community_stats('adsbx', prefix)
     except Exception:
         results['adsbx_stats'] = {'enabled': True, 'success': False}
     try:
-        results['airplaneslive_stats'] = build_community_stats('airplaneslive')
+        results['airplaneslive_stats'] = build_community_stats('airplaneslive', prefix)
     except Exception:
         results['airplaneslive_stats'] = {'enabled': True, 'success': False}
 

@@ -1,3 +1,9 @@
+## v3.0.80 — 2026-04-14
+
+### Fixed
+- **Proxied Hub Links**: Restored the correctly proxied URLs for community stats links (adsb.lol, adsb.fi, airplanes.live). Fixed a function signature mismatch introduced in v3.0.73 that was causing these links to fail and revert to external defaults.
+
+---
 ## v3.0.79 — 2026-04-14
 
 ### Fixed
