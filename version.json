@@ -1,11 +1,11 @@
 {
-  "version": "3.0.72",
+  "version": "3.0.73",
   "release_date": "2026-04-14",
-  "release_name": "UAT Deployment Stability Fix",
+  "release_name": "Dashboard Context Stability Fix",
   "download_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh",
   "changelog_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/CHANGELOG.md",
   "minimum_version": "2.40.0",
   "breaking_changes": false,
-  "release_notes": "Resolved a final deployment blocker where the 'Force Enable UAT' container would fail to start due to Docker profile suppression and variable naming mismatches. Standardized UAT service definitions to ensure consistent container creation even without a physical SDR assigned.",
+  "release_notes": "Fixed a regression where the dashboard 'Core Services' panel would fail with a 'Working outside of request context' error when accessed through the web tunnel. Resolved this by making the status worker threads context-aware.",
   "update_priority": 3
 }

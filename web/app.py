@@ -3897,7 +3897,10 @@ def api_status():
 @app.route('/api/dashboard/bootstrap', methods=['GET'])
 def api_dashboard_bootstrap():
     """Aggregate dashboard data for fast load. Connection quality is NOT included — use GET /api/network-quality separately (slow ping)."""
-    def build_status():
+    # Capture prefix in main thread (which has request context)
+    prefix = request.headers.get('X-Forwarded-Prefix', '')
+
+    def build_status(prefix):
         docker_status = get_docker_status()
         env = read_env()
         config_str = env.get('ULTRAFEEDER_CONFIG', '')
@@ -3916,8 +3919,8 @@ def api_dashboard_bootstrap():
         except Exception:
             pass
 
-        def get_comm_state(name):
-            stats = build_community_stats(name)
+        def get_comm_state(name, prefix):
+            stats = build_community_stats(name, prefix)
             if not stats.get('enabled', False):
                 return 'not_installed'
             return 'running' if stats.get('data_feed_active', False) else 'stopped'
@@ -3928,10 +3931,10 @@ def api_dashboard_bootstrap():
             'dump978': get_service_state('dump978', docker_status),
             'fr24': get_service_state('fr24', docker_status),
             'piaware': get_service_state('piaware', docker_status),
-            'adsbx': get_comm_state('adsbx'),
-            'adsbfi': get_comm_state('adsbfi'),
-            'adsblol': get_comm_state('adsblol'),
-            'airplaneslive': get_comm_state('airplaneslive'),
+            'adsbx': get_comm_state('adsbx', prefix),
+            'adsbfi': get_comm_state('adsbfi', prefix),
+            'adsblol': get_comm_state('adsblol', prefix),
+            'airplaneslive': get_comm_state('airplaneslive', prefix),
             'adsbhub': get_service_state('adsbhub', docker_status),
             'autoheal': get_service_state('autoheal', docker_status),
             'mobile_mode_gps': get_service_state('mobile-mode-gps', docker_status) if env.get('FEEDER_DEPLOYMENT_MODE') == 'mobile' else None,
@@ -4131,7 +4134,7 @@ def api_dashboard_bootstrap():
             'mlat_enabled': False
         }
 
-    def build_community_stats(service_name):
+    def build_community_stats(service_name, prefix):
         env = read_env()
         enabled_var = f"{service_name.upper()}_ENABLED"
         if env.get(enabled_var, 'false').lower() != 'true':
@@ -4148,7 +4151,8 @@ def api_dashboard_bootstrap():
         # Use UUID if available for community stats links to prevent 404s
         link_id = feeder_uuid if feeder_uuid else feeder_id
         
-        prefix = request.headers.get('X-Forwarded-Prefix', '')
+        # Prefix is passed in from main thread
+        # Now uses passed-in prefix instead of accessing flask.request directly (context-safe for threads)
         
         if service_name == 'adsbx':
             # Reverted to UUID pattern: https://www.adsbexchange.com/api/feeders/?feed=UUID
@@ -4176,7 +4180,7 @@ def api_dashboard_bootstrap():
     # Run only request-context-free checks in threads (Flask views need main thread)
     with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
         futures = {
-            'status': executor.submit(build_status),
+            'status': executor.submit(build_status, prefix),
             'network_status': executor.submit(build_network_status),
             'power_status': executor.submit(build_power_status),
         }

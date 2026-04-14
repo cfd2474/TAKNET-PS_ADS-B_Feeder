@@ -1,3 +1,10 @@
+## v3.0.73 — 2026-04-14
+
+### Fixed
+- **Dashboard Context**: Resolved a "Working outside of request context" error in the dashboard's Core Services panel. This was caused by worker threads attempting to access HTTP discovery headers without inherited context.
+- **Tunnel Proxy Stability**: Ensured status worker threads are now fully context-aware for tunnel-prefixed environments.
+
+---
 ## v3.0.72 — 2026-04-14
 
 ### Fixed
