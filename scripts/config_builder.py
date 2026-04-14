@@ -164,16 +164,32 @@ def ensure_taknet_config(env_vars, env_file):
             env_vars[key] = default_value
             was_repaired = True
 
-    # Legacy UAT Migration: Force enabled if hardware indicators are present and it's not already true
+    # Strict UAT (dump978) Reconciliation: Follow hardware/override truth table
+    # Formula: DUMP978_ENABLED = (Physical SDR assigned) OR (Force Override ON)
     uat_hardware_detected = False
+    
+    # 1. Check for modern physical SDR assignment (Serial number present in radio table)
+    if env_vars.get('SDR_978_SERIAL', '').strip():
+        uat_hardware_detected = True
+    
+    # 2. Check for legacy hardware indicators (Phase B transition support)
     urt = env_vars.get('UAT_RECEIVER_TYPE', '').lower()
     urh = env_vars.get('UAT_RECEIVER_HOST', '').lower()
     if (urt and urt not in ['none', 'relay']) or (urh and urh not in ['none', 'ultrafeeder']):
         uat_hardware_detected = True
         
-    if uat_hardware_detected and env_vars.get('DUMP978_ENABLED', 'false').lower() != 'true':
-        print("✓ Auto-detected legacy UAT hardware configuration - FORCIBLY enabling dump978 service")
-        env_vars['DUMP978_ENABLED'] = 'true'
+    # 3. Check for manual UI Force Override
+    uat_force_on = env_vars.get('DUMP978_FORCE_OVERRIDE', 'false').lower() == 'true'
+    
+    # Apply Strict Truth Table
+    should_be_enabled = uat_hardware_detected or uat_force_on
+    current_enabled = env_vars.get('DUMP978_ENABLED', 'false').lower() == 'true'
+    
+    if should_be_enabled != current_enabled:
+        new_state = 'true' if should_be_enabled else 'false'
+        reason = "Hardware detected" if uat_hardware_detected else "Force override active" if uat_force_on else "No hardware/override"
+        print(f"✓ Reconciling UAT configuration: Setting DUMP978_ENABLED to {new_state} (Reason: {reason})")
+        env_vars['DUMP978_ENABLED'] = new_state
         was_repaired = True
 
     # Migrate old PRIMARY key → VPN key

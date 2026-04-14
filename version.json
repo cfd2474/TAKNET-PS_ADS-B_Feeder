@@ -1,5 +1,5 @@
 {
-  "version": "3.0.91",
+  "version": "3.0.92",
   "name": "TAKNET-PS ADS-B Feeder",
-  "release_notes": "Hotfix: Forced UAT activation on hardware detection. Overrides pessimistic default settings to ensure dump978 service starts automatically for users with legacy UAT radios."
+  "release_notes": "Hotfix: Strict UAT service activation rules. Ensures dump978 service state strictly matches the truth table: (Hardware Detected OR Force Override ON). Prevents 'Stopped' service status errors by reconciling config at runtime."
 }

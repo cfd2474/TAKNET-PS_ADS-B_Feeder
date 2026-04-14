@@ -71,22 +71,31 @@ def migrate_to_phase_b():
     else:
         print("✓ SDR 1090 already migrated")
     
-    # Phase 2: SDR 978 (UAT) Migration
-    # legacy UAT detection - check if UAT was enabled in old format
+    # Phase 2: SDR 978 (UAT) Migration & Reconciliation
+    # Rules: DUMP978_ENABLED = (Physical SDR assigned) OR (Force Override ON)
     uat_hardware_detected = False
-    # Legacy indicators: UAT_RECEIVER_TYPE or UAT_RECEIVER_HOST set to something other than none/relay
+    
+    # Check for modern physical SDR assignment
+    if env.get('SDR_978_SERIAL', '').strip():
+        uat_hardware_detected = True
+        
+    # Check for legacy indicators
     urt = env.get('UAT_RECEIVER_TYPE', '').lower()
     urh = env.get('UAT_RECEIVER_HOST', '').lower()
-    if urt and urt not in ['none', 'relay']:
-        uat_hardware_detected = True
-    if urh and urh not in ['none', 'ultrafeeder']:
+    if (urt and urt not in ['none', 'relay']) or (urh and urh not in ['none', 'ultrafeeder']):
         uat_hardware_detected = True
     
-    # If hardware detected, MUST ensure service is enabled
-    # We override even if set to 'false' because the update might have applied a pessimistic default
-    if uat_hardware_detected and env.get('DUMP978_ENABLED', 'false').lower() != 'true':
-        print("✓ Detected legacy UAT configuration - FORCIBLY enabling dump978 service")
-        env['DUMP978_ENABLED'] = 'true'
+    # Check for manual UI Force Override
+    uat_force_on = env.get('DUMP978_FORCE_OVERRIDE', 'false').lower() == 'true'
+    
+    # Tight Enforcement
+    should_be_enabled = uat_hardware_detected or uat_force_on
+    current_enabled = env.get('DUMP978_ENABLED', 'false').lower() == 'true'
+    
+    if should_be_enabled != current_enabled:
+        new_state = 'true' if should_be_enabled else 'false'
+        print(f"✓ Reconciling UAT configuration in migration: Setting DUMP978_ENABLED to {new_state}")
+        env['DUMP978_ENABLED'] = new_state
 
     if env.get('DUMP978_ENABLED', 'false').lower() == 'true':
         if 'SDR_978_DRIVER' not in env:

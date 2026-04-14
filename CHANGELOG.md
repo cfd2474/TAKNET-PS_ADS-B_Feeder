@@ -1,3 +1,6 @@
+## v3.0.92 - Apr 14, 2026
+- Hotfix: Strict UAT service activation rules. Ensures dump978 service state strictly matches the truth table: (Hardware Detected OR Force Override ON). Prevents "Stopped" service status errors by reconciling config at runtime.
+
 ## v3.0.91 - Apr 14, 2026
 - Hotfix: Forced UAT activation on hardware detection (overrides pessimistic defaults).
 
