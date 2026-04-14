@@ -5105,9 +5105,13 @@ def get_system_version():
                 update_available = False
                 if current_version != 'unknown' and latest_version != 'unknown':
                     try:
+                        # Clean version strings (remove 'v' prefix if present)
+                        cv = current_version.lstrip('v')
+                        lv = latest_version.lstrip('v')
+                        
                         # Parse version strings (format: X.Y.Z)
-                        current_parts = [int(x) for x in current_version.split('.')]
-                        latest_parts = [int(x) for x in latest_version.split('.')]
+                        current_parts = [int(x) for x in cv.split('.')]
+                        latest_parts = [int(x) for x in lv.split('.')]
                         
                         # Pad to same length if needed (handle 2.47 vs 2.47.0)
                         while len(current_parts) < len(latest_parts):
@@ -5126,8 +5130,8 @@ def get_system_version():
                     
                     except (ValueError, AttributeError) as e:
                         print(f"Version comparison error: {e}")
-                        # If can't parse, do string comparison as fallback
-                        update_available = (latest_version != current_version)
+                        # If can't parse, do string comparison as fallback (cleaned)
+                        update_available = (lv != cv)
                 
                 # update_priority: 1=immediate, 2=overnight 02:00, 3=alert only (default)
                 update_priority = int(latest_info.get('update_priority', 3))
