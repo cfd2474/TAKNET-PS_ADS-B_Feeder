@@ -1,7 +1,15 @@
 ## v3.0.86 — 2026-04-14
 
+### Added
+- **Dashboard Disclaimer**: Added a networking disclaimer to the "You are feeding" section to clarify Web Tunnel limitations and guide users toward direct connections or Tailscale for external feed links.
+
+### Changed
+- **Core Services Refresher**: Optimized the dashboard to poll Core Service statuses independently every 5 seconds, improving UI responsiveness without increasing overall backend load.
+
 ### Fixed
-- **Reverted Proxy Routing**: Completely reverted all web tunnel proxy and trailing slash configurations back to `v3.0.82` behavior due to a reported UI parsing compatibility layer mismatch. Restored earlier version logic identically.
+- **Hotfix: Dashboard Scoping**: Resolved a critical 500 Internal Server Error in the dashboard bootstrap and core services endpoints caused by a scoping regression.
+- **Update Display Sync**: Fixed versioning inconsistencies that caused double-'v' prefixing and false update indicators in the System Updates section.
+- **Reverted Proxy Routing**: Completely reverted all web tunnel proxy and trailing slash configurations back to `v3.0.82` behavior.
 
 ---
 ## v3.0.82 — 2026-04-14
