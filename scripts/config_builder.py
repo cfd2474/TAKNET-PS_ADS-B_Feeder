@@ -164,14 +164,17 @@ def ensure_taknet_config(env_vars, env_file):
             env_vars[key] = default_value
             was_repaired = True
 
-    # Legacy UAT Migration: If DUMP978_ENABLED is missing, check for legacy indicators
-    if 'DUMP978_ENABLED' not in env_vars or not env_vars['DUMP978_ENABLED']:
-        urt = env_vars.get('UAT_RECEIVER_TYPE', '').lower()
-        urh = env_vars.get('UAT_RECEIVER_HOST', '').lower()
-        if (urt and urt not in ['none', 'relay']) or (urh and urh not in ['none', 'ultrafeeder']):
-            print("✓ Auto-detected legacy UAT hardware configuration - enabling dump978 service")
-            env_vars['DUMP978_ENABLED'] = 'true'
-            was_repaired = True
+    # Legacy UAT Migration: Force enabled if hardware indicators are present and it's not already true
+    uat_hardware_detected = False
+    urt = env_vars.get('UAT_RECEIVER_TYPE', '').lower()
+    urh = env_vars.get('UAT_RECEIVER_HOST', '').lower()
+    if (urt and urt not in ['none', 'relay']) or (urh and urh not in ['none', 'ultrafeeder']):
+        uat_hardware_detected = True
+        
+    if uat_hardware_detected and env_vars.get('DUMP978_ENABLED', 'false').lower() != 'true':
+        print("✓ Auto-detected legacy UAT hardware configuration - FORCIBLY enabling dump978 service")
+        env_vars['DUMP978_ENABLED'] = 'true'
+        was_repaired = True
 
     # Migrate old PRIMARY key → VPN key
     if 'TAKNET_PS_SERVER_HOST_PRIMARY' in env_vars and 'TAKNET_PS_SERVER_HOST_VPN' not in env_vars:

@@ -1,5 +1,5 @@
 {
-  "version": "3.0.89",
+  "version": "3.0.91",
   "name": "TAKNET-PS ADS-B Feeder",
-  "release_notes": "Hotfix: Robust UAT migration fix for partial upgrades. Corrected .env file path and ensured independent migration of legacy UAT settings."
+  "release_notes": "Hotfix: Forced UAT activation on hardware detection. Overrides pessimistic default settings to ensure dump978 service starts automatically for users with legacy UAT radios."
 }

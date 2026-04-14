@@ -73,21 +73,22 @@ def migrate_to_phase_b():
     
     # Phase 2: SDR 978 (UAT) Migration
     # legacy UAT detection - check if UAT was enabled in old format
-    if env.get('DUMP978_ENABLED') is None:
-        uat_active = False
-        # Legacy indicators: UAT_RECEIVER_TYPE or UAT_RECEIVER_HOST set to something other than none/relay
-        urt = env.get('UAT_RECEIVER_TYPE', '').lower()
-        urh = env.get('UAT_RECEIVER_HOST', '').lower()
-        if urt and urt not in ['none', 'relay']:
-            uat_active = True
-        if urh and urh not in ['none', 'ultrafeeder']:
-            uat_active = True
-        
-        if uat_active:
-            print("✓ Detected legacy UAT configuration, enabling dump978 service")
-            env['DUMP978_ENABLED'] = 'true'
+    uat_hardware_detected = False
+    # Legacy indicators: UAT_RECEIVER_TYPE or UAT_RECEIVER_HOST set to something other than none/relay
+    urt = env.get('UAT_RECEIVER_TYPE', '').lower()
+    urh = env.get('UAT_RECEIVER_HOST', '').lower()
+    if urt and urt not in ['none', 'relay']:
+        uat_hardware_detected = True
+    if urh and urh not in ['none', 'ultrafeeder']:
+        uat_hardware_detected = True
+    
+    # If hardware detected, MUST ensure service is enabled
+    # We override even if set to 'false' because the update might have applied a pessimistic default
+    if uat_hardware_detected and env.get('DUMP978_ENABLED', 'false').lower() != 'true':
+        print("✓ Detected legacy UAT configuration - FORCIBLY enabling dump978 service")
+        env['DUMP978_ENABLED'] = 'true'
 
-    if env.get('DUMP978_ENABLED', 'false') == 'true':
+    if env.get('DUMP978_ENABLED', 'false').lower() == 'true':
         if 'SDR_978_DRIVER' not in env:
             print("🔄 Migrating SDR 978 (UAT) to Phase B format...")
             env['SDR_978_DRIVER'] = env.get('SDR_978_TYPE', 'rtlsdr')

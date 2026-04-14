@@ -1,3 +1,6 @@
+## v3.0.91 - Apr 14, 2026
+- Hotfix: Forced UAT activation on hardware detection (overrides pessimistic defaults).
+
 ## v3.0.89 - Apr 14, 2026
 - Hotfix: Robust UAT migration fix for partial upgrades. Corrected .env file path and ensured independent migration of legacy UAT settings.
 
