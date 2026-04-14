@@ -1154,6 +1154,12 @@
             let url;
             
             switch (feedType) {
+                case 'fr24':
+                    url = `http://${hostname}:8754/`;
+                    break;
+                case 'piaware':
+                    url = `http://${hostname}:8082/`;
+                    break;
                 default:
                     // Try to get from dynamic link if available
                     const link = document.getElementById(`${feedType}-link`);

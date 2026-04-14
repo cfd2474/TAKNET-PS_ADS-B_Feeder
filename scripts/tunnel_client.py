@@ -35,8 +35,6 @@ LOCAL_PORT = 5000
 # Local tar1090/graphs1090 stack (map/stats) served on 8080
 TAR1090_HOST = "127.0.0.1"
 TAR1090_PORT = WEB_UI_PORT
-# Local NGINX reverse proxy on port 80 routes complex apps like PiAware/FR24 with websocket support
-NGINX_PORT = 80
 # Hop-by-hop headers we should not forward to localhost
 SKIP_HEADERS = frozenset(
     k.lower()
@@ -285,8 +283,6 @@ def infer_target(path, headers):
         or p.startswith("/tar1090/")
     ):
         return "tar1090"
-    if p.startswith("/fr24") or p.startswith("/piaware"):
-        return "nginx"
     return "dashboard"
 
 
@@ -313,8 +309,6 @@ def forward_request(method, path, headers, body_b64):
     target = infer_target(path, headers)
     if target == "tar1090":
         upstream_host, upstream_port = TAR1090_HOST, TAR1090_PORT
-    elif target == "nginx":
-        upstream_host, upstream_port = LOCAL_HOST, NGINX_PORT
     else:
         upstream_host, upstream_port = LOCAL_HOST, LOCAL_PORT
     upstream_base = f"http://{upstream_host}:{upstream_port}"

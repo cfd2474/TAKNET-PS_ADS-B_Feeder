@@ -1,10 +1,11 @@
 {
-  "version": "v3.0.83",
-  "min_os_version": "10",
-  "release_notes": [
-    "Fix bug causing FlightRadar24 and PiAware local URLs to break over tunnel",
-    "Route fr24 and piaware through tunnel client NGINX proxy automatically",
-    "Fix missing trailing slash formatting for community proxied links",
-    "Update stats_proxy route matching to avoid absolute path rewriting bug"
-  ]
+  "version": "v3.0.84",
+  "release_date": "2026-04-14",
+  "release_name": "Revert Proxy Changes",
+  "download_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh",
+  "changelog_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/CHANGELOG.md",
+  "minimum_version": "2.40.0",
+  "breaking_changes": false,
+  "release_notes": "Completely reverted v3.0.83 web tunnel proxy routing changes by user request.",
+  "update_priority": 3
 }

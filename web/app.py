@@ -2269,8 +2269,8 @@ def stats_proxy(service, path=''):
                             text = f'{base_tag}{text}'
                         
                         # Fix root-relative links in HTML
-                        text = re.sub(r'href="/(?!api/stats/)', f'href="{base_proxy}/', text)
-                        text = re.sub(r'src="/(?!api/stats/)', f'src="{base_proxy}/', text)
+                        text = re.sub(r'href="/(?!stats/)', f'href="{base_proxy}/', text)
+                        text = re.sub(r'src="/(?!stats/)', f'src="{base_proxy}/', text)
 
                     # DEEP REWRITING: Replace absolute URLs for ALL configured services
                     # This ensures that even nested API calls or links in JSON avoid bypassing the tunnel
@@ -4090,7 +4090,7 @@ def api_dashboard_bootstrap():
         except Exception:
             return None
 
-    def build_fr24_stats(prefix=''):
+    def build_fr24_stats():
         env = read_env()
         if env.get('FR24_ENABLED', 'false').lower() != 'true':
             return {'enabled': False, 'success': False}
@@ -4114,11 +4114,10 @@ def api_dashboard_bootstrap():
             'success': True,
             'data_feed_active': data_active,
             'mlat_active': mlat_active,
-            'mlat_enabled': False,
-            'stats_url': f"{prefix}/fr24/"
+            'mlat_enabled': False
         }
 
-    def build_piaware_stats(prefix=''):
+    def build_piaware_stats():
         env = read_env()
         if env.get('PIAWARE_ENABLED', 'false').lower() != 'true':
             return {'enabled': False, 'success': False}
@@ -4142,8 +4141,7 @@ def api_dashboard_bootstrap():
             'success': True,
             'data_feed_active': data_active,
             'mlat_active': mlat_active,
-            'mlat_enabled': True,
-            'stats_url': f"{prefix}/piaware/"
+            'mlat_enabled': True
         }
 
     def build_adsbhub_stats():
@@ -4183,13 +4181,13 @@ def api_dashboard_bootstrap():
             stats_url = f"https://www.adsbexchange.com/api/feeders/?feed={link_id}"
         elif service_name == 'adsbfi':
             # Proxy through feeder to use feeder's public IP
-            stats_url = f"{prefix}/api/stats/proxy/adsbfi/"
+            stats_url = f"{prefix}/api/stats/proxy/adsbfi"
         elif service_name == 'adsblol':
             # Proxy through feeder to use feeder's public IP
-            stats_url = f"{prefix}/api/stats/proxy/adsblol/"
+            stats_url = f"{prefix}/api/stats/proxy/adsblol"
         elif service_name == 'airplaneslive':
             # Proxy through feeder to use feeder's public IP
-            stats_url = f"{prefix}/api/stats/proxy/airplaneslive/"
+            stats_url = f"{prefix}/api/stats/proxy/airplaneslive"
             
         return {
             'enabled': True,
@@ -4224,11 +4222,11 @@ def api_dashboard_bootstrap():
     except Exception as e:
         results['taknet_stats'] = {'success': False, 'error': str(e)}
     try:
-        results['fr24_stats'] = build_fr24_stats(prefix)
+        results['fr24_stats'] = build_fr24_stats()
     except Exception as e:
         results['fr24_stats'] = {'enabled': True, 'success': False, 'error': str(e)}
     try:
-        results['piaware_stats'] = build_piaware_stats(prefix)
+        results['piaware_stats'] = build_piaware_stats()
     except Exception as e:
         results['piaware_stats'] = {'enabled': True, 'success': False, 'error': str(e)}
     try:
