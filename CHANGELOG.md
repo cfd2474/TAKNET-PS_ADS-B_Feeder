@@ -1,3 +1,10 @@
+## v3.0.74 — 2026-04-14
+
+### Fixed
+- **UAT Force Toggle**: Fixed a logic error where the 'Force Enable UAT' override would fail to disable if it had previously been enabled.
+- **Cleanup Logic**: Standardized the removal of compatibility environment variables and added explicit `docker compose stop/rm` for the `dump978` container when disabling the override.
+
+---
 ## v3.0.73 — 2026-04-14
 
 ### Fixed

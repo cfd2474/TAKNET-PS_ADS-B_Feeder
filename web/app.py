@@ -3575,11 +3575,22 @@ def api_force_dump978():
             env['SDR_978_TYPE'] = 'rtlsdr'
             print("ℹ Forced UAT on via override")
         else:
-            # Disable only if no SDR is natively configured for 978
-            sdr_978_installed = env.get('SDR_978_DEVICE') is not None and env.get('SDR_978_DEVICE') != ''
-            if not sdr_978_installed:
-                env['DUMP978_ENABLED'] = 'false'
+            # When unforcing, we should clear the override and reset enabled state
             env['DUMP978_FORCE_OVERRIDE'] = 'false'
+            
+            # Use 'disabled' instead of empty string for safety
+            env['DUMP978_ENABLED'] = 'false'
+            env['SDR_978_DEVICE'] = 'disabled'
+            env['SDR_978_PATH'] = 'disabled'
+            
+            print("ℹ Force override removed for UAT")
+            
+            # Explicitly stop the container to be sure it doesn't hang around as an orphan or profile-ghost
+            try:
+                subprocess.run(['docker', 'compose', 'stop', 'dump978'], cwd='/opt/adsb/config', timeout=10)
+                subprocess.run(['docker', 'compose', 'rm', '-f', 'dump978'], cwd='/opt/adsb/config', timeout=10)
+            except Exception:
+                pass
             
         write_env(env)
         if rebuild_config():
