@@ -1,3 +1,12 @@
+## v3.0.71 — 2026-04-14
+
+### Fixed
+- **UAT Force Persistence**: Fixed a major bug where the 'Force Enable UAT' override would reset to disabled when saving other configuration settings.
+- **Whitelist Synchronization**: Added `DUMP978_FORCE_OVERRIDE` to the security whitelist for config saves.
+- **Status Reporting**: Updated the SDR configuration state machine to properly report the force-enable status during UI refreshes.
+- **Container Deployment**: Fixed logic in `config_builder.py` to ensure the `dump978` container is created even without a local SDR assignment when forced (supporting networked UAT source scenarios).
+
+---
 ## v3.0.70 — 2026-04-14
 
 ### Fixed

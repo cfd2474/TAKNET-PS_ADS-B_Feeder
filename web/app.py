@@ -2964,7 +2964,7 @@ CONFIG_WHITELIST = {
     'FR24_ENABLED', 'FR24_KEY', 'FR24_SHARING_KEY',
     'ADSBFI_ENABLED', 'ADSBLOL_ENABLED', 'ADSBX_ENABLED', 'AIRPLANESLIVE_ENABLED', 'ADSBHUB_ENABLED', 'PIAWARE_ENABLED',
     'PIAWARE_FEEDER_ID', 'ADSBHUB_STATION_KEY',
-    'DUMP978_ENABLED', 'SDR_978_DEVICE', 'SDR_978_TYPE', 'SDR_978_PATH', 'SDR_978_GAIN',
+    'DUMP978_ENABLED', 'DUMP978_FORCE_OVERRIDE', 'SDR_978_DEVICE', 'SDR_978_TYPE', 'SDR_978_PATH', 'SDR_978_GAIN',
     'NETBIRD_ENABLED', 'NETBIRD_SETUP_KEY', 'NETBIRD_MANAGEMENT_URL',
     'TAILSCALE_AUTH_KEY', 'TAILSCALE_HOSTNAME',
     'FEEDER_UUID'
@@ -3585,6 +3585,7 @@ def api_get_current_sdr_config():
             'readsb_device': env.get('READSB_DEVICE', '0'),
             'readsb_gain': env.get('READSB_GAIN', 'autogain'),
             'dump978_enabled': env.get('DUMP978_ENABLED', 'false') == 'true',
+            'dump978_force_override': env.get('DUMP978_FORCE_OVERRIDE', 'false') == 'true',
             'dump978_device': env.get('DUMP978_DEVICE', '1'),
             'dump978_gain': env.get('DUMP978_GAIN', 'autogain')
         }

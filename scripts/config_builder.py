@@ -454,8 +454,10 @@ def build_dump978_service(env_vars):
     sdr_978_path = env_vars.get('SDR_978_PATH', '1')
     sdr_978_gain = env_vars.get('SDR_978_GAIN', 'autogain')
     
-    # Don't create service if 978 not configured
-    if not sdr_978_device or sdr_978_device == 'disabled':
+    force_override = env_vars.get('DUMP978_FORCE_OVERRIDE', 'false').lower() == 'true'
+    
+    # Don't create service if 978 not configured AND not forced
+    if (not sdr_978_device or sdr_978_device == 'disabled') and not force_override:
         return None
     
     # Get values from env_vars

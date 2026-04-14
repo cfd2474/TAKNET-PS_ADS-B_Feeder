@@ -1694,7 +1694,8 @@
                 FEEDER_TZ: document.getElementById('tz').value,
                 MLAT_SITE_NAME: finalSiteName,
                 ZIP_CODE: userZipCode || zipCode || '',
-                TAKNET_PS_FEEDER_CLAIM_KEY: claimRaw
+                TAKNET_PS_FEEDER_CLAIM_KEY: claimRaw,
+                DUMP978_FORCE_OVERRIDE: document.getElementById('force_dump978').checked ? 'true' : 'false'
             };
             
             try {
