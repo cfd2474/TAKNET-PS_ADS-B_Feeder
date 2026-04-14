@@ -1,4 +1,4 @@
-## v3.0.84 — 2026-04-14
+## v3.0.85 — 2026-04-14
 
 ### Fixed
 - **Reverted Proxy Routing**: Completely reverted all web tunnel proxy and trailing slash configurations back to `v3.0.82` behavior due to a reported UI parsing compatibility layer mismatch. Restored earlier version logic identically.
