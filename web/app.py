@@ -14,6 +14,8 @@ import json
 import concurrent.futures
 import threading
 import time
+import gzip
+import io
 import socket
 import urllib.request
 import uuid
@@ -2226,46 +2228,59 @@ def stats_proxy(service, path=''):
             clean_path = path if path.startswith('/') else '/' + path
             target_url = cfg['host'] + clean_path
 
-        # Set headers to look like a real browser to avoid bot blocks
+        # Force specific headers to mask the proxy
         headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
             'Accept': '*/*',
-            'Cache-Control': 'no-cache'
+            'Accept-Encoding': 'gzip',  # Support compression for bandwidth and deep scanning
+            'Cache-Control': 'no-cache',
+            'Referer': cfg['host'] + cfg['index']
         }
         
+        # Determine target host for Referer/Origin if needed
         req = urllib.request.Request(target_url, headers=headers)
         with urllib.request.urlopen(req, timeout=12) as response:
+            encoding = response.info().get('Content-Encoding')
             content = response.read()
+            
+            # 1. Handle decompression if necessary
+            if encoding == 'gzip':
+                with gzip.GzipFile(fileobj=io.BytesIO(content)) as f:
+                    content = f.read()
+                    
             mime_type = response.info().get_content_type()
             
-            # For HTML content, perform recursive rewriting
-            if 'text/html' in mime_type:
-                html = content.decode('utf-8', errors='ignore')
-                
-                # 1. Inject base tag to fix background AJAX and relative path resolution
-                # This is critical for airplaneslive status checks
-                base_tag = f'<base href="/stats/proxy/{service}/">'
-                if '<head>' in html:
-                    html = html.replace('<head>', f'<head>{base_tag}')
-                else:
-                    html = f'{base_tag}{html}'
-
-                # 2. Rewrite URLs to go back through our proxy
-                if service == 'airplaneslive':
-                    # Replace absolute https://airplanes.live with /stats/proxy/airplaneslive
-                    html = html.replace('https://airplanes.live', f'/stats/proxy/{service}')
-                    # Replace root-relative paths (/css/...) with /stats/proxy/airplaneslive/css/...
-                    # Use negative lookahead to avoid double-prefixing already proxied links
-                    html = re.sub(r'href="/(?!stats/)', f'href="/stats/proxy/{service}/', html)
-                    html = re.sub(r'src="/(?!stats/)', f'src="/stats/proxy/{service}/', html)
+            # 2. Perform deep content rewriting
+            if 'text/html' in mime_type or 'javascript' in mime_type or 'json' in mime_type:
+                try:
+                    text = content.decode('utf-8', errors='ignore')
                     
-                return html
-                
-            # For other assets (CSS/JS/Images), serve with correct MIME and allow CORS
+                    if 'text/html' in mime_type:
+                        # Inject base tag for relative path fixing
+                        base_tag = f'<base href="/stats/proxy/{service}/">'
+                        if '<head>' in text:
+                            text = text.replace('<head>', f'<head>{base_tag}')
+                        else:
+                            text = f'{base_tag}{text}'
+                        
+                        # Fix root-relative links in HTML
+                        text = re.sub(r'href="/(?!stats/)', f'href="/stats/proxy/{service}/', text)
+                        text = re.sub(r'src="/(?!stats/)', f'src="/stats/proxy/{service}/', text)
+
+                    # Deep string replacement for absolute URLs (affects HTML, JS, and JSON)
+                    if service == 'airplaneslive':
+                        # Catch both https and non-https just in case
+                        text = text.replace('https://airplanes.live', f'/stats/proxy/{service}')
+                        text = text.replace('//airplanes.live', f'/stats/proxy/{service}')
+                    
+                    content = text.encode('utf-8')
+                except Exception:
+                    pass
+            
             asset_headers = {
                 'Content-Type': mime_type,
                 'Access-Control-Allow-Origin': '*',
-                'Cache-Control': 'public, max-age=3600'
+                'Cache-Control': 'no-cache'
             }
             return content, 200, asset_headers
             

@@ -1,11 +1,11 @@
 {
-  "version": "3.0.64",
-  "release_date": "2026-04-13",
-  "release_name": "Emergency Hotfix",
+  "version": "3.0.65",
+  "release_date": "2026-04-14",
+  "release_name": "Deep Proxy Rewrite",
   "download_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh",
   "changelog_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/CHANGELOG.md",
   "minimum_version": "2.40.0",
   "breaking_changes": false,
-  "release_notes": "Emergency hotfix to resolve a 500 Internal Server Error on the dashboard caused by missing dependencies in the v3.0.63 cleanup.",
+  "release_notes": "Implemented deep recursive proxying specifically for airplanes.live. This version rewrites absolute URLs within HTML, JavaScript, and JSON responses, while masking proxy identifying headers to ensure accurate feeder status detection in remote views.",
   "update_priority": 3
 }

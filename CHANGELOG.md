@@ -1,3 +1,9 @@
+## v3.0.65 — 2026-04-14
+
+### Fixed
+- **Deep Proxying for Airplanes.Live**: Implemented aggressive URL rewriting and header masking specifically for the `airplanes.live` status page. This version now scans and rewrites absolute URLs within HTML, JavaScript, and JSON responses, ensuring that background AJAX checks are correctly routed through the feeder's proxy. This resolves the "no beast connection found" error when viewing the dashboard from a remote connection.
+
+---
 ## v3.0.64 — 2026-04-13
 
 ### Fixed
