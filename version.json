@@ -1,5 +1,5 @@
 {
-  "version": "3.0.88",
+  "version": "3.0.89",
   "name": "TAKNET-PS ADS-B Feeder",
-  "release_notes": "Hotfix: Automatically detect and migrate legacy UAT configurations (UAT_RECEIVER_TYPE) to the new dump978 service model during upgrade."
+  "release_notes": "Hotfix: Robust UAT migration fix for partial upgrades. Corrected .env file path and ensured independent migration of legacy UAT settings."
 }

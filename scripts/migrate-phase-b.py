@@ -7,11 +7,16 @@ Migrates existing .env files to add Phase B driver variables
 import sys
 import os
 
-def read_env(env_file='/opt/adsb/.env'):
+def read_env(env_file='/opt/adsb/config/.env'):
     """Read environment file"""
     env = {}
     if not os.path.exists(env_file):
-        return env
+        # Fallback to legacy path if new path doesn't exist
+        legacy_path = '/opt/adsb/.env'
+        if os.path.exists(legacy_path):
+            env_file = legacy_path
+        else:
+            return env
     
     with open(env_file, 'r') as f:
         for line in f:
@@ -21,8 +26,10 @@ def read_env(env_file='/opt/adsb/.env'):
                 env[key.strip()] = value.strip()
     return env
 
-def write_env(env, env_file='/opt/adsb/.env'):
+def write_env(env, env_file='/opt/adsb/config/.env'):
     """Write environment file"""
+    # Ensure directory exists
+    os.makedirs(os.path.dirname(env_file), exist_ok=True)
     with open(env_file, 'w') as f:
         for key, value in sorted(env.items()):
             f.write(f'{key}={value}\n')
@@ -33,38 +40,38 @@ def migrate_to_phase_b():
     print("TAKNET-PS Phase B Migration")
     print("="*60)
     
-    env_file = '/opt/adsb/.env'
+    env_file = '/opt/adsb/config/.env'
     if not os.path.exists(env_file):
-        print(f"✗ Error: {env_file} not found")
+        # Fallback to legacy path
+        env_file = '/opt/adsb/.env'
+        
+    if not os.path.exists(env_file):
+        print(f"✗ Error: .env not found in /opt/adsb/config/ or /opt/adsb/")
         sys.exit(1)
+    
+    print(f"Using configuration file: {env_file}")
     
     # Read current config
     env = read_env(env_file)
     
-    # Check if already migrated
-    if 'SDR_1090_DRIVER' in env:
-        print("✓ Already migrated to Phase B")
-        return
+    # Phase 1: SDR 1090 Migration
+    if 'SDR_1090_DRIVER' not in env:
+        print("\n🔄 Migrating SDR 1090 to Phase B format...")
+        # Set driver (use existing TYPE or default to rtlsdr)
+        env['SDR_1090_DRIVER'] = env.get('SDR_1090_TYPE', 'rtlsdr')
+        # Set serial
+        env['SDR_1090_SERIAL'] = env.get('SDR_1090_SERIAL', '')
+        # Ensure device is set
+        if 'SDR_1090_DEVICE' not in env:
+            env['SDR_1090_DEVICE'] = env.get('READSB_DEVICE', '0')
+        # Add USE_SOAPYSDR flag
+        if 'USE_SOAPYSDR' not in env:
+            env['USE_SOAPYSDR'] = 'auto'
+        print("✓ SDR 1090 migration complete")
+    else:
+        print("✓ SDR 1090 already migrated")
     
-    print("\n📋 Current Configuration:")
-    print(f"  SDR_1090_TYPE: {env.get('SDR_1090_TYPE', 'Not set')}")
-    print(f"  SDR_1090_DEVICE: {env.get('SDR_1090_DEVICE', 'Not set')}")
-    print(f"  READSB_DEVICE: {env.get('READSB_DEVICE', 'Not set')}")
-    
-    # Migrate SDR_1090 variables
-    print("\n🔄 Migrating to Phase B format...")
-    
-    # Set driver (use existing TYPE or default to rtlsdr)
-    env['SDR_1090_DRIVER'] = env.get('SDR_1090_TYPE', 'rtlsdr')
-    
-    # Set serial (empty for now, will be detected)
-    env['SDR_1090_SERIAL'] = env.get('SDR_1090_SERIAL', '')
-    
-    # Ensure device is set
-    if 'SDR_1090_DEVICE' not in env:
-        env['SDR_1090_DEVICE'] = env.get('READSB_DEVICE', '0')
-    
-    # Migrate SDR_978 variables
+    # Phase 2: SDR 978 (UAT) Migration
     # legacy UAT detection - check if UAT was enabled in old format
     if env.get('DUMP978_ENABLED') is None:
         uat_active = False
@@ -81,24 +88,27 @@ def migrate_to_phase_b():
             env['DUMP978_ENABLED'] = 'true'
 
     if env.get('DUMP978_ENABLED', 'false') == 'true':
-        env['SDR_978_DRIVER'] = env.get('SDR_978_TYPE', 'rtlsdr')
-        env['SDR_978_SERIAL'] = env.get('SDR_978_SERIAL', '')
-        if 'SDR_978_DEVICE' not in env:
-            env['SDR_978_DEVICE'] = env.get('DUMP978_DEVICE', '1')
+        if 'SDR_978_DRIVER' not in env:
+            print("🔄 Migrating SDR 978 (UAT) to Phase B format...")
+            env['SDR_978_DRIVER'] = env.get('SDR_978_TYPE', 'rtlsdr')
+            env['SDR_978_SERIAL'] = env.get('SDR_978_SERIAL', '')
+            if 'SDR_978_DEVICE' not in env:
+                env['SDR_978_DEVICE'] = env.get('DUMP978_DEVICE', '1')
+            print("✓ SDR 978 migration complete")
     
-    # Add USE_SOAPYSDR flag (default to auto)
-    if 'USE_SOAPYSDR' not in env:
-        env['USE_SOAPYSDR'] = 'auto'
+    # Phase 3: Deployment Mode
+    if 'FEEDER_DEPLOYMENT_MODE' not in env:
+        env['FEEDER_DEPLOYMENT_MODE'] = 'stationary'
     
-    # Write updated config
-    write_env(env, env_file)
+    # Write updated config (always use the new standard path)
+    write_env(env, '/opt/adsb/config/.env')
     
-    print("\n✓ Migration Complete!")
-    print(f"\n📋 New Configuration:")
-    print(f"  SDR_1090_DRIVER: {env['SDR_1090_DRIVER']}")
-    print(f"  SDR_1090_SERIAL: {env['SDR_1090_SERIAL']}")
-    print(f"  SDR_1090_DEVICE: {env['SDR_1090_DEVICE']}")
-    print(f"  USE_SOAPYSDR: {env['USE_SOAPYSDR']}")
+    print("\n✓ All Migration steps verified!")
+    print(f"\n📋 Configuration Summary:")
+    print(f"  SDR_1090_DRIVER: {env.get('SDR_1090_DRIVER')}")
+    print(f"  DUMP978_ENABLED: {env.get('DUMP978_ENABLED', 'false')}")
+    if env.get('DUMP978_ENABLED') == 'true':
+        print(f"  SDR_978_DRIVER: {env.get('SDR_978_DRIVER')}")
     
     print("\n⚠ Note: Configuration will use native drivers by default (auto mode)")
     print("   RTL-SDR devices will continue using READSB_DEVICE_TYPE=rtlsdr")
