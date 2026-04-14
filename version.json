@@ -1,11 +1,11 @@
 {
-  "version": "3.0.69",
+  "version": "3.0.70",
   "release_date": "2026-04-14",
-  "release_name": "Aggregator Upstream Error Reporting",
+  "release_name": "Web Tunnel Proxy Link Navigation",
   "download_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh",
   "changelog_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/CHANGELOG.md",
   "minimum_version": "2.40.0",
   "breaking_changes": false,
-  "release_notes": "Improved the stats proxy error reporting functionality to distinctly identify HTTP upstream server outage states, particularly for intermittent aggregator API downtime instances on remote services.",
+  "release_notes": "Resolved a navigation issue where community stats links and embedded proxy assets failed to load when accessing the dashboard remotely via the tak-solutions.com Web Tunnel UI. Implemented advanced X-Forwarded-Prefix handling and deep URL injection mapping to correct proxy paths.",
   "update_priority": 3
 }

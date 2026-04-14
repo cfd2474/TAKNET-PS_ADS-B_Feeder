@@ -1,3 +1,9 @@
+## v3.0.70 — 2026-04-14
+
+### Fixed
+- **Web Tunnel Proxy Links**: Fixed an issue where clicking the community stats links (like adsb.fi, adsb.lol, airplanes.live) from a remote web session via `tak-solutions.com` would resulting in broken navigation / 404 errors. Handled by dynamically calculating and appending the `X-Forwarded-Prefix` HTTP header to all absolute URLs in `app.py` proxy logic.
+
+---
 ## v3.0.69 — 2026-04-14
 
 ### Changed

@@ -2257,28 +2257,33 @@ def stats_proxy(service, path=''):
             if 'text/html' in mime_type:
                 html = content.decode('utf-8', errors='ignore')
                 
+                prefix = request.headers.get('X-Forwarded-Prefix', '')
+                base_proxy = f'{prefix}/stats/proxy/{service}'
+                
                 # Default base tag inject for all HTML (preserves standard proxy behavior)
-                base_tag = f'<base href="/stats/proxy/{service}/">'
+                base_tag = f'<base href="{base_proxy}/">'
                 if '<head>' in html:
                     html = html.replace('<head>', f'<head>{base_tag}')
                 else:
                     html = f'{base_tag}{html}'
                 
                 # Fix root-relative links in HTML
-                html = re.sub(r'href="/(?!stats/)', f'href="/stats/proxy/{service}/', html)
-                html = re.sub(r'src="/(?!stats/)', f'src="/stats/proxy/{service}/', html)
+                html = re.sub(r'href="/(?!stats/)', f'href="{base_proxy}/', html)
+                html = re.sub(r'src="/(?!stats/)', f'src="{base_proxy}/', html)
                 content = html.encode('utf-8')
                 
             # Perform deep script rewriting ONLY for airplaneslive
             if service in ('airplaneslive', 'airplaneslive_api') and ('text/html' in mime_type or 'javascript' in mime_type or 'json' in mime_type):
                 try:
                     text = content.decode('utf-8', errors='ignore')
+                    prefix = request.headers.get('X-Forwarded-Prefix', '')
+                    base_proxy = f'{prefix}/stats/proxy/{service}'
 
                     # Deep string replacement for absolute URLs (affects HTML, JS, and JSON)
                     # Replace the API subdomain first so it doesn't get partially matched
-                    text = text.replace('https://api.airplanes.live', '/stats/proxy/airplaneslive_api')
-                    text = text.replace('https://airplanes.live', f'/stats/proxy/airplaneslive')
-                    text = text.replace('//airplanes.live', f'/stats/proxy/airplaneslive')
+                    text = text.replace('https://api.airplanes.live', f'{prefix}/stats/proxy/airplaneslive_api')
+                    text = text.replace('https://airplanes.live', f'{base_proxy}')
+                    text = text.replace('//airplanes.live', f'{base_proxy}')
                     
                     content = text.encode('utf-8')
                 except Exception:
@@ -4129,18 +4134,20 @@ def api_dashboard_bootstrap():
         # Use UUID if available for community stats links to prevent 404s
         link_id = feeder_uuid if feeder_uuid else feeder_id
         
+        prefix = request.headers.get('X-Forwarded-Prefix', '')
+        
         if service_name == 'adsbx':
             # Reverted to UUID pattern: https://www.adsbexchange.com/api/feeders/?feed=UUID
             stats_url = f"https://www.adsbexchange.com/api/feeders/?feed={link_id}"
         elif service_name == 'adsbfi':
             # Proxy through feeder to use feeder's public IP
-            stats_url = "/stats/proxy/adsbfi"
+            stats_url = f"{prefix}/stats/proxy/adsbfi"
         elif service_name == 'adsblol':
             # Proxy through feeder to use feeder's public IP
-            stats_url = "/stats/proxy/adsblol"
+            stats_url = f"{prefix}/stats/proxy/adsblol"
         elif service_name == 'airplaneslive':
             # Proxy through feeder to use feeder's public IP
-            stats_url = "/stats/proxy/airplaneslive"
+            stats_url = f"{prefix}/stats/proxy/airplaneslive"
             
         return {
             'enabled': True,

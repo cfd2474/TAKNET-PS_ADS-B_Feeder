@@ -246,25 +246,25 @@ def write_status(connected, feeder_id=None, error=None):
 
 def strip_feeder_prefix(path):
     """Remove one /feeder/<id> prefix when the aggregator forwards prefixed paths.
-
-    Local nginx uses exact paths like ``location = /logo.png``; a request for
-    ``/feeder/my-id/logo.png`` would otherwise miss and fall through to Flask (404).
-    """
+    Returns (stripped_path, extracted_prefix)."""
     if not path:
-        return path
+        return path, ""
     qsep = path.find("?")
     q = ""
+    prefix = ""
     if qsep >= 0:
         q = path[qsep:]
         path = path[:qsep]
     if not path.startswith("/feeder/"):
-        return path + q
+        return path + q, ""
     parts = [p for p in path.split("/") if p]
     if len(parts) < 2 or parts[0] != "feeder":
-        return path + q
+        return path + q, ""
+    
+    prefix = f"/feeder/{parts[1]}"
     if len(parts) == 2:
-        return "/" + q if q else "/"
-    return "/" + "/".join(parts[2:]) + q
+        return "/" + q if q else "/", prefix
+    return "/" + "/".join(parts[2:]) + q, prefix
 
 
 def infer_target(path, headers):
@@ -305,7 +305,7 @@ def forward_request(method, path, headers, body_b64):
     Returns (status, headers_dict, body_base64, target, upstream_base, path_used).
     """
     body = base64.b64decode(body_b64) if body_b64 else b""
-    path = strip_feeder_prefix(path)
+    path, url_prefix = strip_feeder_prefix(path)
     target = infer_target(path, headers)
     if target == "tar1090":
         upstream_host, upstream_port = TAR1090_HOST, TAR1090_PORT
@@ -318,6 +318,8 @@ def forward_request(method, path, headers, body_b64):
     # Preserve Host from aggregator if present; otherwise set a sane default.
     if "Host" not in req_headers:
         req_headers["Host"] = f"{upstream_host}:{upstream_port}"
+    if url_prefix:
+        req_headers["X-Forwarded-Prefix"] = url_prefix
 
     req = urllib.request.Request(url, data=body if method in ("POST", "PUT", "PATCH") else None, method=method, headers=req_headers)
     try:
