@@ -1,3 +1,10 @@
+## v3.0.78 — 2026-04-14
+
+### Changed
+- **UI Countdown Polish**: Standardized the 10-second redirect countdown across all restart flows (Modal and Full-page).
+- **Restart Message**: Updated the redirect message to "Services restarting, reloading dashboard in X..." as requested for better clarity during service initialization.
+
+---
 ## v3.0.77 — 2026-04-14
 
 ### Changed

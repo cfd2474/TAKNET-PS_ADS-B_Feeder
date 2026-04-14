@@ -1868,7 +1868,7 @@
                             
                             // 10-second countdown before redirect
                             let countdown = 10;
-                            logDiv.innerHTML += `\n\n✅ Complete! Redirecting to dashboard in <span id="redirect-timer">${countdown}</span> seconds...`;
+                            logDiv.innerHTML += `\n\n✅ Services restarting, reloading dashboard in <span id="redirect-timer">${countdown}</span>...`;
                             
                             const countdownInterval = setInterval(() => {
                                 countdown--;
@@ -1917,11 +1917,19 @@
                 
                 if (!response.ok) throw new Error('Failed to restart');
                 
-                statusDiv.innerHTML = '<p>✓ Services restarting! Redirecting to dashboard...</p>';
+                let countdown = 10;
+                statusDiv.innerHTML = `<p>✓ Services restarting, reloading dashboard in <span id="modal-redirect-timer">${countdown}</span>...</p>`;
                 
-                setTimeout(() => {
-                    window.location.href = '/dashboard';
-                }, 2000);
+                const countdownInterval = setInterval(() => {
+                    countdown--;
+                    const timerSpan = document.getElementById('modal-redirect-timer');
+                    if (timerSpan) timerSpan.textContent = countdown;
+                    
+                    if (countdown <= 0) {
+                        clearInterval(countdownInterval);
+                        window.location.href = '/dashboard';
+                    }
+                }, 1000);
                 
             } catch (error) {
                 statusDiv.innerHTML = '<p class="error">✗ Error: ' + error.message + '</p>';
