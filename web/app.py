@@ -4095,16 +4095,21 @@ def api_dashboard_core_services():
             return 'not_installed'
         return 'running' if stats.get('data_feed_active', False) else 'stopped'
 
+    def get_service_state_vsafe(name, env_key, docker_status):
+        if env.get(env_key, '').lower() != 'true':
+            return 'not_installed'
+        return get_service_state(name, docker_status)
+
     service_states = {
         'ultrafeeder': get_service_state('ultrafeeder', docker_status),
-        'dump978': get_service_state('dump978', docker_status),
-        'fr24': get_service_state('fr24', docker_status),
-        'piaware': get_service_state('piaware', docker_status),
+        'dump978': get_service_state_vsafe('dump978', 'DUMP978_ENABLED', docker_status),
+        'fr24': get_service_state_vsafe('fr24', 'FR24_ENABLED', docker_status),
+        'piaware': get_service_state_vsafe('piaware', 'PIAWARE_ENABLED', docker_status),
         'adsbx': get_comm_state('adsbx', prefix),
         'adsbfi': get_comm_state('adsbfi', prefix),
         'adsblol': get_comm_state('adsblol', prefix),
         'airplaneslive': get_comm_state('airplaneslive', prefix),
-        'adsbhub': get_service_state('adsbhub', docker_status),
+        'adsbhub': get_service_state_vsafe('adsbhub', 'ADSBHUB_ENABLED', docker_status),
         'autoheal': get_service_state('autoheal', docker_status),
         'mobile_mode_gps': get_service_state('mobile-mode-gps', docker_status) if env.get('FEEDER_DEPLOYMENT_MODE') == 'mobile' else None,
         'tunnel_client': 'running' if tunnel_running else 'stopped'
@@ -4146,17 +4151,22 @@ def api_dashboard_bootstrap():
                 return 'not_installed'
             return 'running' if stats.get('data_feed_active', False) else 'stopped'
 
+        def get_service_state_vsafe(name, env_key, docker_status):
+            if env.get(env_key, '').lower() != 'true':
+                return 'not_installed'
+            return get_service_state(name, docker_status)
+
         ultrafeeder_running = get_service_state('ultrafeeder', docker_status)
         service_states = {
             'ultrafeeder': ultrafeeder_running,
-            'dump978': get_service_state('dump978', docker_status),
-            'fr24': get_service_state('fr24', docker_status),
-            'piaware': get_service_state('piaware', docker_status),
+            'dump978': get_service_state_vsafe('dump978', 'DUMP978_ENABLED', docker_status),
+            'fr24': get_service_state_vsafe('fr24', 'FR24_ENABLED', docker_status),
+            'piaware': get_service_state_vsafe('piaware', 'PIAWARE_ENABLED', docker_status),
             'adsbx': get_comm_state('adsbx', prefix),
             'adsbfi': get_comm_state('adsbfi', prefix),
             'adsblol': get_comm_state('adsblol', prefix),
             'airplaneslive': get_comm_state('airplaneslive', prefix),
-            'adsbhub': get_service_state('adsbhub', docker_status),
+            'adsbhub': get_service_state_vsafe('adsbhub', 'ADSBHUB_ENABLED', docker_status),
             'autoheal': get_service_state('autoheal', docker_status),
             'mobile_mode_gps': get_service_state('mobile-mode-gps', docker_status) if env.get('FEEDER_DEPLOYMENT_MODE') == 'mobile' else None,
             'tunnel_client': 'running' if tunnel_running else 'stopped'

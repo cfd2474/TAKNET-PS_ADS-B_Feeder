@@ -1,3 +1,6 @@
+## v3.0.93 - Apr 14, 2026
+- Hotfix: Corrected dashboard service status reporting to honor disabled flags for FR24, ADSBHub, and FlightAware.
+
 ## v3.0.92 - Apr 14, 2026
 - Hotfix: Strict UAT service activation rules. Ensures dump978 service state strictly matches the truth table: (Hardware Detected OR Force Override ON). Prevents "Stopped" service status errors by reconciling config at runtime.
 

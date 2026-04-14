@@ -1,5 +1,5 @@
 {
-  "version": "3.0.92",
+  "version": "3.0.93",
   "name": "TAKNET-PS ADS-B Feeder",
-  "release_notes": "Hotfix: Strict UAT service activation rules. Ensures dump978 service state strictly matches the truth table: (Hardware Detected OR Force Override ON). Prevents 'Stopped' service status errors by reconciling config at runtime."
+  "release_notes": "Hotfix: Corrected dashboard service status reporting to honor disabled flags for FR24, ADSBHub, and FlightAware."
 }
