@@ -5,6 +5,7 @@ let lastUpdateTime = new Date();
 let pollInFlight = false;
 let healthPollInFlight = false;
 let eventsPollInFlight = false;
+let corePollInFlight = false;
 
 function debugLog(...args) {
     if (DASHBOARD_DEBUG) {
@@ -584,6 +585,23 @@ async function pollSystemHealth() {
     }
 }
 
+async function pollCoreServices() {
+    if (corePollInFlight) return;
+    corePollInFlight = true;
+    try {
+        const t = Date.now();
+        const resp = await fetch(`/api/dashboard/core-services?t=${t}`);
+        if (resp.ok) {
+            const data = await resp.json();
+            renderCoreStatus(data);
+        }
+    } catch (e) {
+        debugLog('core services poll failed', e);
+    } finally {
+        corePollInFlight = false;
+    }
+}
+
 async function pollSystemEvents() {
     if (eventsPollInFlight) return;
     eventsPollInFlight = true;
@@ -651,6 +669,7 @@ function initPolling() {
     if (!dashboardPollInterval) {
         dashboardPollInterval = setInterval(pollDashboard, 15000);
     }
+    setInterval(pollCoreServices, 5000);
     setInterval(updateLastUpdateTime, 1000);
 }
 
