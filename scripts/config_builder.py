@@ -482,6 +482,7 @@ def build_dump978_service(env_vars):
     sdr_978_type = env_vars.get('SDR_978_TYPE', 'rtlsdr')
     sdr_978_path = env_vars.get('SDR_978_PATH', env_vars.get('DUMP978_DEVICE', '1'))
     sdr_978_gain = env_vars.get('SDR_978_GAIN', env_vars.get('DUMP978_GAIN', 'autogain'))
+    sdr_978_serial = env_vars.get('SDR_978_SERIAL', '').strip()
     
     enabled = env_vars.get('DUMP978_ENABLED', 'false').lower() == 'true'
     force_override = env_vars.get('DUMP978_FORCE_OVERRIDE', 'false').lower() == 'true'
@@ -530,11 +531,20 @@ def build_dump978_service(env_vars):
             'DUMP978_JSON_STDOUT=true'
         ])
     else:
-        # RTL-SDR: Map USB bus and use device index
-        # Modern images prefer DUMP978_RTLSDR_DEVICE for specific SDR selection
+        # RTL-SDR: Map USB bus and identify device by serial (preferred) or index
+        # DUMP978_RTLSDR_DEVICE must be a serial number string, NOT a numeric index.
+        # SoapySDR internally calls rtlsdr_get_index_by_serial() which fails on bare
+        # index numbers.  Fall back to the index only when no serial is available.
+        if sdr_978_serial:
+            rtlsdr_device_id = sdr_978_serial
+            print(f"  dump978: Using SDR serial {rtlsdr_device_id}")
+        else:
+            rtlsdr_device_id = sdr_978_path
+            print(f"  dump978: No serial found, falling back to device path/index {rtlsdr_device_id}")
+        
         service['devices'] = ['/dev/bus/usb:/dev/bus/usb']
         service['environment'].extend([
-            f'DUMP978_RTLSDR_DEVICE={sdr_978_path}',
+            f'DUMP978_RTLSDR_DEVICE={rtlsdr_device_id}',
             f'DUMP978_SDR_GAIN={sdr_978_gain}',
             'DUMP978_SDR_AGC=off',
             'DUMP978_JSON_STDOUT=true'

@@ -1,3 +1,6 @@
+## v3.0.94 - Apr 14, 2026
+- **Hotfix: dump978 SDR Selection**: Fixed `DUMP978_RTLSDR_DEVICE` to use the SDR serial number instead of the device index. SoapySDR internally calls `rtlsdr_get_index_by_serial()` which fails on bare numeric indices, causing "No matching SoapySDR device found" errors. The config builder now prefers `SDR_978_SERIAL` when available.
+
 ## v3.0.93 - Apr 14, 2026
 - Hotfix: Corrected dashboard service status reporting to honor disabled flags for FR24, ADSBHub, and FlightAware.
 

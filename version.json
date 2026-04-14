@@ -1,5 +1,5 @@
 {
-  "version": "3.0.93",
+  "version": "3.0.94",
   "name": "TAKNET-PS ADS-B Feeder",
-  "release_notes": "Hotfix: Corrected dashboard service status reporting to honor disabled flags for FR24, ADSBHub, and FlightAware."
+  "release_notes": "Hotfix: Fixed dump978 SoapySDR error by using SDR serial number instead of device index for DUMP978_RTLSDR_DEVICE."
 }
