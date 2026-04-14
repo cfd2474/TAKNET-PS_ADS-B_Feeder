@@ -1,3 +1,11 @@
+## v3.0.83 — 2026-04-14
+
+### Fixed
+- **Complex UI Proxy Integration**: Resolved a major issue where the FlightRadar24 and PiAware local monitoring UIs were failing to load over the web tunnel. These rich web applications are now automatically proxied directly through the feeder's local NGINX server out to the tunnel websocket, safely delivering full websocket capability over the remote connection without modification to the web applications themselves.
+- **Community Feed Trailing Slashes**: Fixed an HTML `<base>` tag context issue where community proxied links (`adsb.fi`, `adsb.lol`, `airplanes.live`) were failing to load relative assets over the tunnel. This was resolved by strictly enforcing trailing slashes on all dynamic `stats_url` proxy patterns.
+- **Proxy Regex Refinement**: Updated the `stats_proxy` absolute and relative URL rewriting engine to correctly ignore `/api/stats/` paths, preventing duplicate path rewriting loops.
+
+---
 ## v3.0.82 — 2026-04-14
 
 ### Fixed
