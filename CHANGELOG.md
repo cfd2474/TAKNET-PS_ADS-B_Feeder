@@ -1,3 +1,9 @@
+## v3.0.67 — 2026-04-14
+
+### Fixed
+- **Proxy Compatibility**: Isolated the aggressive deep proxy rewriting, gzip compression headers, and Referer masking strictly to the `airplanes.live` service. This restores original stable proxy block parsing for other aggregators (like `adsb.lol`) which were crashing or experiencing 500 errors due to the strict aggregator parsing rules introduced in v3.0.65.
+
+---
 ## v3.0.66 — 2026-04-14
 
 ### Fixed

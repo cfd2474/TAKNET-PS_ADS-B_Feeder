@@ -2229,15 +2229,17 @@ def stats_proxy(service, path=''):
             clean_path = path if path.startswith('/') else '/' + path
             target_url = cfg['host'] + clean_path
 
-        # Force specific headers to mask the proxy
         headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
             'Accept': '*/*',
-            'Accept-Encoding': 'gzip',  # Support compression for bandwidth and deep scanning
-            'Cache-Control': 'no-cache',
-            'Referer': cfg['host'] + cfg['index']
+            'Cache-Control': 'no-cache'
         }
         
+        # Apply aggressive proxy masking and compression ONLY for airplanes.live
+        if service in ('airplaneslive', 'airplaneslive_api'):
+            headers['Accept-Encoding'] = 'gzip'
+            headers['Referer'] = cfg['host'] + cfg['index']
+
         # Determine target host for Referer/Origin if needed
         req = urllib.request.Request(target_url, headers=headers)
         with urllib.request.urlopen(req, timeout=12) as response:
@@ -2252,28 +2254,31 @@ def stats_proxy(service, path=''):
             mime_type = response.info().get_content_type()
             
             # 2. Perform deep content rewriting
-            if 'text/html' in mime_type or 'javascript' in mime_type or 'json' in mime_type:
+            if 'text/html' in mime_type:
+                html = content.decode('utf-8', errors='ignore')
+                
+                # Default base tag inject for all HTML (preserves standard proxy behavior)
+                base_tag = f'<base href="/stats/proxy/{service}/">'
+                if '<head>' in html:
+                    html = html.replace('<head>', f'<head>{base_tag}')
+                else:
+                    html = f'{base_tag}{html}'
+                
+                # Fix root-relative links in HTML
+                html = re.sub(r'href="/(?!stats/)', f'href="/stats/proxy/{service}/', html)
+                html = re.sub(r'src="/(?!stats/)', f'src="/stats/proxy/{service}/', html)
+                content = html.encode('utf-8')
+                
+            # Perform deep script rewriting ONLY for airplaneslive
+            if service in ('airplaneslive', 'airplaneslive_api') and ('text/html' in mime_type or 'javascript' in mime_type or 'json' in mime_type):
                 try:
                     text = content.decode('utf-8', errors='ignore')
-                    
-                    if 'text/html' in mime_type:
-                        # Inject base tag for relative path fixing
-                        base_tag = f'<base href="/stats/proxy/{service}/">'
-                        if '<head>' in text:
-                            text = text.replace('<head>', f'<head>{base_tag}')
-                        else:
-                            text = f'{base_tag}{text}'
-                        
-                        # Fix root-relative links in HTML
-                        text = re.sub(r'href="/(?!stats/)', f'href="/stats/proxy/{service}/', text)
-                        text = re.sub(r'src="/(?!stats/)', f'src="/stats/proxy/{service}/', text)
 
                     # Deep string replacement for absolute URLs (affects HTML, JS, and JSON)
-                    if service == 'airplaneslive':
-                        # Replace the API subdomain first so it doesn't get partially matched
-                        text = text.replace('https://api.airplanes.live', '/stats/proxy/airplaneslive_api')
-                        text = text.replace('https://airplanes.live', f'/stats/proxy/{service}')
-                        text = text.replace('//airplanes.live', f'/stats/proxy/{service}')
+                    # Replace the API subdomain first so it doesn't get partially matched
+                    text = text.replace('https://api.airplanes.live', '/stats/proxy/airplaneslive_api')
+                    text = text.replace('https://airplanes.live', f'/stats/proxy/airplaneslive')
+                    text = text.replace('//airplanes.live', f'/stats/proxy/airplaneslive')
                     
                     content = text.encode('utf-8')
                 except Exception:
