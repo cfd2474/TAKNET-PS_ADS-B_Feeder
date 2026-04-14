@@ -3916,6 +3916,165 @@ def api_status():
     })
 
 
+def classify_health_value(v):
+    """Best-effort classifier for feed status text/values."""
+    if isinstance(v, bool):
+        return v
+    s = str(v or '').strip().lower()
+    if not s:
+        return None
+    negative = ['disconnected', 'not connected', 'inactive', 'failed', 'error', 'down', 'stopped', 'no']
+    positive = ['connected', 'active', 'running', 'ok', 'online', 'yes', 'healthy', 'synchronized', 'sync']
+    if any(tok in s for tok in negative):
+        return False
+    if any(tok in s for tok in positive):
+        return True
+    return None
+
+def flatten_pairs(obj, prefix=''):
+    pairs = []
+    if isinstance(obj, dict):
+        for k, v in obj.items():
+            key = f"{prefix}.{k}" if prefix else str(k)
+            pairs.extend(flatten_pairs(v, key))
+    elif isinstance(obj, list):
+        for i, v in enumerate(obj):
+            key = f"{prefix}[{i}]"
+            pairs.extend(flatten_pairs(v, key))
+    else:
+        pairs.append((prefix.lower(), obj))
+    return pairs
+
+def derive_data_mlat_from_payload(payload):
+    """Infer data/mlat health from FR24/PiAware JSON payloads."""
+    data_active = None
+    mlat_active = None
+    for key, value in flatten_pairs(payload):
+        state = classify_health_value(value)
+        if state is None:
+            continue
+        if 'mlat' in key:
+            mlat_active = state
+        elif any(tok in key for tok in ['feed', 'data', 'receiver', 'connection', 'piaware', 'fr24']):
+            data_active = state
+    return data_active, mlat_active
+
+def fetch_json(url):
+    try:
+        with urllib.request.urlopen(url, timeout=4) as r:
+            body = r.read().decode('utf-8', errors='ignore')
+        return json.loads(body)
+    except Exception:
+        return None
+
+def build_fr24_stats():
+    env = read_env()
+    if env.get('FR24_ENABLED', 'false').lower() != 'true':
+        return {'enabled': False, 'success': False}
+    if get_service_state('fr24') != 'running':
+        return {'enabled': True, 'success': True, 'data_feed_active': False, 'mlat_active': False, 'mlat_enabled': True}
+
+    payload = fetch_json('http://127.0.0.1:8754/monitor.json')
+    if payload is None:
+        payload = fetch_json('http://127.0.0.1:8754/status.json')
+
+    if payload is None:
+        return {'enabled': True, 'success': False}
+
+    data_active, mlat_active = derive_data_mlat_from_payload(payload)
+    if data_active is None:
+        data_active = False
+    if mlat_active is None:
+        mlat_active = False
+    return {
+        'enabled': True,
+        'success': True,
+        'data_feed_active': data_active,
+        'mlat_active': mlat_active,
+        'mlat_enabled': False
+    }
+
+def build_piaware_stats():
+    env = read_env()
+    if env.get('PIAWARE_ENABLED', 'false').lower() != 'true':
+        return {'enabled': False, 'success': False}
+    if get_service_state('piaware') != 'running':
+        return {'enabled': True, 'success': True, 'data_feed_active': False, 'mlat_active': False, 'mlat_enabled': True}
+
+    payload = fetch_json('http://127.0.0.1:8082/status.json')
+    if payload is None:
+        payload = fetch_json('http://127.0.0.1:8082/skyaware/data/status.json')
+
+    if payload is None:
+        return {'enabled': True, 'success': False}
+
+    data_active, mlat_active = derive_data_mlat_from_payload(payload)
+    if data_active is None:
+        data_active = False
+    if mlat_active is None:
+        mlat_active = False
+    return {
+        'enabled': True,
+        'success': True,
+        'data_feed_active': data_active,
+        'mlat_active': mlat_active,
+        'mlat_enabled': True
+    }
+
+def build_adsbhub_stats():
+    env = read_env()
+    if env.get('ADSBHUB_ENABLED', 'false').lower() != 'true':
+        return {'enabled': False, 'success': False}
+    return {
+        'enabled': True,
+        'success': True,
+        'data_feed_active': get_service_state('adsbhub') == 'running',
+        'mlat_active': False,
+        'mlat_enabled': False
+    }
+
+def build_community_stats(service_name, prefix=''):
+    env = read_env()
+    enabled_var = f"{service_name.upper()}_ENABLED"
+    if env.get(enabled_var, 'false').lower() != 'true':
+        return {'enabled': False, 'success': False}
+
+    feeder_id = (env.get('MLAT_SITE_NAME') or env.get('TUNNEL_FEEDER_ID') or socket.gethostname() or 'feeder').strip()
+    feeder_uuid = env.get('FEEDER_UUID', '').strip()
+    
+    # All these feeders are integrated into ultrafeeder. 
+    # If ultrafeeder is running and the feeder is enabled, it's 'active'.
+    is_active = get_service_state('ultrafeeder') == 'running'
+    
+    stats_url = '#'
+    # Use UUID if available for community stats links to prevent 404s
+    link_id = feeder_uuid if feeder_uuid else feeder_id
+    
+    # Prefix is passed in from main thread
+    # Now uses passed-in prefix instead of accessing flask.request directly (context-safe for threads)
+    
+    if service_name == 'adsbx':
+        # Reverted to UUID pattern: https://www.adsbexchange.com/api/feeders/?feed=UUID
+        stats_url = f"https://www.adsbexchange.com/api/feeders/?feed={link_id}"
+    elif service_name == 'adsbfi':
+        # Proxy through feeder to use feeder's public IP
+        stats_url = f"{prefix}/api/stats/proxy/adsbfi"
+    elif service_name == 'adsblol':
+        # Proxy through feeder to use feeder's public IP
+        stats_url = f"{prefix}/api/stats/proxy/adsblol"
+    elif service_name == 'airplaneslive':
+        # Proxy through feeder to use feeder's public IP
+        stats_url = f"{prefix}/api/stats/proxy/airplaneslive"
+        
+    return {
+        'enabled': True,
+        'success': True,
+        'data_feed_active': is_active,
+        'mlat_active': is_active,
+        'mlat_enabled': service_name != 'adsbhub',
+        'stats_url': stats_url
+    }
+
 @app.route('/api/dashboard/core-services', methods=['GET'])
 def api_dashboard_core_services():
     """Lightweight endpoint for polling just the core service states at high frequency."""
@@ -4078,165 +4237,6 @@ def api_dashboard_bootstrap():
             return resp
         except Exception:
             return {'success': False}
-
-    def classify_health_value(v):
-        """Best-effort classifier for feed status text/values."""
-        if isinstance(v, bool):
-            return v
-        s = str(v or '').strip().lower()
-        if not s:
-            return None
-        negative = ['disconnected', 'not connected', 'inactive', 'failed', 'error', 'down', 'stopped', 'no']
-        positive = ['connected', 'active', 'running', 'ok', 'online', 'yes', 'healthy', 'synchronized', 'sync']
-        if any(tok in s for tok in negative):
-            return False
-        if any(tok in s for tok in positive):
-            return True
-        return None
-
-    def flatten_pairs(obj, prefix=''):
-        pairs = []
-        if isinstance(obj, dict):
-            for k, v in obj.items():
-                key = f"{prefix}.{k}" if prefix else str(k)
-                pairs.extend(flatten_pairs(v, key))
-        elif isinstance(obj, list):
-            for i, v in enumerate(obj):
-                key = f"{prefix}[{i}]"
-                pairs.extend(flatten_pairs(v, key))
-        else:
-            pairs.append((prefix.lower(), obj))
-        return pairs
-
-    def derive_data_mlat_from_payload(payload):
-        """Infer data/mlat health from FR24/PiAware JSON payloads."""
-        data_active = None
-        mlat_active = None
-        for key, value in flatten_pairs(payload):
-            state = classify_health_value(value)
-            if state is None:
-                continue
-            if 'mlat' in key:
-                mlat_active = state
-            elif any(tok in key for tok in ['feed', 'data', 'receiver', 'connection', 'piaware', 'fr24']):
-                data_active = state
-        return data_active, mlat_active
-
-    def fetch_json(url):
-        try:
-            with urllib.request.urlopen(url, timeout=4) as r:
-                body = r.read().decode('utf-8', errors='ignore')
-            return json.loads(body)
-        except Exception:
-            return None
-
-    def build_fr24_stats():
-        env = read_env()
-        if env.get('FR24_ENABLED', 'false').lower() != 'true':
-            return {'enabled': False, 'success': False}
-        if get_service_state('fr24') != 'running':
-            return {'enabled': True, 'success': True, 'data_feed_active': False, 'mlat_active': False, 'mlat_enabled': True}
-
-        payload = fetch_json('http://127.0.0.1:8754/monitor.json')
-        if payload is None:
-            payload = fetch_json('http://127.0.0.1:8754/status.json')
-
-        if payload is None:
-            return {'enabled': True, 'success': False}
-
-        data_active, mlat_active = derive_data_mlat_from_payload(payload)
-        if data_active is None:
-            data_active = False
-        if mlat_active is None:
-            mlat_active = False
-        return {
-            'enabled': True,
-            'success': True,
-            'data_feed_active': data_active,
-            'mlat_active': mlat_active,
-            'mlat_enabled': False
-        }
-
-    def build_piaware_stats():
-        env = read_env()
-        if env.get('PIAWARE_ENABLED', 'false').lower() != 'true':
-            return {'enabled': False, 'success': False}
-        if get_service_state('piaware') != 'running':
-            return {'enabled': True, 'success': True, 'data_feed_active': False, 'mlat_active': False, 'mlat_enabled': True}
-
-        payload = fetch_json('http://127.0.0.1:8082/status.json')
-        if payload is None:
-            payload = fetch_json('http://127.0.0.1:8082/skyaware/data/status.json')
-
-        if payload is None:
-            return {'enabled': True, 'success': False}
-
-        data_active, mlat_active = derive_data_mlat_from_payload(payload)
-        if data_active is None:
-            data_active = False
-        if mlat_active is None:
-            mlat_active = False
-        return {
-            'enabled': True,
-            'success': True,
-            'data_feed_active': data_active,
-            'mlat_active': mlat_active,
-            'mlat_enabled': True
-        }
-
-    def build_adsbhub_stats():
-        env = read_env()
-        if env.get('ADSBHUB_ENABLED', 'false').lower() != 'true':
-            return {'enabled': False, 'success': False}
-        return {
-            'enabled': True,
-            'success': True,
-            'data_feed_active': get_service_state('adsbhub') == 'running',
-            'mlat_active': False,
-            'mlat_enabled': False
-        }
-
-    def build_community_stats(service_name, prefix=''):
-        env = read_env()
-        enabled_var = f"{service_name.upper()}_ENABLED"
-        if env.get(enabled_var, 'false').lower() != 'true':
-            return {'enabled': False, 'success': False}
-
-        feeder_id = (env.get('MLAT_SITE_NAME') or env.get('TUNNEL_FEEDER_ID') or socket.gethostname() or 'feeder').strip()
-        feeder_uuid = env.get('FEEDER_UUID', '').strip()
-        
-        # All these feeders are integrated into ultrafeeder. 
-        # If ultrafeeder is running and the feeder is enabled, it's 'active'.
-        is_active = get_service_state('ultrafeeder') == 'running'
-        
-        stats_url = '#'
-        # Use UUID if available for community stats links to prevent 404s
-        link_id = feeder_uuid if feeder_uuid else feeder_id
-        
-        # Prefix is passed in from main thread
-        # Now uses passed-in prefix instead of accessing flask.request directly (context-safe for threads)
-        
-        if service_name == 'adsbx':
-            # Reverted to UUID pattern: https://www.adsbexchange.com/api/feeders/?feed=UUID
-            stats_url = f"https://www.adsbexchange.com/api/feeders/?feed={link_id}"
-        elif service_name == 'adsbfi':
-            # Proxy through feeder to use feeder's public IP
-            stats_url = f"{prefix}/api/stats/proxy/adsbfi"
-        elif service_name == 'adsblol':
-            # Proxy through feeder to use feeder's public IP
-            stats_url = f"{prefix}/api/stats/proxy/adsblol"
-        elif service_name == 'airplaneslive':
-            # Proxy through feeder to use feeder's public IP
-            stats_url = f"{prefix}/api/stats/proxy/airplaneslive"
-            
-        return {
-            'enabled': True,
-            'success': True,
-            'data_feed_active': is_active,
-            'mlat_active': is_active,
-            'mlat_enabled': service_name != 'adsbhub',
-            'stats_url': stats_url
-        }
 
     results = {}
     # Run only request-context-free checks in threads (Flask views need main thread)

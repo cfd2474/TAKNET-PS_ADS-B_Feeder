@@ -1,4 +1,4 @@
-## v3.0.86 — 2026-04-14
+## v3.0.87 — 2026-04-14
 
 ### Added
 - **Dashboard Disclaimer**: Added a networking disclaimer to the "You are feeding" section to clarify Web Tunnel limitations and guide users toward direct connections or Tailscale for external feed links.
