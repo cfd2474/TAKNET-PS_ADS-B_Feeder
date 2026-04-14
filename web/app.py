@@ -3575,22 +3575,33 @@ def api_force_dump978():
             env['SDR_978_TYPE'] = 'rtlsdr'
             print("ℹ Forced UAT on via override")
         else:
-            # When unforcing, we should clear the override and reset enabled state
+            # When unforcing, we clear the override flag
             env['DUMP978_FORCE_OVERRIDE'] = 'false'
             
-            # Use 'disabled' instead of empty string for safety
-            env['DUMP978_ENABLED'] = 'false'
-            env['SDR_978_DEVICE'] = 'disabled'
-            env['SDR_978_PATH'] = 'disabled'
+            # CRITICAL: Check if a physical SDR is assigned to 978 before disabling.
+            # Physical SDR assignments (via the radio table) always set 'SDR_978_SERIAL'.
+            # Virtual 'Force' toggles never set this variable.
+            physical_sdr_present = 'SDR_978_SERIAL' in env
             
-            print("ℹ Force override removed for UAT")
-            
-            # Explicitly stop the container to be sure it doesn't hang around as an orphan or profile-ghost
-            try:
-                subprocess.run(['docker', 'compose', 'stop', 'dump978'], cwd='/opt/adsb/config', timeout=10)
-                subprocess.run(['docker', 'compose', 'rm', '-f', 'dump978'], cwd='/opt/adsb/config', timeout=10)
-            except Exception:
-                pass
+            if not physical_sdr_present:
+                # It was a purely virtual toggle, so we should actually disable and cleanup
+                env['DUMP978_ENABLED'] = 'false'
+                env['SDR_978_DEVICE'] = 'disabled'
+                env['SDR_978_PATH'] = 'disabled'
+                
+                print("ℹ Force override removed and no physical SDR found; disabling UAT")
+                
+                # Explicitly stop the virtual container
+                try:
+                    subprocess.run(['docker', 'compose', 'stop', 'dump978'], cwd='/opt/adsb/config', timeout=10)
+                    subprocess.run(['docker', 'compose', 'rm', '-f', 'dump978'], cwd='/opt/adsb/config', timeout=10)
+                except Exception:
+                    pass
+            else:
+                # A physical SDR is still assigned in the radio table!
+                # We KEEP DUMP978 enabled, just remove the force-override flag.
+                env['DUMP978_ENABLED'] = 'true'
+                print("ℹ Force override removed, but keeping UAT active for physical SDR")
             
         write_env(env)
         if rebuild_config():

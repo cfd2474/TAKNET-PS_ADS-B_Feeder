@@ -1,3 +1,10 @@
+## v3.0.75 — 2026-04-14
+
+### Fixed
+- **UAT Logic Refinement**: Refined the 'Force Enable UAT' behavior to ensure that unchecking the override does NOT disable 978 MHz UAT if a physical SDR is still assigned in the hardware configuration table. 
+- **Hardware-Aware Cleanup**: Added a sentinel check for physical hardware serials before performing container cleanup during a force-override removal.
+
+---
 ## v3.0.74 — 2026-04-14
 
 ### Fixed
