@@ -1,3 +1,9 @@
+## v3.0.81 — 2026-04-14
+
+### Fixed
+- **Webtunnel Proxy Compatibility**: Implemented robust, generic URL rewriting in the `stats_proxy` to ensure full compatibility with TAKNET-PS web tunnels. Absolute URLs within HTML, JSON, and JavaScript content are now correctly shifted to use the tunnel prefix for adsb.fi, adsb.lol, and airplanes.live.
+
+---
 ## v3.0.80 — 2026-04-14
 
 ### Fixed

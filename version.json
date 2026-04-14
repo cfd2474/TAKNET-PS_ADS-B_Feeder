@@ -1,11 +1,11 @@
 {
-  "version": "3.0.80",
+  "version": "3.0.81",
   "release_date": "2026-04-14",
-  "release_name": "Proxied Hub Link Restoration",
+  "release_name": "Webtunnel Proxy Optimization",
   "download_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh",
   "changelog_url": "https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/CHANGELOG.md",
   "minimum_version": "2.40.0",
   "breaking_changes": false,
-  "release_notes": "Restored the 'proxied' behavior for community stats links (adsb.lol, adsb.fi, airplanes.live). Fixed a signature mismatch in the status engine that was causing these links to fail and revert to external defaults.",
+  "release_notes": "Implemented deep-rewriting for community stats proxy to ensure full compatibility with TAKNET-PS web tunnels. Absolute URLs within HTML, JS, and JSON are now correctly shifted to use the tunnel prefix for adsb.fi, adsb.lol, and airplanes.live.",
   "update_priority": 3
 }

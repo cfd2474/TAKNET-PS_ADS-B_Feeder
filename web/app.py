@@ -2253,40 +2253,39 @@ def stats_proxy(service, path=''):
                     
             mime_type = response.info().get_content_type()
             
-            # 2. Perform deep content rewriting
-            if 'text/html' in mime_type:
-                html = content.decode('utf-8', errors='ignore')
-                
-                prefix = request.headers.get('X-Forwarded-Prefix', '')
-                base_proxy = f'{prefix}/stats/proxy/{service}'
-                
-                # Default base tag inject for all HTML (preserves standard proxy behavior)
-                base_tag = f'<base href="{base_proxy}/">'
-                if '<head>' in html:
-                    html = html.replace('<head>', f'<head>{base_tag}')
-                else:
-                    html = f'{base_tag}{html}'
-                
-                # Fix root-relative links in HTML
-                html = re.sub(r'href="/(?!stats/)', f'href="{base_proxy}/', html)
-                html = re.sub(r'src="/(?!stats/)', f'src="{base_proxy}/', html)
-                content = html.encode('utf-8')
-                
-            # Perform deep script rewriting ONLY for airplaneslive
-            if service in ('airplaneslive', 'airplaneslive_api') and ('text/html' in mime_type or 'javascript' in mime_type or 'json' in mime_type):
+            # 2. Perform deep content rewriting (HTML, JS, and JSON)
+            if 'text/html' in mime_type or 'javascript' in mime_type or 'json' in mime_type:
                 try:
                     text = content.decode('utf-8', errors='ignore')
                     prefix = request.headers.get('X-Forwarded-Prefix', '')
-                    base_proxy = f'{prefix}/stats/proxy/{service}'
+                    
+                    # For HTML, inject <base> tag first
+                    if 'text/html' in mime_type:
+                        base_proxy = f'{prefix}/stats/proxy/{service}'
+                        base_tag = f'<base href="{base_proxy}/">'
+                        if '<head>' in text:
+                            text = text.replace('<head>', f'<head>{base_tag}')
+                        else:
+                            text = f'{base_tag}{text}'
+                        
+                        # Fix root-relative links in HTML
+                        text = re.sub(r'href="/(?!stats/)', f'href="{base_proxy}/', text)
+                        text = re.sub(r'src="/(?!stats/)', f'src="{base_proxy}/', text)
 
-                    # Deep string replacement for absolute URLs (affects HTML, JS, and JSON)
-                    # Replace the API subdomain first so it doesn't get partially matched
-                    text = text.replace('https://api.airplanes.live', f'{prefix}/stats/proxy/airplaneslive_api')
-                    text = text.replace('https://airplanes.live', f'{base_proxy}')
-                    text = text.replace('//airplanes.live', f'{base_proxy}')
+                    # DEEP REWRITING: Replace absolute URLs for ALL configured services
+                    # This ensures that even nested API calls or links in JSON avoid bypassing the tunnel
+                    for svc_key, svc_cfg in config.items():
+                        target_host = svc_cfg['host']
+                        proxy_path = f'{prefix}/stats/proxy/{svc_key}'
+                        
+                        # Handle https://host, http://host, and //host
+                        text = text.replace(f'{target_host}', f'{proxy_path}')
+                        text = text.replace(f'{target_host.replace("https:", "http:")}', f'{proxy_path}')
+                        text = text.replace(f'//{target_host.split("//")[1]}', f'{proxy_path}')
                     
                     content = text.encode('utf-8')
-                except Exception:
+                except Exception as e:
+                    print(f"⚠️ Proxy rewriting error for {service}: {str(e)}")
                     pass
             
             asset_headers = {
