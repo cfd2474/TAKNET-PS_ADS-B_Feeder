@@ -1,3 +1,6 @@
+## v3.0.89 - Apr 14, 2026
+- Hotfix: Robust UAT migration fix for partial upgrades. Corrected .env file path and ensured independent migration of legacy UAT settings.
+
 ## v3.0.88 - Apr 14, 2026
 - Hotfix: Automated migration for legacy UAT hardware (dump978 service auto-activation).
 
