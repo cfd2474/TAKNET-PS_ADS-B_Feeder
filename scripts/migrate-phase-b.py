@@ -64,7 +64,22 @@ def migrate_to_phase_b():
     if 'SDR_1090_DEVICE' not in env:
         env['SDR_1090_DEVICE'] = env.get('READSB_DEVICE', '0')
     
-    # Migrate SDR_978 variables if 978 is enabled
+    # Migrate SDR_978 variables
+    # legacy UAT detection - check if UAT was enabled in old format
+    if env.get('DUMP978_ENABLED') is None:
+        uat_active = False
+        # Legacy indicators: UAT_RECEIVER_TYPE or UAT_RECEIVER_HOST set to something other than none/relay
+        urt = env.get('UAT_RECEIVER_TYPE', '').lower()
+        urh = env.get('UAT_RECEIVER_HOST', '').lower()
+        if urt and urt not in ['none', 'relay']:
+            uat_active = True
+        if urh and urh not in ['none', 'ultrafeeder']:
+            uat_active = True
+        
+        if uat_active:
+            print("✓ Detected legacy UAT configuration, enabling dump978 service")
+            env['DUMP978_ENABLED'] = 'true'
+
     if env.get('DUMP978_ENABLED', 'false') == 'true':
         env['SDR_978_DRIVER'] = env.get('SDR_978_TYPE', 'rtlsdr')
         env['SDR_978_SERIAL'] = env.get('SDR_978_SERIAL', '')

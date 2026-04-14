@@ -1,4 +1,7 @@
-## v3.0.87 — 2026-04-14
+## v3.0.88 - Apr 14, 2026
+- Hotfix: Automated migration for legacy UAT hardware (dump978 service auto-activation).
+
+## v3.0.88 — 2026-04-14
 
 ### Added
 - **Dashboard Disclaimer**: Added a networking disclaimer to the "You are feeding" section to clarify Web Tunnel limitations and guide users toward direct connections or Tailscale for external feed links.
