@@ -14,6 +14,19 @@ MLAT_SITE_NAME=TAKNET-PS-ADSB-Feeder
 FEEDER_DEPLOYMENT_MODE=stationary
 
 # ============================================
+# GPS Source Configuration
+# ============================================
+# usb      = Local USB GPS via gpsd (default, existing behavior)
+# network  = Remote gpsd or NMEA-over-TCP source
+# disabled = No GPS hardware (manual lat/lon only)
+GPS_SOURCE=usb
+# Network GPS settings (only used when GPS_SOURCE=network)
+GPS_NETWORK_HOST=
+GPS_NETWORK_PORT=2947
+# Protocol: gpsd (JSON via gpspipe) or nmea (raw NMEA sentences over TCP)
+GPS_NETWORK_PROTOCOL=gpsd
+
+# ============================================
 # RTL-SDR Configuration (Configured via wizard)
 # ============================================
 # READSB_DEVICE=

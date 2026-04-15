@@ -1,5 +1,5 @@
 {
-  "version": "3.0.94",
+  "version": "3.0.95",
   "name": "TAKNET-PS ADS-B Feeder",
-  "release_notes": "Hotfix: Fixed dump978 SoapySDR error by using SDR serial number instead of device index for DUMP978_RTLSDR_DEVICE."
+  "release_notes": "Network GPS support: added GPS source selector (USB / Network gpsd / Raw NMEA-over-TCP / Disabled) in Settings and Setup wizard. New gps_provider.py shared module. Test Connection button for network GPS. Mobile mode supports both USB and network GPS sources."
 }

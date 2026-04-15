@@ -92,7 +92,58 @@
                     </small>
                 </div>
                 
-                <div class="form-group">
+                <!-- GPS Source -->
+                <div style="margin-bottom: 18px; padding: 14px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px;">
+                    <div style="margin-bottom: 8px; font-weight: 600; color: #334155; font-size: 0.95em;">🛰️ GPS Source</div>
+                    <div style="display: flex; flex-direction: column; gap: 8px;">
+                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 8px; border: 1px solid #e5e7eb; border-radius: 6px; background: #fff;">
+                            <input type="radio" name="gps_source" value="usb"
+                                {% if config.get('GPS_SOURCE', 'usb') == 'usb' %}checked{% endif %}
+                                onchange="updateSetupGpsSourceUI()">
+                            <span style="font-size: 0.92em;"><strong>USB GPS</strong> <span style="color: #6b7280;">(local gpsd)</span></span>
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 8px; border: 1px solid #e5e7eb; border-radius: 6px; background: #fff;">
+                            <input type="radio" name="gps_source" value="network"
+                                {% if config.get('GPS_SOURCE', 'usb') == 'network' %}checked{% endif %}
+                                onchange="updateSetupGpsSourceUI()">
+                            <span style="font-size: 0.92em;"><strong>Network GPS</strong> <span style="color: #6b7280;">(remote gpsd or NMEA)</span></span>
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 8px; border: 1px solid #e5e7eb; border-radius: 6px; background: #fff;">
+                            <input type="radio" name="gps_source" value="disabled"
+                                {% if config.get('GPS_SOURCE', 'usb') == 'disabled' %}checked{% endif %}
+                                onchange="updateSetupGpsSourceUI()">
+                            <span style="font-size: 0.92em;"><strong>Disabled</strong> <span style="color: #6b7280;">(manual coordinates)</span></span>
+                        </label>
+                    </div>
+                    <div id="setup-gps-network-config" style="display: {% if config.get('GPS_SOURCE', 'usb') == 'network' %}block{% else %}none{% endif %}; margin-top: 10px; padding: 10px; background: #fff; border: 1px solid #e2e8f0; border-radius: 6px;">
+                        <div style="display: flex; gap: 12px; margin-bottom: 8px;">
+                            <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; font-size: 0.9em;">
+                                <input type="radio" name="gps_network_protocol" value="gpsd"
+                                    {% if config.get('GPS_NETWORK_PROTOCOL', 'gpsd') != 'nmea' %}checked{% endif %}
+                                    onchange="updateSetupGpsProtocol()">
+                                gpsd
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; font-size: 0.9em;">
+                                <input type="radio" name="gps_network_protocol" value="nmea"
+                                    {% if config.get('GPS_NETWORK_PROTOCOL', 'gpsd') == 'nmea' %}checked{% endif %}
+                                    onchange="updateSetupGpsProtocol()">
+                                Raw NMEA
+                            </label>
+                        </div>
+                        <div style="display: flex; gap: 10px;">
+                            <div style="flex: 2;">
+                                <input type="text" id="gps_network_host" placeholder="Host (e.g. 192.168.1.50)"
+                                    value="{{ config.get('GPS_NETWORK_HOST', '') }}" style="width: 100%; font-size: 0.92em;">
+                            </div>
+                            <div style="flex: 1;">
+                                <input type="number" id="gps_network_port" placeholder="Port"
+                                    value="{{ config.get('GPS_NETWORK_PORT', '2947') }}" style="width: 100%; font-size: 0.92em;">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group" id="setup-gps-action-buttons" style="{% if config.get('GPS_SOURCE', 'usb') == 'disabled' %}display: none;{% endif %}">
                     <button type="button" class="btn" onclick="openGpsCheckModal()" style="margin-bottom: 6px;">
                         🔍 Check GPS status
                     </button>
@@ -338,7 +389,11 @@
                         lon: lon,
                         alt: alt,
                         tz: tz,
-                        site_name: siteName
+                        site_name: siteName,
+                        GPS_SOURCE: (document.querySelector('input[name="gps_source"]:checked') || {}).value || 'usb',
+                        GPS_NETWORK_HOST: (document.getElementById('gps_network_host') || {}).value || '',
+                        GPS_NETWORK_PORT: (document.getElementById('gps_network_port') || {}).value || '2947',
+                        GPS_NETWORK_PROTOCOL: (document.querySelector('input[name="gps_network_protocol"]:checked') || {}).value || 'gpsd'
                     })
                 });
                 
@@ -367,6 +422,22 @@
             statusDiv.style.display = 'block';
         }
         
+        function updateSetupGpsSourceUI() {
+            const source = (document.querySelector('input[name="gps_source"]:checked') || {}).value || 'usb';
+            document.getElementById('setup-gps-network-config').style.display = source === 'network' ? 'block' : 'none';
+            document.getElementById('setup-gps-action-buttons').style.display = source === 'disabled' ? 'none' : '';
+        }
+
+        function updateSetupGpsProtocol() {
+            const protocol = (document.querySelector('input[name="gps_network_protocol"]:checked') || {}).value || 'gpsd';
+            const portInput = document.getElementById('gps_network_port');
+            if (protocol === 'nmea' && (portInput.value === '2947' || portInput.value === '')) {
+                portInput.value = '10110';
+            } else if (protocol === 'gpsd' && (portInput.value === '10110' || portInput.value === '')) {
+                portInput.value = '2947';
+            }
+        }
+
         let gpsPollInterval = null;
 
         function openGpsCheckModal() {

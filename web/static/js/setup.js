@@ -285,6 +285,12 @@ async function saveAndStart() {
         MLAT_SITE_NAME: finalSiteName,
         ZIP_CODE: userZipCode || zipCode || '',
         
+        // GPS source settings
+        GPS_SOURCE: (document.querySelector('input[name="gps_source"]:checked') || {}).value || 'usb',
+        GPS_NETWORK_HOST: (document.getElementById('gps_network_host') || {}).value || '',
+        GPS_NETWORK_PORT: (document.getElementById('gps_network_port') || {}).value || '2947',
+        GPS_NETWORK_PROTOCOL: (document.querySelector('input[name="gps_network_protocol"]:checked') || {}).value || 'gpsd',
+        
         // Tailscale settings (disabled by default, configured in Settings)
         TAILSCALE_ENABLED: 'false',
         TAILSCALE_AUTH_KEY: ''

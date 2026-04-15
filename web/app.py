@@ -87,12 +87,55 @@ GPS_LOG_MAX = 20
 GPS_ACQUIRE_TIMEOUT = 20
 
 def _gps_acquisition_thread():
-    """Background thread: run gpspipe, parse TPV/SKY, update gps_state."""
+    """Background thread: acquire a GPS fix from the configured source, update gps_state."""
     global gps_state
     import math
+    import sys
+    sys.path.insert(0, '/opt/adsb/scripts')
+    from gps_provider import get_gps_source, build_gpspipe_cmd, read_nmea_tcp  # noqa: E402
+
+    env_vars = read_env()
+    source, host, port, protocol = get_gps_source(env_vars)
+
+    # ---------- Network NMEA: direct TCP, no gpspipe ----------
+    if source == 'network' and protocol == 'nmea':
+        try:
+            with gps_lock:
+                gps_state['log_lines'].append(f'Connecting to NMEA stream at {host}:{port}...')
+            fix = read_nmea_tcp(host, port, timeout=GPS_ACQUIRE_TIMEOUT)
+            with gps_lock:
+                if fix and fix.get('lat') is not None:
+                    gps_state['lat'] = round(fix['lat'], 5)
+                    gps_state['lon'] = round(fix['lon'], 5)
+                    gps_state['alt'] = int(round(float(fix['alt']))) if fix.get('alt') is not None else None
+                    gps_state['mode'] = fix.get('mode')
+                    gps_state['satellites_used'] = fix.get('satellites_used')
+                    gps_state['accuracy_m'] = None
+                    gps_state['status'] = 'fix'
+                    gps_state['message'] = 'Fix acquired (NMEA)'
+                    gps_state['log_lines'].append(
+                        f"Fix: {gps_state['lat']}, {gps_state['lon']} ({gps_state['mode'] or 'NMEA'})"
+                    )
+                else:
+                    gps_state['status'] = 'timeout'
+                    gps_state['message'] = f'No NMEA fix from {host}:{port}. Ensure device is sending data.'
+        except Exception as e:
+            with gps_lock:
+                gps_state['status'] = 'error'
+                gps_state['message'] = str(e)
+        return
+
+    # ---------- USB or Network gpsd: use gpspipe ----------
+    cmd = build_gpspipe_cmd(env_vars, n_lines=100, timeout=GPS_ACQUIRE_TIMEOUT)
+    if not cmd:
+        with gps_lock:
+            gps_state['status'] = 'error'
+            gps_state['message'] = 'GPS source is disabled or misconfigured.'
+        return
+
     try:
         proc = subprocess.Popen(
-            ['timeout', str(GPS_ACQUIRE_TIMEOUT), 'gpspipe', '-w', '-n', '100'],
+            cmd,
             stdout=subprocess.PIPE,
             stderr=subprocess.DEVNULL,
             text=True,
@@ -175,7 +218,8 @@ def _gps_acquisition_thread():
         with gps_lock:
             if gps_state['status'] == 'acquiring':
                 gps_state['status'] = 'timeout'
-                gps_state['message'] = 'No GPS fix (timeout). Ensure USB GPS has sky view and gpsd is running.'
+                src_hint = 'network GPS' if source == 'network' else 'USB GPS'
+                gps_state['message'] = f'No GPS fix (timeout). Check {src_hint} connection and sky view.'
 
 def update_progress(service, progress, total=100, status='', details=''):
     """Update global progress state"""
@@ -2703,6 +2747,16 @@ def _gps_state_snapshot():
 @app.route('/api/gps/start', methods=['POST'])
 def api_gps_start():
     """Start background GPS acquisition. Frontend polls GET /api/gps/status for progress and result."""
+    import sys
+    sys.path.insert(0, '/opt/adsb/scripts')
+    from gps_provider import get_gps_source  # noqa: E402
+
+    env_vars = read_env()
+    source, host, port, protocol = get_gps_source(env_vars)
+
+    if source == 'disabled':
+        return jsonify({'success': False, 'message': 'GPS is disabled. Set GPS source in Settings → Location.'})
+
     with gps_lock:
         if gps_state['status'] == 'acquiring':
             return jsonify({'success': True, 'message': 'Acquisition already in progress'})
@@ -2711,11 +2765,15 @@ def api_gps_start():
         gps_state['lat'] = gps_state['lon'] = gps_state['alt'] = None
         gps_state['accuracy_m'] = gps_state['satellites_used'] = gps_state['mode'] = None
         gps_state['log_lines'] = []
-    if not shutil.which('gpspipe'):
-        with gps_lock:
-            gps_state['status'] = 'error'
-            gps_state['message'] = 'gpspipe not found. Run the installer or update.'
-        return jsonify({'success': False, 'message': gps_state['message']})
+
+    # For USB and network-gpsd, gpspipe is required
+    if not (source == 'network' and protocol == 'nmea'):
+        if not shutil.which('gpspipe'):
+            with gps_lock:
+                gps_state['status'] = 'error'
+                gps_state['message'] = 'gpspipe not found. Run the installer or update.'
+            return jsonify({'success': False, 'message': gps_state['message']})
+
     t = threading.Thread(target=_gps_acquisition_thread, daemon=True)
     t.start()
     return jsonify({'success': True})
@@ -2727,70 +2785,23 @@ def api_gps_status():
 
 @app.route('/api/gps/check', methods=['GET'])
 def api_gps_check():
-    """Check if gpsd is running and if a GPS device is present/connected. For status modal."""
-    out = {'gpsd_running': False, 'gps_present': False, 'message': '', 'details': {}}
-    try:
-        # Check if gpsd service/process is running
-        try:
-            r = subprocess.run(
-                ['systemctl', 'is-active', 'gpsd'],
-                capture_output=True,
-                text=True,
-                timeout=5
-            )
-            out['gpsd_running'] = r.returncode == 0 and (r.stdout or '').strip() == 'active'
-        except (FileNotFoundError, subprocess.TimeoutExpired):
-            try:
-                r = subprocess.run(['pgrep', '-x', 'gpsd'], capture_output=True, timeout=5)
-                out['gpsd_running'] = r.returncode == 0
-            except (FileNotFoundError, subprocess.TimeoutExpired):
-                pass
-        if not out['gpsd_running']:
-            out['message'] = 'gpsd is not running. Run the installer or start gpsd (e.g. sudo systemctl start gpsd).'
-            return jsonify(out)
-        # Check if gpsd has a device that is actually connected: require DEVICES with a path that exists.
-        # (TPV/SKY alone can be stale after unplug, so we verify the device node exists.)
-        try:
-            r = subprocess.run(
-                ['timeout', '3', 'gpspipe', '-w', '-n', '15'],
-                capture_output=True,
-                text=True,
-                timeout=5,
-                cwd='/opt/adsb/scripts',
-                env={**os.environ}
-            )
-            lines = [l.strip() for l in (r.stdout or '').strip().splitlines() if l.strip()]
-            for line in lines:
-                try:
-                    obj = json.loads(line)
-                    cls = obj.get('class')
-                    if cls == 'DEVICES':
-                        for dev in obj.get('devices') or []:
-                            path = dev.get('path')
-                            if path and Path(path).exists():
-                                out['gps_present'] = True
-                                out['details']['device'] = path
-                                break
-                    elif cls == 'TPV':
-                        # Fallback: some gpsd configs don't send DEVICES; TPV can include device path
-                        dev_path = obj.get('device')
-                        if isinstance(dev_path, str) and dev_path.startswith('/') and Path(dev_path).exists():
-                            out['gps_present'] = True
-                            out['details']['device'] = dev_path
-                        if out['gps_present'] and obj.get('mode') is not None:
-                            out['details']['mode'] = '3D' if obj.get('mode') == 2 else ('2D' if obj.get('mode') == 1 else 'no fix')
-                except json.JSONDecodeError:
-                    continue
-        except FileNotFoundError:
-            out['details']['gpspipe'] = 'gpspipe not found (install gpsd-clients)'
-        except subprocess.TimeoutExpired:
-            out['details']['note'] = 'gpspipe timed out (no data from gpsd in 3s)'
-        if out['gps_present']:
-            out['message'] = 'GPS is present and gpsd is running. You can use "Get coordinates from GPS".'
-        else:
-            out['message'] = 'gpsd is running but no GPS device data received. Check USB connection and device (e.g. /dev/ttyUSB0).'
-    except Exception as e:
-        out['message'] = str(e)
+    """Check GPS source status (USB gpsd, network gpsd, or NMEA). For status modal."""
+    import sys
+    sys.path.insert(0, '/opt/adsb/scripts')
+    from gps_provider import check_gps_status as _check_gps_status  # noqa: E402
+
+    env_vars = read_env()
+    result = _check_gps_status(env_vars)
+
+    # Map gps_provider result to the UI-expected format
+    out = {
+        'gpsd_running': result.get('details', {}).get('gpsd_running', result.get('source') != 'usb'),
+        'gps_present': result.get('available', False),
+        'message': result.get('message', ''),
+        'details': result.get('details', {}),
+        'source': result.get('source', 'usb'),
+        'protocol': result.get('protocol'),
+    }
     return jsonify(out)
 
 
@@ -2899,28 +2910,45 @@ def api_mobile_status():
         except (json.JSONDecodeError, OSError):
             pass
     try:
-        r = subprocess.run(
-            ['timeout', '3', 'gpspipe', '-w', '-n', '15'],
-            capture_output=True,
-            text=True,
-            timeout=5,
-            cwd='/opt/adsb/scripts',
-            env={**os.environ}
-        )
-        for line in (r.stdout or '').strip().splitlines():
-            line = line.strip()
-            if not line:
-                continue
-            try:
-                obj = json.loads(line)
-                if obj.get('class') == 'TPV' and obj.get('speed') is not None:
+        import sys
+        sys.path.insert(0, '/opt/adsb/scripts')
+        from gps_provider import get_gps_source, build_gpspipe_cmd, read_nmea_tcp  # noqa: E402
+
+        source, host, port, protocol = get_gps_source(env)
+
+        if source == 'network' and protocol == 'nmea':
+            # Raw NMEA — try to get speed from TCP
+            if host:
+                fix = read_nmea_tcp(host, port, timeout=3.0)
+                if fix and fix.get('speed') is not None:
                     out['in_motion_unknown'] = False
-                    speed = float(obj['speed'])
-                    out['speed_mps'] = round(speed, 2)
-                    out['in_motion'] = abs(speed) > 0.5
-                    break
-            except (json.JSONDecodeError, TypeError, ValueError):
-                continue
+                    out['speed_mps'] = round(float(fix['speed']), 2)
+                    out['in_motion'] = abs(fix['speed']) > 0.5
+        else:
+            cmd = build_gpspipe_cmd(env, n_lines=15, timeout=3)
+            if cmd:
+                r = subprocess.run(
+                    cmd,
+                    capture_output=True,
+                    text=True,
+                    timeout=5,
+                    cwd='/opt/adsb/scripts',
+                    env={**os.environ}
+                )
+                for line in (r.stdout or '').strip().splitlines():
+                    line = line.strip()
+                    if not line:
+                        continue
+                    try:
+                        obj = json.loads(line)
+                        if obj.get('class') == 'TPV' and obj.get('speed') is not None:
+                            out['in_motion_unknown'] = False
+                            speed = float(obj['speed'])
+                            out['speed_mps'] = round(speed, 2)
+                            out['in_motion'] = abs(speed) > 0.5
+                            break
+                    except (json.JSONDecodeError, TypeError, ValueError):
+                        continue
     except (FileNotFoundError, subprocess.TimeoutExpired):
         pass
     except Exception:
@@ -2931,11 +2959,15 @@ def api_mobile_status():
 def api_gps_coordinates():
     """Legacy: single-shot GPS coordinates. Prefer POST /api/gps/start + GET /api/gps/status for modal flow."""
     try:
-        script = '/opt/adsb/scripts/get-gps-coordinates.sh'
+        # Try Python script first (source-aware), fall back to shell script
+        script = '/opt/adsb/scripts/get-gps-coordinates.py'
+        if not Path(script).exists():
+            script = '/opt/adsb/scripts/get-gps-coordinates.sh'
         if not Path(script).exists():
             return jsonify({'success': False, 'message': 'GPS script not found. Run the installer or update.'})
+        cmd = ['python3', script] if script.endswith('.py') else [script]
         result = subprocess.run(
-            [script],
+            cmd,
             capture_output=True,
             text=True,
             timeout=20,
@@ -2943,20 +2975,44 @@ def api_gps_coordinates():
         )
         out = (result.stdout or '').strip()
         if not out:
-            return jsonify({'success': False, 'message': 'No output from GPS (gpsd not running or no fix).'})
+            return jsonify({'success': False, 'message': 'No output from GPS. Check source configuration in Settings.'})
         data = json.loads(out)
         return jsonify(data)
     except subprocess.TimeoutExpired:
-        return jsonify({'success': False, 'message': 'GPS read timed out. Ensure USB GPS has sky view.'})
+        return jsonify({'success': False, 'message': 'GPS read timed out. Check GPS source and connection.'})
     except json.JSONDecodeError as e:
         return jsonify({'success': False, 'message': f'Invalid GPS output: {e}'})
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)})
 
+@app.route('/api/gps/test-connection', methods=['POST'])
+def api_gps_test_connection():
+    """Test connectivity to a network GPS source (gpsd or NMEA-over-TCP)."""
+    import sys
+    sys.path.insert(0, '/opt/adsb/scripts')
+    from gps_provider import test_network_connection  # noqa: E402
+
+    data = request.json or {}
+    host = (data.get('host') or '').strip()
+    try:
+        port = int(data.get('port', 2947))
+    except (TypeError, ValueError):
+        port = 2947
+    protocol = (data.get('protocol') or 'gpsd').strip().lower()
+    if protocol not in ('gpsd', 'nmea'):
+        protocol = 'gpsd'
+
+    if not host:
+        return jsonify({'success': False, 'message': 'Host is required.'})
+
+    result = test_network_connection(host, port, protocol, timeout=5.0)
+    return jsonify(result)
+
 # Whitelist of environment variables that can be modified via web UI
 CONFIG_WHITELIST = {
     'FEEDER_LAT', 'FEEDER_LONG', 'FEEDER_ALT_M', 'FEEDER_TZ',
     'MLAT_SITE_NAME', 'FEEDER_DEPLOYMENT_MODE',
+    'GPS_SOURCE', 'GPS_NETWORK_HOST', 'GPS_NETWORK_PORT', 'GPS_NETWORK_PROTOCOL',
     'TAKNET_PS_ENABLED', 'TAKNET_PS_MLAT_ENABLED', 'TAKNET_PS_FEEDER_CLAIM_KEY', 'TAKNET_PS_FEEDER_MAC',
     'TUNNEL_AGGREGATOR_URL', 'TUNNEL_FEEDER_ID',
     'SDR_1090_SERIAL', 'SDR_1090_GAIN', 'SDR_1090_DRIVER', 'SDR_1090_DEVICE', 'USE_SOAPYSDR',

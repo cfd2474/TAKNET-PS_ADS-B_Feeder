@@ -113,9 +113,29 @@ def haversine_m(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
 
 
 def parse_gpspipe_tpv() -> dict | None:
+    import sys
+    sys.path.insert(0, '/opt/adsb/scripts')
+    from gps_provider import get_gps_source, build_gpspipe_cmd, parse_gpspipe_output, read_nmea_tcp  # noqa: E402
+
+    env = read_env()
+    source, host, port, protocol = get_gps_source(env)
+
+    if source == 'disabled':
+        return None
+
+    # Network NMEA — use direct TCP
+    if source == 'network' and protocol == 'nmea':
+        if not host:
+            return None
+        return read_nmea_tcp(host, port, timeout=3.0)
+
+    # USB or network gpsd — use gpspipe
+    cmd = build_gpspipe_cmd(env, n_lines=20, timeout=3)
+    if not cmd:
+        return None
     try:
         r = subprocess.run(
-            ["timeout", "3", "gpspipe", "-w", "-n", "20"],
+            cmd,
             capture_output=True,
             text=True,
             timeout=5,
@@ -124,30 +144,25 @@ def parse_gpspipe_tpv() -> dict | None:
         )
     except (FileNotFoundError, subprocess.TimeoutExpired):
         return None
-    last_tpv = None
-    for line in (r.stdout or "").strip().splitlines():
-        line = line.strip()
-        if not line:
-            continue
-        try:
-            obj = json.loads(line)
-            if obj.get("class") == "TPV":
-                last_tpv = obj
-        except json.JSONDecodeError:
-            continue
-    if not last_tpv:
+
+    result = parse_gpspipe_output(r.stdout)
+    if not result:
         return None
-    lat = last_tpv.get("lat")
-    lon = last_tpv.get("lon")
-    if lat is None or lon is None:
-        return None
+
+    # Map to the format the main loop expects
     out = {
-        "lat": float(lat),
-        "lon": float(lon),
-        "alt": last_tpv.get("alt"),
-        "speed": last_tpv.get("speed"),
-        "mode": last_tpv.get("mode") or 0,
+        "lat": result["lat"],
+        "lon": result["lon"],
+        "alt": result.get("alt"),
+        "speed": result.get("speed"),
+        "mode": 0,
     }
+    # Convert mode string back to int for compatibility
+    mode_str = result.get("mode")
+    if mode_str == "3D":
+        out["mode"] = 3
+    elif mode_str == "2D":
+        out["mode"] = 2
     if out["speed"] is not None:
         try:
             out["speed"] = float(out["speed"])
@@ -181,6 +196,24 @@ def main() -> None:
                 {
                     "active": False,
                     "message": "Stationary deployment mode — daemon idle",
+                    "in_motion": False,
+                    "stationary_seconds": 0,
+                    "stationary_target_seconds": STATIONARY_SECONDS,
+                    "awaiting_stationary_sync": False,
+                    "mlat_paused": env.get("TAKNET_PS_MLAT_ENABLED", "true").lower() != "true",
+                }
+            )
+            stationary_accum = 0.0
+            awaiting_stationary_sync = False
+            continue
+
+        # Check if GPS is disabled
+        gps_src = (env.get("GPS_SOURCE") or "usb").strip().lower()
+        if gps_src == "disabled":
+            write_state(
+                {
+                    "active": False,
+                    "message": "GPS source is disabled — daemon idle",
                     "in_motion": False,
                     "stationary_seconds": 0,
                     "stationary_target_seconds": STATIONARY_SECONDS,

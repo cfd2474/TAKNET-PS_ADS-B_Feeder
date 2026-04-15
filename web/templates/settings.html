@@ -288,6 +288,80 @@
 
             <div class="card">
                 <h3>Location</h3>
+
+                <!-- GPS Source Selector -->
+                <div style="margin-bottom: 20px; padding: 16px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px;">
+                    <div style="margin-bottom: 10px; font-weight: 600; color: #334155;">🛰️ GPS Source</div>
+                    <div style="display: flex; flex-direction: column; gap: 10px;">
+                        <label style="display: flex; align-items: flex-start; gap: 10px; cursor: pointer; padding: 10px; border: 2px solid #e5e7eb; border-radius: 8px; background: #fff;" id="gps-source-label-usb">
+                            <input type="radio" name="gps_source" value="usb"
+                                {% if config.get('GPS_SOURCE', 'usb') == 'usb' %}checked{% endif %}
+                                onchange="updateGpsSourceUI()" style="margin-top: 3px;">
+                            <div>
+                                <strong style="color: #1f2937;">USB GPS (local gpsd)</strong>
+                                <p style="margin: 4px 0 0 0; font-size: 0.87em; color: #6b7280; line-height: 1.4;">For USB-connected GPS receivers (e.g. u-blox, NMEA USB dongles). Uses local gpsd.</p>
+                            </div>
+                        </label>
+                        <label style="display: flex; align-items: flex-start; gap: 10px; cursor: pointer; padding: 10px; border: 2px solid #e5e7eb; border-radius: 8px; background: #fff;" id="gps-source-label-network">
+                            <input type="radio" name="gps_source" value="network"
+                                {% if config.get('GPS_SOURCE', 'usb') == 'network' %}checked{% endif %}
+                                onchange="updateGpsSourceUI()" style="margin-top: 3px;">
+                            <div>
+                                <strong style="color: #1f2937;">Network GPS</strong>
+                                <p style="margin: 4px 0 0 0; font-size: 0.87em; color: #6b7280; line-height: 1.4;">Connect to a remote GPS source over the network (remote gpsd instance or raw NMEA-over-TCP stream).</p>
+                            </div>
+                        </label>
+                        <label style="display: flex; align-items: flex-start; gap: 10px; cursor: pointer; padding: 10px; border: 2px solid #e5e7eb; border-radius: 8px; background: #fff;" id="gps-source-label-disabled">
+                            <input type="radio" name="gps_source" value="disabled"
+                                {% if config.get('GPS_SOURCE', 'usb') == 'disabled' %}checked{% endif %}
+                                onchange="updateGpsSourceUI()" style="margin-top: 3px;">
+                            <div>
+                                <strong style="color: #1f2937;">Disabled</strong>
+                                <p style="margin: 4px 0 0 0; font-size: 0.87em; color: #6b7280; line-height: 1.4;">No GPS hardware. Enter coordinates manually.</p>
+                            </div>
+                        </label>
+                    </div>
+
+                    <!-- Network GPS config panel (shown when network selected) -->
+                    <div id="gps-network-config" style="display: {% if config.get('GPS_SOURCE', 'usb') == 'network' %}block{% else %}none{% endif %}; margin-top: 14px; padding: 14px; background: #fff; border: 1px solid #e2e8f0; border-radius: 8px;">
+                        <div style="margin-bottom: 12px;">
+                            <div style="font-weight: 500; color: #374151; margin-bottom: 8px;">Protocol</div>
+                            <div style="display: flex; gap: 16px;">
+                                <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                                    <input type="radio" name="gps_network_protocol" value="gpsd"
+                                        {% if config.get('GPS_NETWORK_PROTOCOL', 'gpsd') != 'nmea' %}checked{% endif %}
+                                        onchange="updateGpsProtocolUI()">
+                                    <span style="font-size: 0.92em;">gpsd <span style="color: #6b7280;">(recommended)</span></span>
+                                </label>
+                                <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                                    <input type="radio" name="gps_network_protocol" value="nmea"
+                                        {% if config.get('GPS_NETWORK_PROTOCOL', 'gpsd') == 'nmea' %}checked{% endif %}
+                                        onchange="updateGpsProtocolUI()">
+                                    <span style="font-size: 0.92em;">Raw NMEA over TCP</span>
+                                </label>
+                            </div>
+                        </div>
+                        <div style="display: flex; gap: 12px; margin-bottom: 12px;">
+                            <div style="flex: 2;">
+                                <label style="font-weight: 500; color: #374151; font-size: 0.92em; display: block; margin-bottom: 4px;">Host</label>
+                                <input type="text" id="gps_network_host" placeholder="192.168.1.50"
+                                    value="{{ config.get('GPS_NETWORK_HOST', '') }}" style="width: 100%;">
+                            </div>
+                            <div style="flex: 1;">
+                                <label style="font-weight: 500; color: #374151; font-size: 0.92em; display: block; margin-bottom: 4px;">Port</label>
+                                <input type="number" id="gps_network_port" placeholder="2947"
+                                    value="{{ config.get('GPS_NETWORK_PORT', '2947') }}" style="width: 100%;">
+                            </div>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <button type="button" class="btn" onclick="testGpsNetworkConnection()" id="gps-test-btn" style="white-space: nowrap;">
+                                🔗 Test Connection
+                            </button>
+                            <span id="gps-test-result" style="font-size: 0.9em; color: #6b7280;"></span>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="form-group">
                     <label>Latitude</label>
                     <input type="text" id="lat" placeholder="" 
@@ -315,12 +389,12 @@
                         Whole number only (e.g., 304 for 304 meters)
                     </small>
                 </div>
-                <div class="form-group">
-                    <button type="button" class="btn" onclick="openGpsCheckModal()" style="margin-bottom: 6px;">
-                        🔍 Check GPS status
+                <div class="form-group" id="gps-action-buttons" style="{% if config.get('GPS_SOURCE', 'usb') == 'disabled' %}display: none;{% endif %}">
+                    <button type="button" class="btn" onclick="openGpsCheckModal()" style="margin-bottom: 6px;" id="gps-check-btn-settings">
+                        🔍 <span id="gps-check-btn-label">Check GPS status</span>
                     </button>
                     <button type="button" class="btn" id="gps-btn-settings" onclick="openGpsModal()" style="margin-bottom: 8px;">
-                        📍 Get coordinates from GPS
+                        📍 <span id="gps-get-btn-label">Get coordinates from GPS</span>
                     </button>
                 </div>
                 <div class="form-group">
@@ -1241,6 +1315,88 @@
             }
         }
         
+        // --- GPS Source UI ---
+        function updateGpsSourceUI() {
+            const source = (document.querySelector('input[name="gps_source"]:checked') || {}).value || 'usb';
+            const networkPanel = document.getElementById('gps-network-config');
+            const actionButtons = document.getElementById('gps-action-buttons');
+            const checkLabel = document.getElementById('gps-check-btn-label');
+            const getLabel = document.getElementById('gps-get-btn-label');
+
+            // Show/hide network config
+            networkPanel.style.display = source === 'network' ? 'block' : 'none';
+
+            // Show/hide GPS action buttons
+            actionButtons.style.display = source === 'disabled' ? 'none' : '';
+
+            // Adapt button labels
+            if (source === 'network') {
+                checkLabel.textContent = 'Check network GPS';
+                getLabel.textContent = 'Get coordinates from network GPS';
+            } else {
+                checkLabel.textContent = 'Check GPS status';
+                getLabel.textContent = 'Get coordinates from GPS';
+            }
+
+            // Clear test result when switching
+            const testResult = document.getElementById('gps-test-result');
+            if (testResult) testResult.textContent = '';
+        }
+
+        function updateGpsProtocolUI() {
+            const protocol = (document.querySelector('input[name="gps_network_protocol"]:checked') || {}).value || 'gpsd';
+            const portInput = document.getElementById('gps_network_port');
+            // Swap default port hint
+            if (protocol === 'nmea') {
+                if (portInput.value === '2947' || portInput.value === '') {
+                    portInput.value = '10110';
+                }
+            } else {
+                if (portInput.value === '10110' || portInput.value === '') {
+                    portInput.value = '2947';
+                }
+            }
+        }
+
+        async function testGpsNetworkConnection() {
+            const btn = document.getElementById('gps-test-btn');
+            const resultSpan = document.getElementById('gps-test-result');
+            const host = (document.getElementById('gps_network_host').value || '').trim();
+            const port = document.getElementById('gps_network_port').value || '2947';
+            const protocol = (document.querySelector('input[name="gps_network_protocol"]:checked') || {}).value || 'gpsd';
+
+            if (!host) {
+                resultSpan.textContent = '⚠ Host is required.';
+                resultSpan.style.color = '#dc2626';
+                return;
+            }
+
+            btn.disabled = true;
+            resultSpan.textContent = '⏳ Testing...';
+            resultSpan.style.color = '#6b7280';
+
+            try {
+                const resp = await fetch('/api/gps/test-connection', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ host, port: parseInt(port, 10), protocol })
+                });
+                const data = await resp.json();
+                if (data.success) {
+                    resultSpan.textContent = '✓ ' + data.message;
+                    resultSpan.style.color = '#059669';
+                } else {
+                    resultSpan.textContent = '✗ ' + data.message;
+                    resultSpan.style.color = '#dc2626';
+                }
+            } catch (e) {
+                resultSpan.textContent = '✗ Connection test failed: ' + e.message;
+                resultSpan.style.color = '#dc2626';
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
         let gpsPollInterval = null;
 
         function openGpsCheckModal() {
@@ -1782,7 +1938,11 @@
                 FEEDER_TZ: document.getElementById('tz').value,
                 MLAT_SITE_NAME: finalSiteName,
                 ZIP_CODE: userZipCode || zipCode || '',
-                TAKNET_PS_FEEDER_CLAIM_KEY: claimRaw2
+                TAKNET_PS_FEEDER_CLAIM_KEY: claimRaw2,
+                GPS_SOURCE: (document.querySelector('input[name="gps_source"]:checked') || {}).value || 'usb',
+                GPS_NETWORK_HOST: (document.getElementById('gps_network_host') || {}).value || '',
+                GPS_NETWORK_PORT: (document.getElementById('gps_network_port') || {}).value || '2947',
+                GPS_NETWORK_PROTOCOL: (document.querySelector('input[name="gps_network_protocol"]:checked') || {}).value || 'gpsd'
             };
             
             try {

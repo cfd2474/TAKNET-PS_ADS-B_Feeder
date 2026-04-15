@@ -7,7 +7,7 @@
 **Team Awareness Kit Network - Public Safety**  
 **For Enhanced Tracking**
 
-**Current Version: 3.0.93**
+**Current Version: 3.0.95**
 
 A comprehensive ADS-B aircraft tracking solution designed for distributed deployment with centralized aggregation. Built for public safety, emergency services, and aviation tracking networks.
 
@@ -28,7 +28,7 @@ TAKNET-PS is an independently developed project focused on delivering free, low-
 - **🔄 Auto-Updates** - One-click updates from web interface
 - **🔗 Remote access tunnel** - Optional outbound WebSocket to the TAKNET-PS aggregator for dashboard/map via the web (no router port forwarding)
 - **📡 Universal SDR Detection** - SoapySDR-based detection supports RTL-SDR and compatible hardware
-- **🛰️ USB GPS (optional)** - Built-in support to read position from a USB GPS receiver for setup wizard and **Settings → Location** (no manual coordinate entry required when GPS is available)
+- **🛰️ GPS Support (USB + Network)** — Built-in support to read position from a USB GPS receiver, a remote gpsd instance, or a raw NMEA-over-TCP stream. Configurable from **Settings → Location** or the setup wizard.
 
 ---
 
@@ -55,8 +55,9 @@ TAKNET-PS is an independently developed project focused on delivering free, low-
 - **OR** FTDI-based Stratux UATRadio
 - 978 MHz antenna
 
-**Optional location (USB GPS):**
+**Optional GPS (USB or Network):**
 - USB GPS receiver (e.g. u-blox or common NMEA USB dongles) — used from the web UI to set latitude, longitude, and altitude during setup or in Settings
+- **OR** a network GPS source (remote gpsd instance or raw NMEA-over-TCP stream) — configured via Settings → Location
 
 ### Software
 
@@ -270,8 +271,9 @@ Automatically formatted for VPN/MLAT registration:
 
 **Via Web Interface:**
 1. **Settings → Location** (same options exist in the **setup wizard** for first-time configuration)
-2. Set latitude, longitude, altitude (meters), timezone, and feeder name — **or** plug in a **USB GPS** and use the built-in GPS actions to fill coordinates from the receiver (when gpsd sees the device)
-3. Click **Apply Changes & Restart Ultrafeeder**
+2. Set latitude, longitude, altitude (meters), timezone, and feeder name — **or** use a **GPS source** (USB GPS, remote gpsd, or raw NMEA-over-TCP) to fill coordinates automatically
+3. Select your GPS source type (USB / Network / Disabled) from the **🛰️ GPS Source** selector
+4. Click **Apply Changes & Restart Ultrafeeder**
 
 Accurate location is critical for MLAT, coverage analysis, and data attribution.
 
@@ -522,16 +524,29 @@ Michael Leckliter — [mike@tak-solutions.com](mailto:mike@tak-solutions.com)
 
 ## 📝 Version History
 
-**Current Version: 3.0.93**  
+**Current Version: 3.0.95**  
 **Release Date: 2026-04-14**  
 **Minimum Supported Version:** 2.40.0  
 
 See **[CHANGELOG.md](CHANGELOG.md)** for the full release list. Highlights of recent behavior:
 
+- **Network GPS** — v3.0.95 adds network GPS support: remote gpsd or raw NMEA-over-TCP alongside USB GPS. Configurable from Settings → Location → GPS Source selector.
 - **Dashboard** — Loads status via a single aggregate API (`/api/dashboard/bootstrap`); connection quality is on-demand (button + modal), not a live poll.
 - **Remote tunnel** — Routes dashboard vs map stack via `X-Tunnel-Target` on the aggregator; feeder registers with `host` for proxying.
 - **Secure Tunnel Access** — v3.0.44 implements global `Content-Security-Policy: upgrade-insecure-requests` headers for tunneled traffic, ensuring perfect cross-protocol loading for Maps and Statistics without manual HTML modification.
 - **Tunnel service** — `ensure-tunnel-client.sh` enables/starts the client when aggregator URL is configured; **Settings** can restart the tunnel.
+
+### v3.0.95 — Network GPS Support
+- **GPS Source selector** — New radio-button selector in Settings → Location and Setup wizard: USB GPS (local gpsd), Network GPS (remote gpsd or raw NMEA-over-TCP), or Disabled (manual coordinates only).
+- **gps_provider.py** — New shared GPS abstraction module; all GPS consumers (app.py, mobile-mode-gps.py, get-gps-coordinates) route through a single source-aware module.
+- **Raw NMEA-over-TCP** — Direct TCP socket support for devices that output raw NMEA sentences ($GPRMC, $GPGGA) without requiring gpsd on the remote end.
+- **Test Connection** — Settings page includes a "🔗 Test Connection" button for network GPS sources with inline result display.
+- **Mobile mode** — Mobile mode daemon now supports both USB and network GPS sources.
+- **Config** — New `.env` variables: `GPS_SOURCE`, `GPS_NETWORK_HOST`, `GPS_NETWORK_PORT`, `GPS_NETWORK_PROTOCOL`.
+- **Backwards compatible** — Default is `usb`; existing installs behave identically with no config changes.
+
+### v3.0.94 — Dump978 SoapySDR Fix
+- **UAT SDR** — Fixed dump978 SoapySDR error by using SDR serial number instead of device index for DUMP978_RTLSDR_DEVICE.
 
 ### v3.0.44 — Universal CSP Stability
 - **Tunnel security** — Implements header-based `Content-Security-Policy: upgrade-insecure-requests` for all responses. This is a global, robust fix for Mixed Content errors across all proxied services (Maps, Stats, Dashboard).
