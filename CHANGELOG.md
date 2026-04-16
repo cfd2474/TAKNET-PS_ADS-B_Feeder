@@ -1,3 +1,6 @@
+## v3.0.96 - Apr 16, 2026
+- **FR24 feed UAT Configuration validation**: Fixed FR24 configuration to correctly isolate 1090/978 UAT data paths according to FlightRadar24 specifications by explicitly injecting UAT host/port into the standard fr24 container. Fixed UI field to clear key from `.env` when left empty.
+
 ## v3.0.94 - Apr 14, 2026
 - **Hotfix: dump978 SDR Selection**: Fixed `DUMP978_RTLSDR_DEVICE` to use the SDR serial number instead of the device index. SoapySDR internally calls `rtlsdr_get_index_by_serial()` which fails on bare numeric indices, causing "No matching SoapySDR device found" errors. The config builder now prefers `SDR_978_SERIAL` when available.
 

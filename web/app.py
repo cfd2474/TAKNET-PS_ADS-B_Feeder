@@ -1539,8 +1539,7 @@ def api_fr24_setup():
         
         # Update .env with FR24 keys
         update_env_var('FR24_KEY', feeder_id)
-        if feeder_id_uat:
-            update_env_var('FR24_KEY_UAT', feeder_id_uat)
+        update_env_var('FR24_KEY_UAT', feeder_id_uat)
         update_env_var('FR24_ENABLED', 'true')
         
         # Rebuild config to write FR24KEY actual value into docker-compose.yml

@@ -7,7 +7,7 @@
 **Team Awareness Kit Network - Public Safety**  
 **For Enhanced Tracking**
 
-**Current Version: 3.0.95**
+**Current Version: 3.0.96**
 
 A comprehensive ADS-B aircraft tracking solution designed for distributed deployment with centralized aggregation. Built for public safety, emergency services, and aviation tracking networks.
 
@@ -524,17 +524,22 @@ Michael Leckliter — [mike@tak-solutions.com](mailto:mike@tak-solutions.com)
 
 ## 📝 Version History
 
-**Current Version: 3.0.95**  
-**Release Date: 2026-04-14**  
+**Current Version: 3.0.96**  
+**Release Date: 2026-04-16**  
 **Minimum Supported Version:** 2.40.0  
 
 See **[CHANGELOG.md](CHANGELOG.md)** for the full release list. Highlights of recent behavior:
+
+- **FR24 UAT Fix** — v3.0.96: Fixed FR24 configuration to correctly isolate 1090/978 UAT data paths per FlightRadar24 specifications by explicitly injecting UAT host/port into the standard fr24 container.
 
 - **Network GPS** — v3.0.95 adds network GPS support: remote gpsd or raw NMEA-over-TCP alongside USB GPS. Configurable from Settings → Location → GPS Source selector.
 - **Dashboard** — Loads status via a single aggregate API (`/api/dashboard/bootstrap`); connection quality is on-demand (button + modal), not a live poll.
 - **Remote tunnel** — Routes dashboard vs map stack via `X-Tunnel-Target` on the aggregator; feeder registers with `host` for proxying.
 - **Secure Tunnel Access** — v3.0.44 implements global `Content-Security-Policy: upgrade-insecure-requests` headers for tunneled traffic, ensuring perfect cross-protocol loading for Maps and Statistics without manual HTML modification.
 - **Tunnel service** — `ensure-tunnel-client.sh` enables/starts the client when aggregator URL is configured; **Settings** can restart the tunnel.
+
+### v3.0.96 — FR24 UAT Fix
+- **FR24 Configuration** — Fixed FR24 configuration to correctly isolate 1090/978 UAT data paths. explicitly injected UAT host and port into the fr24 container, and fixed the UI to allow clearing empty keys.
 
 ### v3.0.95 — Network GPS Support
 - **GPS Source selector** — New radio-button selector in Settings → Location and Setup wizard: USB GPS (local gpsd), Network GPS (remote gpsd or raw NMEA-over-TCP), or Disabled (manual coordinates only).

@@ -832,6 +832,8 @@ def build_docker_compose(env_vars):
         fr24_key_uat = env_vars.get('FR24_KEY_UAT', '').strip()
         if fr24_key_uat:
             fr24_env.append(f'FR24KEY_UAT={fr24_key_uat}')
+            fr24_env.append('UATHOST=dump978')
+            fr24_env.append('UATPORT=30978')
         
         compose['services']['fr24'] = {
             'image': 'ghcr.io/sdr-enthusiasts/docker-flightradar24:latest',

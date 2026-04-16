@@ -1,5 +1,5 @@
 {
-  "version": "3.0.95",
+  "version": "3.0.96",
   "name": "TAKNET-PS ADS-B Feeder",
-  "release_notes": "Network GPS support: added GPS source selector (USB / Network gpsd / Raw NMEA-over-TCP / Disabled) in Settings and Setup wizard. New gps_provider.py shared module. Test Connection button for network GPS. Mobile mode supports both USB and network GPS sources."
+  "release_notes": "FR24 UAT Fix: Fixed FR24 configuration to correctly isolate 1090/978 UAT data paths per FlightRadar24 specifications by explicitly injecting UAT host/port into the standard fr24 container. Fixed empty key clearing."
 }
