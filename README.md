@@ -7,7 +7,7 @@
 **Team Awareness Kit Network - Public Safety**  
 **For Enhanced Tracking**
 
-**Current Version: 3.0.96**
+**Current Version: 3.0.97**
 
 A comprehensive ADS-B aircraft tracking solution designed for distributed deployment with centralized aggregation. Built for public safety, emergency services, and aviation tracking networks.
 
@@ -524,12 +524,13 @@ Michael Leckliter — [mike@tak-solutions.com](mailto:mike@tak-solutions.com)
 
 ## 📝 Version History
 
-**Current Version: 3.0.96**  
+**Current Version: 3.0.97**  
 **Release Date: 2026-04-16**  
 **Minimum Supported Version:** 2.40.0  
 
 See **[CHANGELOG.md](CHANGELOG.md)** for the full release list. Highlights of recent behavior:
 
+- **FR24 Registration Fix** — v3.0.97: Hotfix resolving new feed registration token extractions.
 - **FR24 UAT Fix** — v3.0.96: Fixed FR24 configuration to correctly isolate 1090/978 UAT data paths per FlightRadar24 specifications by explicitly injecting UAT host/port into the standard fr24 container.
 
 - **Network GPS** — v3.0.95 adds network GPS support: remote gpsd or raw NMEA-over-TCP alongside USB GPS. Configurable from Settings → Location → GPS Source selector.
@@ -537,6 +538,9 @@ See **[CHANGELOG.md](CHANGELOG.md)** for the full release list. Highlights of re
 - **Remote tunnel** — Routes dashboard vs map stack via `X-Tunnel-Target` on the aggregator; feeder registers with `host` for proxying.
 - **Secure Tunnel Access** — v3.0.44 implements global `Content-Security-Policy: upgrade-insecure-requests` headers for tunneled traffic, ensuring perfect cross-protocol loading for Maps and Statistics without manual HTML modification.
 - **Tunnel service** — `ensure-tunnel-client.sh` enables/starts the client when aggregator URL is configured; **Settings** can restart the tunnel.
+
+### v3.0.97 — FR24 Registration Fix
+- **Backend API** — Updated the `api_fr24_register` workflow. The upstream `sdr-enthusiasts` image deprecated running arbitrary binaries via entrypoint, so the backend now leverages their official standalone setup helper script via `docker-baseimage:qemu`. This fully repairs the feed key generation functionality in the web dashboard.
 
 ### v3.0.96 — FR24 UAT Fix
 - **FR24 Configuration** — Fixed FR24 configuration to correctly isolate 1090/978 UAT data paths. explicitly injected UAT host and port into the fr24 container, and fixed the UI to allow clearing empty keys.

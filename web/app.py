@@ -1666,18 +1666,18 @@ yes
 {lon_formatted}
 {alt_formatted}
 yes
-5
+4
 ultrafeeder
 30005
 no
 no
 '''
         
-        # Run fr24feed --signup in Docker container
+        # Run official signup script using the baseimage to retrieve the key
         docker_cmd = [
             'docker', 'run', '-i', '--rm',
-            'ghcr.io/sdr-enthusiasts/docker-flightradar24:latest',
-            'fr24feed', '--signup'
+            'ghcr.io/sdr-enthusiasts/docker-baseimage:qemu',
+            'bash', '-c', 'curl -sSL https://raw.githubusercontent.com/sdr-enthusiasts/docker-flightradar24/main/get_adsb_key.sh > /tmp/get_key.sh && bash /tmp/get_key.sh'
         ]
         
         try:
@@ -1686,7 +1686,7 @@ no
                 input=signup_inputs,
                 capture_output=True,
                 text=True,
-                timeout=120
+                timeout=240
             )
             
             output = result.stdout + result.stderr

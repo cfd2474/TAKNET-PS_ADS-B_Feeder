@@ -1,5 +1,5 @@
 {
-  "version": "3.0.96",
+  "version": "3.0.97",
   "name": "TAKNET-PS ADS-B Feeder",
-  "release_notes": "FR24 UAT Fix: Fixed FR24 configuration to correctly isolate 1090/978 UAT data paths per FlightRadar24 specifications by explicitly injecting UAT host/port into the standard fr24 container. Fixed empty key clearing."
+  "release_notes": "Hotfix: Fixed FR24 account registration failing to extract sharing keys due to upstream Docker image changes. Registration now correctly utilizes the baseimage helper script."
 }

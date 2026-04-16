@@ -1,3 +1,6 @@
+## v3.0.97 - Apr 16, 2026
+- **Hotfix: FR24 Feed Registration**: The web UI's account registration logic was failing with a "couldn't automatically retrieve your sharing key" error. The upstream `sdr-enthusiasts` flightradar24 image no longer ships with `fr24feed` configured in the path in a way that allows arbitrary execution with interactive prompts. The setup workflow was updated to securely proxy registration using their `docker-baseimage:qemu` wrapper script, fully restoring the one-click registration process.
+
 ## v3.0.96 - Apr 16, 2026
 - **FR24 feed UAT Configuration validation**: Fixed FR24 configuration to correctly isolate 1090/978 UAT data paths according to FlightRadar24 specifications by explicitly injecting UAT host/port into the standard fr24 container. Fixed UI field to clear key from `.env` when left empty.
 
