@@ -1,3 +1,6 @@
+## v3.0.98 - Apr 16, 2026
+- **Hotfix: FR24 Feed Registration Timeout**: Fixed a critical deadlock where the dashboard would spin indefinitely during FR24 registration. The newly utilized upstream `install_feeder.sh` helper script executes `apt-get`, which was unintentionally draining the standard output pipeline that contained the automated configuration answers. This left the `fr24feed` binary starved for input. The variables are now securely buffered into a dedicated text file and piped specifically to the final binary step rather than the parent sub-shell, thoroughly permanently rectifying the integration.
+
 ## v3.0.97 - Apr 16, 2026
 - **Hotfix: FR24 Feed Registration**: The web UI's account registration logic was failing with a "couldn't automatically retrieve your sharing key" error. The upstream `sdr-enthusiasts` flightradar24 image no longer ships with `fr24feed` configured in the path in a way that allows arbitrary execution with interactive prompts. The setup workflow was updated to securely proxy registration using their `docker-baseimage:qemu` wrapper script, fully restoring the one-click registration process.
 

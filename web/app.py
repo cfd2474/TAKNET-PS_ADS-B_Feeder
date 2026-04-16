@@ -1673,17 +1673,34 @@ no
 no
 '''
         
-        # Run official signup script using the baseimage to retrieve the key
+        # We write a custom bash script that ensures install_feeder.sh doesn't consume stdin
+        # and inputs are safely pushed specifically to fr24feed
+        docker_bash_script = f'''
+mkdir -p /run/tmp
+curl -sSL https://raw.githubusercontent.com/sdr-enthusiasts/docker-flightradar24/main/install_feeder.sh > /run/tmp/install_feeder.sh
+chmod a+x /run/tmp/install_feeder.sh
+export DEBIAN_FRONTEND=noninteractive
+INSTALL_X86_FROMDEB=true /run/tmp/install_feeder.sh < /dev/null >/dev/null 2>&1
+
+cat << 'EOF' > /tmp/inputs.txt
+{signup_inputs}EOF
+
+if /usr/bin/fr24feed --version >/dev/null 2>&1; then
+    /usr/bin/fr24feed --signup --configfile=/tmp/config.txt < /tmp/inputs.txt
+else
+    qemu-arm-static /usr/bin/fr24feed --signup --configfile=/tmp/config.txt < /tmp/inputs.txt
+fi
+'''
+        
         docker_cmd = [
             'docker', 'run', '-i', '--rm',
             'ghcr.io/sdr-enthusiasts/docker-baseimage:qemu',
-            'bash', '-c', 'curl -sSL https://raw.githubusercontent.com/sdr-enthusiasts/docker-flightradar24/main/get_adsb_key.sh > /tmp/get_key.sh && bash /tmp/get_key.sh'
+            'bash', '-c', docker_bash_script
         ]
         
         try:
             result = subprocess.run(
                 docker_cmd,
-                input=signup_inputs,
                 capture_output=True,
                 text=True,
                 timeout=240

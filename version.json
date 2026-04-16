@@ -1,5 +1,5 @@
 {
-  "version": "3.0.97",
+  "version": "3.0.98",
   "name": "TAKNET-PS ADS-B Feeder",
-  "release_notes": "Hotfix: Fixed FR24 account registration failing to extract sharing keys due to upstream Docker image changes. Registration now correctly utilizes the baseimage helper script."
+  "release_notes": "Hotfix: Fixed FR24 account registration freezing and timing out. The upstream container's apt-get dependency installer was stealing the automated input answers; inputs are now strictly isolated to the registration binary."
 }
