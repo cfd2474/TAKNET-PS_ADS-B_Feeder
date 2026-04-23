@@ -57,22 +57,22 @@ def taknet_beast_uses_claim_proxy(env_vars):
 # Phase B: Valid gain values per driver type
 VALID_GAINS = {
     'rtlsdr': [
-        'autogain', '0.0', '0.9', '1.4', '2.7', '3.7', '7.7', '8.7',
+        'auto', '0.0', '0.9', '1.4', '2.7', '3.7', '7.7', '8.7',
         '12.5', '14.4', '15.7', '16.6', '19.7', '20.7', '22.9',
         '25.4', '28.0', '29.7', '32.8', '33.8', '36.4', '37.2',
         '38.6', '40.2', '42.1', '43.4', '43.9', '44.5', '48.0', '49.6'
     ],
     'airspy': ['0', '3', '6', '9', '12', '15', '18', '21'],
     'hackrf': ['0', '8', '16', '24', '32', '40', '48'],
-    'ftdi': ['autogain']  # N/A for FTDI
+    'ftdi': ['auto']  # N/A for FTDI
 }
 
 # Recommended gain defaults per driver
 RECOMMENDED_GAINS = {
-    'rtlsdr': 'autogain',
+    'rtlsdr': 'auto',
     'airspy': '21',      # Maximum sensitivity
     'hackrf': '40',      # High gain
-    'ftdi': 'autogain'
+    'ftdi': 'auto'
 }
 
 def validate_gain(driver, gain):
@@ -90,7 +90,7 @@ def validate_gain(driver, gain):
     # For numeric gains, try to match closest valid value
     try:
         gain_float = float(gain)
-        valid_floats = [float(g) for g in valid if g != 'autogain']
+        valid_floats = [float(g) for g in valid if g != 'auto']
         if valid_floats:
             closest = min(valid_floats, key=lambda x: abs(x - gain_float))
             print(f"[WARNING] Gain {gain} not valid for {driver}, using closest: {closest}")
@@ -99,7 +99,7 @@ def validate_gain(driver, gain):
         pass
     
     # Fall back to recommended default
-    default = RECOMMENDED_GAINS.get(driver, 'autogain')
+    default = RECOMMENDED_GAINS.get(driver, 'auto')
     print(f"[WARNING] Invalid gain '{gain}' for {driver}, using default: {default}")
     return default
 
@@ -481,7 +481,7 @@ def build_dump978_service(env_vars):
     sdr_978_device = env_vars.get('SDR_978_DEVICE', env_vars.get('DUMP978_DEVICE', ''))
     sdr_978_type = env_vars.get('SDR_978_TYPE', 'rtlsdr')
     sdr_978_path = env_vars.get('SDR_978_PATH', env_vars.get('DUMP978_DEVICE', '1'))
-    sdr_978_gain = env_vars.get('SDR_978_GAIN', env_vars.get('DUMP978_GAIN', 'autogain'))
+    sdr_978_gain = env_vars.get('SDR_978_GAIN', env_vars.get('DUMP978_GAIN', 'auto'))
     sdr_978_serial = env_vars.get('SDR_978_SERIAL', '').strip()
     
     enabled = env_vars.get('DUMP978_ENABLED', 'false').lower() == 'true'
@@ -511,7 +511,7 @@ def build_dump978_service(env_vars):
         'environment': [
             f'TZ={feeder_tz}',
             f'LAT={feeder_lat}',
-            f'LONG={feeder_long}'
+            f'LON={feeder_long}'
         ],
         'tmpfs': [
             '/run:exec,size=64M',
@@ -550,8 +550,8 @@ def build_dump978_service(env_vars):
             'DUMP978_JSON_STDOUT=true'
         ])
         
-        # Add gain if not autogain
-        if sdr_978_gain and sdr_978_gain != 'autogain':
+        # Add gain if not auto
+        if sdr_978_gain and sdr_978_gain != 'auto':
             service['environment'].append(f'DUMP978_GAIN={sdr_978_gain}')
     
     return service
@@ -565,7 +565,7 @@ def build_sdr_configuration(env_vars):
     sdr_driver = env_vars.get('SDR_1090_DRIVER', 'rtlsdr')
     sdr_serial = env_vars.get('SDR_1090_SERIAL', '')
     sdr_device = env_vars.get('SDR_1090_DEVICE', '0')
-    sdr_gain = env_vars.get('SDR_1090_GAIN', 'autogain')
+    sdr_gain = env_vars.get('SDR_1090_GAIN', 'auto')
     use_soapy = env_vars.get('USE_SOAPYSDR', 'auto')
     
     # Legacy fallback for systems without new variables
@@ -574,7 +574,7 @@ def build_sdr_configuration(env_vars):
     if not sdr_device:
         sdr_device = env_vars.get('READSB_DEVICE', '0')
     if not sdr_gain:
-        sdr_gain = env_vars.get('READSB_GAIN', 'autogain')
+        sdr_gain = env_vars.get('READSB_GAIN', 'auto')
     
     print(f"[Phase B] SDR Configuration:")
     print(f"  Driver: {sdr_driver}")
@@ -874,7 +874,7 @@ def build_docker_compose(env_vars):
             'restart': 'unless-stopped',
             'networks': ['adsb_net'],
             'depends_on': ['ultrafeeder'],
-            'ports': ['8082:80'],
+            'ports': ['8081:8080'],
             'environment': [
                 f'TZ={feeder_tz}',  # Write actual value
                 f'FEEDER_ID={piaware_feeder_id}',  # Write actual value
@@ -914,31 +914,34 @@ def build_docker_compose(env_vars):
         # Get values from env_vars (write actual values, not ${VARIABLE})
         adsbhub_station_key = env_vars.get('ADSBHUB_STATION_KEY', '')
         
-        compose['services']['adsbhub'] = {
-            'image': 'ghcr.io/sdr-enthusiasts/docker-adsbhub:latest',
-            'container_name': 'adsbhub',
-            'hostname': 'adsbhub',
-            'restart': 'unless-stopped',
-            'networks': ['adsb_net'],
-            'depends_on': ['ultrafeeder'],
-            'environment': [
-                f'TZ={feeder_tz}',  # Reuse from ultrafeeder section above
-                'SBSHOST=ultrafeeder',
-                f'CLIENTKEY={adsbhub_station_key}'
-            ],
-            'logging': logging_config,
-            **pi_resource_limits,
-            'healthcheck': {
-                'test': ['CMD-SHELL', 'pgrep adsbhub > /dev/null || exit 1'],
-                'interval': '60s',
-                'timeout': '10s',
-                'retries': 3,
-                'start_period': '60s'
-            },
-            'labels': {
-                'autoheal': 'true'
+        if adsbhub_station_key:
+            compose['services']['adsbhub'] = {
+                'image': 'ghcr.io/sdr-enthusiasts/docker-adsbhub:latest',
+                'container_name': 'adsbhub',
+                'hostname': 'adsbhub',
+                'restart': 'unless-stopped',
+                'networks': ['adsb_net'],
+                'depends_on': ['ultrafeeder'],
+                'environment': [
+                    f'TZ={feeder_tz}',  # Reuse from ultrafeeder section above
+                    'SBSHOST=ultrafeeder',
+                    f'CLIENTKEY={adsbhub_station_key}'
+                ],
+                'logging': logging_config,
+                **pi_resource_limits,
+                'healthcheck': {
+                    'test': ['CMD-SHELL', 'pgrep adsbhub > /dev/null || exit 1'],
+                    'interval': '60s',
+                    'timeout': '10s',
+                    'retries': 3,
+                    'start_period': '60s'
+                },
+                'labels': {
+                    'autoheal': 'true'
+                }
             }
-        }
+        else:
+            print("ℹ ADSBHub: Station key missing, disabling service to prevent restart loops")
     else:
         print("ℹ Mobile mode: Disabling ADSBHub feed")
     

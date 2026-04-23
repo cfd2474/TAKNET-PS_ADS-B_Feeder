@@ -2163,16 +2163,16 @@
                     sdrDevices = data.devices.map(device => {
                         // Determine current use and gain from config
                         let useFor = '';
-                        let gain = 'autogain';
+                        let gain = 'auto';
                         
                         if (device.type === 'rtlsdr' && device.index === 0 && currentConfig.readsb_device === device.index.toString()) {
                             useFor = '1090';
-                            gain = currentConfig.readsb_gain || 'autogain';
+                            gain = currentConfig.readsb_gain || 'auto';
                         } else if (device.type === 'ftdi' || (device.type === 'rtlsdr' && currentConfig.dump978_enabled)) {
                             if (currentConfig.dump978_device === device.index.toString() || 
                                 (device.type === 'ftdi' && currentConfig.dump978_enabled)) {
                                 useFor = '978';
-                                gain = currentConfig.dump978_gain || 'autogain';
+                                gain = currentConfig.dump978_gain || 'auto';
                             }
                         }
                         
@@ -2236,7 +2236,7 @@
                             '<span style="color: #9ca3af;">Not Configured</span>'
                         }
                     </td>
-                    <td><strong>${device.gain || 'autogain'}</strong></td>
+                    <td><strong>${device.gain || 'auto'}</strong></td>
                     <td>${device.biastee ? '✓ Enabled' : '—'}</td>
                 `;
                 
@@ -2276,7 +2276,7 @@
             useForSelect.value = device.useFor || '';
             
             // Load driver-specific gain options
-            loadGainOptionsForSettings(device.driver || 'rtlsdr', device.gain || 'autogain', device.type);
+            loadGainOptionsForSettings(device.driver || 'rtlsdr', device.gain || 'auto', device.type);
             
             // Bias tee
             document.getElementById('sdrModalBiasTee').checked = device.biastee || false;
@@ -2291,8 +2291,8 @@
             
             // Handle FTDI special case
             if (deviceType === 'ftdi') {
-                gainSelect.innerHTML = '<option value="autogain">Auto Gain (Hardware Managed)</option>';
-                gainSelect.value = 'autogain';
+                gainSelect.innerHTML = '<option value="auto">Auto Gain (Hardware Managed)</option>';
+                gainSelect.value = 'auto';
                 gainSelect.disabled = true;
                 ftdiNotice.style.display = 'block';
                 gainHelp.textContent = 'FTDI devices manage gain automatically';
@@ -2336,15 +2336,15 @@
                     gainHelp.textContent = data.description;
                 } else {
                     // Fallback to generic options
-                    gainSelect.innerHTML = '<option value="autogain">Auto Gain (Recommended)</option>';
-                    gainSelect.value = currentGain || 'autogain';
+                    gainSelect.innerHTML = '<option value="auto">Auto Gain (Recommended)</option>';
+                    gainSelect.value = currentGain || 'auto';
                     gainHelp.textContent = 'Select gain level or use auto gain (recommended)';
                 }
             } catch (error) {
                 console.error('Error loading gain options:', error);
                 // Fallback
-                gainSelect.innerHTML = '<option value="autogain">Auto Gain (Recommended)</option>';
-                gainSelect.value = currentGain || 'autogain';
+                gainSelect.innerHTML = '<option value="auto">Auto Gain (Recommended)</option>';
+                gainSelect.value = currentGain || 'auto';
                 gainHelp.textContent = 'Select gain level or use auto gain (recommended)';
             }
         }
@@ -2378,7 +2378,7 @@
                 index: device.index,
                 serial: device.serial,
                 use: device.use || device.useFor || 'disabled',
-                gain: device.gain || 'autogain',
+                gain: device.gain || 'auto',
                 biastee: device.biastee || false,
                 type: device.type || 'rtlsdr',
                 device_path: device.device_path || device.index.toString(),
@@ -2550,7 +2550,7 @@
             <div class="form-group">
                 <label>Gain</label>
                 <select id="sdrModalGain" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px;">
-                    <option value="autogain">Auto Gain (Recommended)</option>
+                    <option value="auto">Auto Gain (Recommended)</option>
                 </select>
                 <p id="sdrModalGainHelp" style="margin: 5px 0 0 0; color: #6b7280; font-size: 0.85em;">
                     Select gain level or use auto gain (recommended)
@@ -2561,7 +2561,7 @@
             <div id="sdrModalFtdiNotice" style="display: none; padding: 15px; background: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 6px; margin-bottom: 15px; word-wrap: break-word; overflow-wrap: break-word;">
                 <p style="margin: 0; font-size: 0.9em; color: #92400e; line-height: 1.5;">
                     <strong>ℹ️ FTDI UATRadio</strong><br>
-                    Gain is hardcoded to autogain by the hardware and cannot be changed. The device automatically manages optimal gain levels.
+                    Gain is hardcoded to auto by the hardware and cannot be changed. The device automatically manages optimal gain levels.
                 </p>
             </div>
             

@@ -2526,12 +2526,12 @@ def api_sdr_status():
                 detected_devices = detected.get('devices', []) or []
                 if detected_devices:
                     readsb_device = str(env.get('READSB_DEVICE', '0')).strip()
-                    readsb_gain = env.get('READSB_GAIN', 'autogain')
+                    readsb_gain = env.get('READSB_GAIN', 'auto')
                     readsb_biastee = env.get('READSB_ENABLE_BIASTEE', '').upper() == 'ON'
 
                     dump978_enabled = env.get('DUMP978_ENABLED', 'false').lower() == 'true'
                     dump978_device = str(env.get('DUMP978_DEVICE', '1')).strip()
-                    dump978_gain = env.get('DUMP978_GAIN', 'autogain')
+                    dump978_gain = env.get('DUMP978_GAIN', 'auto')
 
                     for d in detected_devices:
                         idx = d.get('index')
@@ -2541,13 +2541,13 @@ def api_sdr_status():
                         device_path = str(d.get('device_path') or '').strip()
 
                         use_for = 'Unassigned'
-                        gain = 'autogain'
+                        gain = 'auto'
                         biastee = False
 
                         # 1090 assignment (readsb)
                         if readsb_device == idx_str:
                             use_for = '1090 MHz'
-                            gain = readsb_gain or 'autogain'
+                            gain = readsb_gain or 'auto'
                             biastee = readsb_biastee
                         # 978 assignment (dump978): support index-based and path-based configs.
                         elif dump978_enabled and (
@@ -2555,7 +2555,7 @@ def api_sdr_status():
                             (device_path and dump978_device == device_path)
                         ):
                             use_for = '978 MHz (UAT)'
-                            gain = 'autogain' if driver == 'ftdi' else (dump978_gain or 'autogain')
+                            gain = 'auto' if driver == 'ftdi' else (dump978_gain or 'auto')
 
                         devices.append({
                             'index': idx if idx is not None else len(devices),
@@ -2595,16 +2595,16 @@ def api_sdr_status():
                 label  = get_field('label') or get_field('product') or driver
 
                 use_for = ''
-                gain = 'autogain'
+                gain = 'auto'
                 biastee = False
 
                 if serial and env.get('SDR_1090_SERIAL', '').strip() == serial:
                     use_for = '1090 MHz'
-                    gain = env.get('SDR_1090_GAIN', 'autogain')
+                    gain = env.get('SDR_1090_GAIN', 'auto')
                     biastee = env.get('READSB_ENABLE_BIASTEE', '').upper() == 'ON'
                 elif serial and env.get('SDR_978_SERIAL', '').strip() == serial:
                     use_for = '978 MHz (UAT)'
-                    gain = env.get('SDR_978_GAIN', '') or env.get('DUMP978_GAIN', 'autogain')
+                    gain = env.get('SDR_978_GAIN', '') or env.get('DUMP978_GAIN', 'auto')
                     biastee = False
 
                 devices.append({
@@ -2628,7 +2628,7 @@ def api_sdr_status():
                     'type': env.get('SDR_1090_TYPE', 'RTL-SDR'),
                     'serial': env.get('SDR_1090_SERIAL', 'Unknown'),
                     'use_for': '1090 MHz',
-                    'gain': env.get('SDR_1090_GAIN', 'autogain'),
+                    'gain': env.get('SDR_1090_GAIN', 'auto'),
                     'biastee': env.get('READSB_ENABLE_BIASTEE', '').upper() == 'ON'
                 })
             if env.get('SDR_978_SERIAL') and env.get('DUMP978_ENABLED', 'false').lower() == 'true':
@@ -2637,7 +2637,7 @@ def api_sdr_status():
                     'type': env.get('SDR_978_TYPE', 'RTL-SDR'),
                     'serial': env.get('SDR_978_SERIAL', 'Unknown'),
                     'use_for': '978 MHz (UAT)',
-                    'gain': env.get('SDR_978_GAIN', 'autogain') or env.get('DUMP978_GAIN', 'autogain'),
+                    'gain': env.get('SDR_978_GAIN', 'auto') or env.get('DUMP978_GAIN', 'auto'),
                     'biastee': False
                 })
 
@@ -2681,7 +2681,7 @@ def api_sdr_detect():
                 'type': label or driver or 'RTL-SDR',
                 'serial': serial or 'Unknown',
                 'useFor': '',
-                'gain': 'autogain',
+                'gain': 'auto',
                 'biastee': False
             }
 
@@ -2689,11 +2689,11 @@ def api_sdr_detect():
             env = read_env()
             if serial and env.get('SDR_1090_SERIAL', '').strip() == serial:
                 device['useFor'] = '1090'
-                device['gain'] = env.get('SDR_1090_GAIN', 'autogain')
+                device['gain'] = env.get('SDR_1090_GAIN', 'auto')
                 device['biastee'] = env.get('READSB_ENABLE_BIASTEE', '').upper() == 'ON'
             elif serial and env.get('SDR_978_SERIAL', '').strip() == serial:
                 device['useFor'] = '978'
-                device['gain'] = env.get('SDR_978_GAIN', '') or env.get('DUMP978_GAIN', 'autogain')
+                device['gain'] = env.get('SDR_978_GAIN', '') or env.get('DUMP978_GAIN', 'auto')
 
             devices.append(device)
             idx += 1
@@ -2721,10 +2721,10 @@ def api_sdr_configure():
             if device.get('useFor'):
                 index = device.get('index')
                 use_for = device.get('useFor', '')
-                gain = device.get('gain', 'autogain')
+                gain = device.get('gain', 'auto')
                 biastee = 'true' if device.get('biastee', False) else 'false'
                 
-                # Store as SDR_0=1090,autogain,false
+                # Store as SDR_0=1090,auto,false
                 env[f'SDR_{index}'] = f"{use_for},{gain},{biastee}"
                 
                 # Set primary device (first 1090 device found)
@@ -3438,14 +3438,14 @@ def api_gain_options(driver):
     gain_options = {
         'rtlsdr': {
             'options': [
-                'autogain', '0.0', '0.9', '1.4', '2.7', '3.7', '7.7', '8.7',
+                'auto', '0.0', '0.9', '1.4', '2.7', '3.7', '7.7', '8.7',
                 '12.5', '14.4', '15.7', '16.6', '19.7', '20.7', '22.9',
                 '25.4', '28.0', '29.7', '32.8', '33.8', '36.4', '37.2',
                 '38.6', '40.2', '42.1', '43.4', '43.9', '44.5', '48.0', '49.6'
             ],
-            'default': 'autogain',
-            'recommended': 'autogain',
-            'description': 'RTL-SDR supports autogain or manual values 0.0-49.6 dB'
+            'default': 'auto',
+            'recommended': 'auto',
+            'description': 'RTL-SDR supports auto or manual values 0.0-49.6 dB'
         },
         'airspy': {
             'options': ['0', '3', '6', '9', '12', '15', '18', '21'],
@@ -3460,9 +3460,9 @@ def api_gain_options(driver):
             'description': 'HackRF gain in steps of 8 dB (0-48). Recommended: 40 for high gain'
         },
         'ftdi': {
-            'options': ['autogain'],
-            'default': 'autogain',
-            'recommended': 'autogain',
+            'options': ['auto'],
+            'default': 'auto',
+            'recommended': 'auto',
             'description': 'FTDI UATRadio does not support gain control'
         }
     }
@@ -3479,35 +3479,35 @@ def api_gain_options(driver):
         return jsonify({
             'success': True,
             'driver': driver_lower,
-            'options': ['autogain', '0', '10', '20', '30', '40', '50'],
-            'default': 'autogain',
-            'recommended': 'autogain',
+            'options': ['auto', '0', '10', '20', '30', '40', '50'],
+            'default': 'auto',
+            'recommended': 'auto',
             'description': f'Generic gain options for {driver}'
         })
 
 def validate_gain_for_driver(driver, gain):
     """Validate gain value for specific driver - used in API"""
     valid_gains = {
-        'rtlsdr': ['autogain', '0.0', '0.9', '1.4', '2.7', '3.7', '7.7', '8.7',
+        'rtlsdr': ['auto', '0.0', '0.9', '1.4', '2.7', '3.7', '7.7', '8.7',
                    '12.5', '14.4', '15.7', '16.6', '19.7', '20.7', '22.9',
                    '25.4', '28.0', '29.7', '32.8', '33.8', '36.4', '37.2',
                    '38.6', '40.2', '42.1', '43.4', '43.9', '44.5', '48.0', '49.6'],
         'airspy': ['0', '3', '6', '9', '12', '15', '18', '21'],
         'hackrf': ['0', '8', '16', '24', '32', '40', '48'],
-        'ftdi': ['autogain']
+        'ftdi': ['auto']
     }
     
     defaults = {
-        'rtlsdr': 'autogain',
+        'rtlsdr': 'auto',
         'airspy': '21',
         'hackrf': '40',
-        'ftdi': 'autogain'
+        'ftdi': 'auto'
     }
     
     if driver in valid_gains and gain in valid_gains[driver]:
         return gain
     
-    return defaults.get(driver, 'autogain')
+    return defaults.get(driver, 'auto')
 
 @app.route('/api/sdrs/configure', methods=['POST'])
 def api_configure_sdrs():
@@ -3532,7 +3532,7 @@ def api_configure_sdrs():
         for sdr in sdrs:
             index = sdr.get('index')
             use = sdr.get('use')
-            gain = sdr.get('gain', 'autogain')
+            gain = sdr.get('gain', 'auto')
             device_type = sdr.get('type', 'rtlsdr')
             device_path = sdr.get('device_path', str(index))
             driver = sdr.get('driver', 'rtlsdr')  # Phase B
@@ -3638,7 +3638,7 @@ def api_force_dump978():
             if not env.get('DUMP978_DEVICE') or env.get('DUMP978_DEVICE') == 'disabled':
                 env['DUMP978_DEVICE'] = '1'
             if not env.get('DUMP978_GAIN'):
-                env['DUMP978_GAIN'] = 'autogain'
+                env['DUMP978_GAIN'] = 'auto'
                 
             env['SDR_978_DEVICE'] = env['DUMP978_DEVICE']
             env['SDR_978_PATH'] = env['DUMP978_DEVICE']
@@ -3690,11 +3690,11 @@ def api_get_current_sdr_config():
         
         config = {
             'readsb_device': env.get('READSB_DEVICE', '0'),
-            'readsb_gain': env.get('READSB_GAIN', 'autogain'),
+            'readsb_gain': env.get('READSB_GAIN', 'auto'),
             'dump978_enabled': env.get('DUMP978_ENABLED', 'false') == 'true',
             'dump978_force_override': env.get('DUMP978_FORCE_OVERRIDE', 'false') == 'true',
             'dump978_device': env.get('DUMP978_DEVICE', '1'),
-            'dump978_gain': env.get('DUMP978_GAIN', 'autogain')
+            'dump978_gain': env.get('DUMP978_GAIN', 'auto')
         }
         
         return jsonify(config)
@@ -3790,7 +3790,7 @@ def api_dump978_enable():
         if 'DUMP978_DEVICE' not in env:
             env['DUMP978_DEVICE'] = '1'
         if 'DUMP978_GAIN' not in env:
-            env['DUMP978_GAIN'] = 'autogain'
+            env['DUMP978_GAIN'] = 'auto'
         write_env(env)
         
         # Rebuild configuration with UAT connector

@@ -1,5 +1,5 @@
 {
-  "version": "3.0.98",
+  "version": "3.0.99",
   "name": "TAKNET-PS ADS-B Feeder",
-  "release_notes": "Hotfix: Fixed FR24 account registration freezing and timing out. The upstream container's apt-get dependency installer was stealing the automated input answers; inputs are now strictly isolated to the registration binary."
+  "release_notes": "Hotfix: Feedback Fixes: Fixed Piaware Nginx port mapping, dump978 LON= coordinate mapping, updated Ultrafeeder gain to use auto instead of autogain, resolved Netbird installer hangs with timeouts and visible logging, and fixed ADSBHub autoheal restart loop when the station key is empty."
 }

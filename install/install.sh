@@ -1,10 +1,10 @@
 #!/bin/bash
-# TAKNET-PS-ADSB-Feeder One-Line Installer v3.0.98
+# TAKNET-PS-ADSB-Feeder One-Line Installer v3.0.99
 # Support: help@tak-solutions.com
 # repo: cfd2474/TAKNET-PS_ADS-B_Feeder
 # License: MIT
 
-# v3.0.98 - Apr 16, 2026
+# v3.0.99 - Apr 23, 2026
 # Optimized for Raspberry Pi 4/5
 
 # Default (main):
@@ -13,7 +13,7 @@
 #   curl -fsSL https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/feature/my-branch/install/install.sh | sudo bash
 # Or: TAKNET_INSTALL_BRANCH=feature/my-branch curl .../main/install/install.sh | sudo -E bash
 
-INSTALLER_VERSION="3.0.98"
+INSTALLER_VERSION="3.0.99"
 NETBIRD_DEFAULT_MANAGEMENT_URL="https://netbird.tak-solutions.com"
 NETBIRD_DEFAULT_SETUP_KEY="C5F35D5B-6B0D-440F-B573-D21C8BE79529"
 
@@ -273,25 +273,29 @@ enroll_netbird_from_env() {
 
     if [ -n "$NB_MGMT_URL" ] && [ -n "$NB_SETUP_KEY" ]; then
         echo "  • Enrolling NetBird peer..."
-        netbird up \
+        
+        # Run with a timeout and allow stdout/stderr to be visible in the install log
+        if timeout 60 netbird up \
             --setup-key "$NB_SETUP_KEY" \
             --management-url "$NB_MGMT_URL" \
             --disable-dns \
             --allow-server-ssh \
             --enable-ssh-root \
-            --hostname "${NB_HOSTNAME:-taknet-ps-feeder}" \
-            > /dev/null 2>&1
-
-        if netbird status 2>/dev/null | grep -q "Management: Connected"; then
-            echo "  ✓ NetBird enrolled and connected"
-            # Update NETBIRD_ENABLED in .env
-            if grep -q "^NETBIRD_ENABLED=" "$env_file" 2>/dev/null; then
-                sed -i 's/^NETBIRD_ENABLED=.*/NETBIRD_ENABLED=true/' "$env_file"
+            --hostname "${NB_HOSTNAME:-taknet-ps-feeder}"; then
+            
+            if netbird status 2>/dev/null | grep -q "Management: Connected"; then
+                echo "  ✓ NetBird enrolled and connected"
+                # Update NETBIRD_ENABLED in .env
+                if grep -q "^NETBIRD_ENABLED=" "$env_file" 2>/dev/null; then
+                    sed -i 's/^NETBIRD_ENABLED=.*/NETBIRD_ENABLED=true/' "$env_file"
+                else
+                    echo "NETBIRD_ENABLED=true" >> "$env_file"
+                fi
             else
-                echo "NETBIRD_ENABLED=true" >> "$env_file"
+                echo "  ⚠ NetBird enrollment returned success, but is not connected. May need manual completion via dashboard."
             fi
         else
-            echo "  ⚠ NetBird enrollment may need manual completion via dashboard"
+            echo "  ⚠ NetBird enrollment timed out or failed. Check the output above. Installation will continue."
         fi
     fi
 }
@@ -752,11 +756,11 @@ server {
         proxy_buffering off;
     }
 
-    # PiAware/FlightAware UI -> local PiAware web service (port 8082).
+    # PiAware/FlightAware UI -> local PiAware web service (port 8081).
     # We do not use sub_filter here: ngx_http_sub_module is missing on many Debian nginx builds (breaks nginx -t).
     # Root-absolute asset URLs are handled via explicit locations below (and aggregator should route origin /jquery.min.js etc.).
     location /piaware/ {
-        proxy_pass http://127.0.0.1:8082/;
+        proxy_pass http://127.0.0.1:8081/;
         proxy_http_version 1.1;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
@@ -770,49 +774,49 @@ server {
 
     # PiAware often emits root-absolute /jquery.min.js, /css/..., etc. Proxy to upstream so tunnel + HTTPS work.
     location = /jquery.min.js {
-        proxy_pass http://127.0.0.1:8082/jquery.min.js;
+        proxy_pass http://127.0.0.1:8081/jquery.min.js;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
     }
     location = /bootstrap.min.js {
-        proxy_pass http://127.0.0.1:8082/bootstrap.min.js;
+        proxy_pass http://127.0.0.1:8081/bootstrap.min.js;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
     }
     location = /index.js {
-        proxy_pass http://127.0.0.1:8082/index.js;
+        proxy_pass http://127.0.0.1:8081/index.js;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
     }
     location /css/ {
-        proxy_pass http://127.0.0.1:8082/css/;
+        proxy_pass http://127.0.0.1:8081/css/;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
     }
     location /js/ {
-        proxy_pass http://127.0.0.1:8082/js/;
+        proxy_pass http://127.0.0.1:8081/js/;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
     }
     location /fonts/ {
-        proxy_pass http://127.0.0.1:8082/fonts/;
+        proxy_pass http://127.0.0.1:8081/fonts/;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
     }
     location /img/ {
-        proxy_pass http://127.0.0.1:8082/img/;
+        proxy_pass http://127.0.0.1:8081/img/;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;

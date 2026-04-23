@@ -264,7 +264,7 @@
             <div class="form-group">
                 <label>Gain</label>
                 <select id="modalGain" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px;">
-                    <option value="autogain">autogain</option>
+                    <option value="auto">auto</option>
                 </select>
                 <p id="gainDescription" style="margin: 5px 0 0 0; color: #6b7280; font-size: 0.85em;">
                     Recommended gain setting for this device
@@ -324,7 +324,7 @@
                         const mapped = {
                             ...device,
                             useFor: device.suggested_use !== 'disabled' ? device.suggested_use : null,
-                            gain: device.suggested_gain || 'autogain',
+                            gain: device.suggested_gain || 'auto',
                             biastee: false
                         };
                         console.log(`Mapped to: useFor="${mapped.useFor}"`);
@@ -415,7 +415,7 @@
                             '<span class="badge badge-unconfigured">Click here to configure</span>'
                         }
                     </td>
-                    <td>${device.gain || 'autogain'}</td>
+                    <td>${device.gain || 'auto'}</td>
                     <td>${device.biastee ? '✓ Enabled' : '—'}</td>
                 `;
                 
@@ -436,7 +436,7 @@
             document.getElementById('modalBiasTee').checked = device.biastee || false;
             
             // Load driver-specific gain options
-            await loadGainOptions(device.driver || 'rtlsdr', device.gain || 'autogain');
+            await loadGainOptions(device.driver || 'rtlsdr', device.gain || 'auto');
             
             document.getElementById('configModal').style.display = 'flex';
         }
@@ -478,14 +478,14 @@
                     gainDesc.textContent = data.description;
                 } else {
                     // Fallback to generic options
-                    gainSelect.innerHTML = '<option value="autogain">autogain</option>';
-                    gainSelect.value = currentGain || 'autogain';
+                    gainSelect.innerHTML = '<option value="auto">auto</option>';
+                    gainSelect.value = currentGain || 'auto';
                 }
             } catch (error) {
                 console.error('Error loading gain options:', error);
                 // Fallback
-                gainSelect.innerHTML = '<option value="autogain">autogain</option>';
-                gainSelect.value = currentGain || 'autogain';
+                gainSelect.innerHTML = '<option value="auto">auto</option>';
+                gainSelect.value = currentGain || 'auto';
             }
         }
         
@@ -507,17 +507,17 @@
                 return;
             }
             
-            if (gain && gain !== 'autogain' && gain !== 'auto') {
+            if (gain && gain !== 'auto' && gain !== 'auto') {
                 const gainNum = parseFloat(gain);
                 if (isNaN(gainNum) || gainNum < 0 || gainNum > 50) {
-                    alert('Gain must be between 0 and 50, or "autogain"');
+                    alert('Gain must be between 0 and 50, or "auto"');
                     return;
                 }
             }
             
             // Update device
             devices[currentDeviceIndex].useFor = useFor;
-            devices[currentDeviceIndex].gain = gain === 'auto' ? 'autogain' : gain;
+            devices[currentDeviceIndex].gain = gain === 'auto' ? 'auto' : gain;
             devices[currentDeviceIndex].biastee = biastee;
             
             closeConfigModal();
@@ -541,7 +541,7 @@
                     index: device.index,
                     serial: device.serial,
                     use: device.useFor || '',  // Map useFor to use
-                    gain: device.gain || 'autogain',
+                    gain: device.gain || 'auto',
                     biastee: device.biastee || false,
                     type: device.type || 'rtlsdr',
                     device_path: device.device_path || device.index.toString(),
