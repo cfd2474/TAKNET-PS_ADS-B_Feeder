@@ -1,4 +1,4 @@
-## v3.0.99 - Apr 23, 2026
+## v3.1.0 - Apr 23, 2026
 - **Hotfix: Feedback Fixes**: Fixed Piaware Nginx port mapping, dump978 `LON=` coordinate mapping, updated Ultrafeeder gain to use `auto` instead of `autogain`, resolved Netbird installer hangs with timeouts and visible logging, and fixed ADSBHub autoheal restart loop when the station key is empty.
 
 ## v3.0.98 - Apr 16, 2026
