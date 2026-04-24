@@ -52,6 +52,10 @@ _MAC = normalize_mac(_MAC_RAW)
 MAC_PREFIX = b"TAKNET_FEEDER_MAC "
 MAC_LINE = (MAC_PREFIX + _MAC.encode("ascii") + b"\n") if _MAC else None
 
+_UUID = (os.environ.get("FEEDER_UUID") or "").strip().lower()
+UUID_PREFIX = b"TAKNET_FEEDER_UUID "
+UUID_LINE = (UUID_PREFIX + _UUID.encode("ascii") + b"\n") if _UUID else None
+
 
 def _relay(src: socket.socket, dst: socket.socket) -> None:
     try:
@@ -78,6 +82,8 @@ def _handle_client(client: socket.socket, addr) -> None:
             upstream.sendall(CLAIM_LINE)
         if MAC_LINE:
             upstream.sendall(MAC_LINE)
+        if UUID_LINE:
+            upstream.sendall(UUID_LINE)
         t_a = threading.Thread(target=_relay, args=(client, upstream), daemon=True)
         t_b = threading.Thread(target=_relay, args=(upstream, client), daemon=True)
         t_a.start()
@@ -108,9 +114,10 @@ def main() -> None:
     ss.listen(16)
     claim_note = "yes" if CLAIM_LINE else "no"
     mac_note = _MAC if MAC_LINE else "no"
+    uuid_note = "yes" if UUID_LINE else "no"
     print(
         f"[beast-claim-proxy] listen {LISTEN_HOST}:{LISTEN_PORT} "
-        f"-> {UPSTREAM_HOST}:{UPSTREAM_PORT} claim={claim_note} mac={mac_note}"
+        f"-> {UPSTREAM_HOST}:{UPSTREAM_PORT} claim={claim_note} mac={mac_note} uuid={uuid_note}"
     )
     while True:
         c, a = ss.accept()

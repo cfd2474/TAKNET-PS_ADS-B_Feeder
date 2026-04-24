@@ -43,14 +43,17 @@ def normalize_feeder_mac(raw):
 def taknet_beast_uses_claim_proxy(env_vars):
     """
     True when the TAKNET-PS Beast feed should use the local identity proxy
-    (valid claim key and/or valid feeder MAC + TAKNET enabled + resolvable upstream host).
+    (valid claim key, valid feeder MAC, OR FEEDER_UUID + TAKNET enabled + resolvable upstream host).
     """
     if env_vars.get("TAKNET_PS_ENABLED", "true").lower() != "true":
         return False
     claim_uuid = normalize_feeder_claim_uuid(env_vars.get("TAKNET_PS_FEEDER_CLAIM_KEY", ""))
     feeder_mac = normalize_feeder_mac(env_vars.get("TAKNET_PS_FEEDER_MAC", ""))
-    if claim_uuid is None and feeder_mac is None:
+    feeder_uuid = env_vars.get("FEEDER_UUID", "").strip()
+    
+    if claim_uuid is None and feeder_mac is None and not feeder_uuid:
         return False
+        
     host, _ctype = select_taknet_host(env_vars)
     return bool(host)
 
@@ -790,6 +793,7 @@ def build_docker_compose(env_vars):
                 f'UPSTREAM_PORT={beast_port}',
                 f'FEEDER_CLAIM_UUID={claim_uuid or ""}',
                 f'FEEDER_MAC={feeder_mac}',
+                f'FEEDER_UUID={env_vars.get("FEEDER_UUID", "").strip()}',
             ],
             'command': ['python3', '/app/beast_claim_proxy.py'],
             'logging': logging_config,

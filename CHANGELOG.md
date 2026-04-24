@@ -1,5 +1,7 @@
+## v3.1.1 - Apr 24, 2026
+- **Feature: Feeder Identity**: Added support for transmitting `FEEDER_UUID` to the Aggregator via Beast Claim Proxy, enabling stable connectivity and deduplication across dynamic IPs.
+
 ## v3.1.0 - Apr 23, 2026
-- **Hotfix: Feedback Fixes**: Fixed Piaware Nginx port mapping, dump978 `LON=` coordinate mapping, updated Ultrafeeder gain to use `auto` instead of `autogain`, resolved Netbird installer hangs with timeouts and visible logging, and fixed ADSBHub autoheal restart loop when the station key is empty.
 
 ## v3.0.98 - Apr 16, 2026
 - **Hotfix: FR24 Feed Registration Timeout**: Fixed a critical deadlock where the dashboard would spin indefinitely during FR24 registration. The newly utilized upstream `install_feeder.sh` helper script executes `apt-get`, which was unintentionally draining the standard output pipeline that contained the automated configuration answers. This left the `fr24feed` binary starved for input. The variables are now securely buffered into a dedicated text file and piped specifically to the final binary step rather than the parent sub-shell, thoroughly permanently rectifying the integration.

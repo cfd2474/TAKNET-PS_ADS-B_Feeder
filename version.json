@@ -1,5 +1,6 @@
 {
-  "version": "3.1.0",
+  "version": "3.1.1",
   "name": "TAKNET-PS ADS-B Feeder",
-  "release_notes": "Hotfix: Feedback Fixes: Fixed Piaware Nginx port mapping, dump978 LON= coordinate mapping, updated Ultrafeeder gain to use auto instead of autogain, resolved Netbird installer hangs with timeouts and visible logging, and fixed ADSBHub autoheal restart loop when the station key is empty."
+  "update_priority": 3,
+  "release_notes": "Feature: Added support for transmitting FEEDER_UUID to the Aggregator via Beast Claim Proxy, enabling stable connectivity and deduplication across dynamic IPs."
 }
