@@ -22,8 +22,8 @@ import uuid
 from werkzeug.middleware.proxy_fix import ProxyFix
 
 app = Flask(__name__)
-# Trusts X-Forwarded-Proto, X-Forwarded-For, X-Forwarded-Host, and X-Forwarded-Port headers.
-app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1, x_for=1, x_port=1)
+# Trusts X-Forwarded-Proto, X-Forwarded-For, X-Forwarded-Host, X-Forwarded-Port, and X-Forwarded-Prefix headers.
+app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1, x_for=1, x_port=1, x_prefix=1)
 
 # Keep template rendering in sync with on-disk HTML updates.
 # This avoids stale Jinja template cache after update operations.

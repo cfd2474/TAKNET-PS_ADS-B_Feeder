@@ -320,6 +320,10 @@ def forward_request(method, path, headers, body_b64):
         req_headers["Host"] = f"{upstream_host}:{upstream_port}"
     if url_prefix:
         req_headers["X-Forwarded-Prefix"] = url_prefix
+    
+    # Force X-Forwarded-Proto to https since the aggregator tunnel is strictly HTTPS.
+    # This prevents Flask (via ProxyFix) from issuing redirects back to http://.
+    req_headers["X-Forwarded-Proto"] = "https"
 
     req = urllib.request.Request(url, data=body if method in ("POST", "PUT", "PATCH") else None, method=method, headers=req_headers)
     try:

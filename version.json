@@ -1,6 +1,6 @@
 {
-  "version": "3.1.6",
+  "version": "3.1.7",
   "name": "TAKNET-PS ADS-B Feeder",
   "update_priority": 3,
-  "release_notes": "Bugfix: Ensure saving configuration checks if NetBird is already connected and only initiates a reconnect if disconnected."
+  "release_notes": "Bugfix: Rebuilt dashboard rendering logic to fix critical Mixed Content cross-origin iframe security errors occurring when accessed remotely via the web tunnel proxy."
 }
