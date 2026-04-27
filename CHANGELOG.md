@@ -1,6 +1,3 @@
-## v3.1.3 - Apr 26, 2026
-- **Bugfix: NetBird Connection Reliability**: Fixed an issue during initial installation and manual connection where NetBird would report success but fail to connect because the background daemon was not fully initialized. Added proactive daemon start checks and asynchronous wait loops (up to 30 seconds) to ensure `netbird status` confirms a `Connected` state before proceeding.
-
 ## v3.1.2 - Apr 26, 2026
 - **Bugfix: SDR Wizard Validation**: Relaxed the SDR requirement during the initial setup wizard to allow standalone 978 MHz UAT receiver configurations without mandating a 1090 MHz SDR.
 

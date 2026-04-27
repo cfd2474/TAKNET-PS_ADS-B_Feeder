@@ -1,10 +1,10 @@
 #!/bin/bash
-# TAKNET-PS-ADSB-Feeder One-Line Installer v3.1.3
+# TAKNET-PS-ADSB-Feeder One-Line Installer v3.1.2
 # Support: help@tak-solutions.com
 # repo: cfd2474/TAKNET-PS_ADS-B_Feeder
 # License: MIT
 
-# v3.1.3 - Apr 26, 2026
+# v3.1.2 - Apr 26, 2026
 # Optimized for Raspberry Pi 4/5
 
 # Default (main):
@@ -13,7 +13,7 @@
 #   curl -fsSL https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/feature/my-branch/install/install.sh | sudo bash
 # Or: TAKNET_INSTALL_BRANCH=feature/my-branch curl .../main/install/install.sh | sudo -E bash
 
-INSTALLER_VERSION="3.1.3"
+INSTALLER_VERSION="3.1.2"
 NETBIRD_DEFAULT_MANAGEMENT_URL="https://netbird.tak-solutions.com"
 NETBIRD_DEFAULT_SETUP_KEY="C5F35D5B-6B0D-440F-B573-D21C8BE79529"
 
@@ -273,7 +273,6 @@ enroll_netbird_from_env() {
 
     if [ -n "$NB_MGMT_URL" ] && [ -n "$NB_SETUP_KEY" ]; then
         echo "  • Enrolling NetBird peer..."
-        
         systemctl start netbird 2>/dev/null || true
         sleep 2
         
@@ -286,16 +285,18 @@ enroll_netbird_from_env() {
             --enable-ssh-root \
             --hostname "${NB_HOSTNAME:-taknet-ps-feeder}"; then
             
-            echo "  • Waiting for NetBird to connect..."
+            # Wait up to 15 seconds for connection to establish
+            local attempt=0
             local connected=false
-            for i in {1..15}; do
+            while [ $attempt -lt 15 ]; do
                 if netbird status 2>/dev/null | grep -q "Management: Connected"; then
                     connected=true
                     break
                 fi
-                sleep 2
+                sleep 1
+                attempt=$((attempt+1))
             done
-            
+
             if [ "$connected" = true ]; then
                 echo "  ✓ NetBird enrolled and connected"
                 # Update NETBIRD_ENABLED in .env

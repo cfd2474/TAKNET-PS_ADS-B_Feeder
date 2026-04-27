@@ -3341,20 +3341,6 @@ def api_netbird_enable():
         result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
 
         if result.returncode == 0:
-            import time
-            connected = False
-            for _ in range(15):
-                status_res = subprocess.run(['netbird', 'status'], capture_output=True, text=True)
-                if 'Management: Connected' in status_res.stdout:
-                    connected = True
-                    break
-                time.sleep(2)
-
-            if not connected:
-                env['NETBIRD_ENABLED'] = 'false'
-                write_env(env)
-                return jsonify({'success': False, 'message': 'NetBird enrollment succeeded, but connection timed out'})
-
             # Rebuild docker-compose with new VPN detection
             subprocess.run(['python3', '/opt/adsb/scripts/config_builder.py'],
                          capture_output=True, timeout=15)

@@ -1,6 +1,6 @@
 {
-  "version": "3.1.3",
+  "version": "3.1.2",
   "name": "TAKNET-PS ADS-B Feeder",
   "update_priority": 3,
-  "release_notes": "Bugfix: Improved NetBird VPN initialization reliability by implementing daemon start checks and asynchronous connection wait loops in both the installer and web interfaces."
+  "release_notes": "Bugfix: Relaxed SDR requirement during wizard setup to allow standalone UAT receiver configurations without a mandatory 1090 MHz SDR."
 }
