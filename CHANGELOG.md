@@ -1,3 +1,7 @@
+## v3.1.4 - Apr 26, 2026
+- **Bugfix: NetBird Wait Time**: Increased the wait time for NetBird to report as connected during installation up to 30 seconds to accommodate slow daemon initialization.
+- **Bugfix: NetBird Enabled State**: The `NETBIRD_ENABLED` flag is now reliably set in the configuration if the enrollment command succeeds, ensuring the UI correctly displays the pending connection state rather than appearing disabled.
+
 ## v3.1.3 - Apr 26, 2026
 - **Bugfix: NetBird Connection**: Forced the NetBird daemon to logout of stale peer states before applying the initial setup key, preventing silent connection failures on fresh installs over existing package state.
 

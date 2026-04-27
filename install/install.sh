@@ -1,10 +1,10 @@
 #!/bin/bash
-# TAKNET-PS-ADSB-Feeder One-Line Installer v3.1.3
+# TAKNET-PS-ADSB-Feeder One-Line Installer v3.1.4
 # Support: help@tak-solutions.com
 # repo: cfd2474/TAKNET-PS_ADS-B_Feeder
 # License: MIT
 
-# v3.1.3 - Apr 26, 2026
+# v3.1.4 - Apr 26, 2026
 # Optimized for Raspberry Pi 4/5
 
 # Default (main):
@@ -13,7 +13,7 @@
 #   curl -fsSL https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/feature/my-branch/install/install.sh | sudo bash
 # Or: TAKNET_INSTALL_BRANCH=feature/my-branch curl .../main/install/install.sh | sudo -E bash
 
-INSTALLER_VERSION="3.1.3"
+INSTALLER_VERSION="3.1.4"
 NETBIRD_DEFAULT_MANAGEMENT_URL="https://netbird.tak-solutions.com"
 NETBIRD_DEFAULT_SETUP_KEY="C5F35D5B-6B0D-440F-B573-D21C8BE79529"
 
@@ -291,10 +291,10 @@ enroll_netbird_from_env() {
             --enable-ssh-root \
             --hostname "${NB_HOSTNAME:-taknet-ps-feeder}"; then
             
-            # Wait up to 15 seconds for connection to establish
+            # Wait up to 30 seconds for connection to establish
             local attempt=0
             local connected=false
-            while [ $attempt -lt 15 ]; do
+            while [ $attempt -lt 30 ]; do
                 if netbird status 2>/dev/null | grep -q "Management: Connected"; then
                     connected=true
                     break
@@ -303,16 +303,17 @@ enroll_netbird_from_env() {
                 attempt=$((attempt+1))
             done
 
+            # Update NETBIRD_ENABLED in .env since the command succeeded
+            if grep -q "^NETBIRD_ENABLED=" "$env_file" 2>/dev/null; then
+                sed -i 's/^NETBIRD_ENABLED=.*/NETBIRD_ENABLED=true/' "$env_file"
+            else
+                echo "NETBIRD_ENABLED=true" >> "$env_file"
+            fi
+
             if [ "$connected" = true ]; then
                 echo "  ✓ NetBird enrolled and connected"
-                # Update NETBIRD_ENABLED in .env
-                if grep -q "^NETBIRD_ENABLED=" "$env_file" 2>/dev/null; then
-                    sed -i 's/^NETBIRD_ENABLED=.*/NETBIRD_ENABLED=true/' "$env_file"
-                else
-                    echo "NETBIRD_ENABLED=true" >> "$env_file"
-                fi
             else
-                echo "  ⚠ NetBird enrollment returned success, but is not connected. May need manual completion via dashboard."
+                echo "  ⚠ NetBird enrollment returned success, but is taking longer than expected to connect. Status will be available in the dashboard."
             fi
         else
             echo "  ⚠ NetBird enrollment timed out or failed. Check the output above. Installation will continue."
