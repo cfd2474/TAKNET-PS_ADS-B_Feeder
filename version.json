@@ -1,6 +1,6 @@
 {
-  "version": "3.1.1",
+  "version": "3.1.2",
   "name": "TAKNET-PS ADS-B Feeder",
   "update_priority": 3,
-  "release_notes": "Feature: Added support for transmitting FEEDER_UUID to the Aggregator via Beast Claim Proxy, enabling stable connectivity and deduplication across dynamic IPs."
+  "release_notes": "Bugfix: Relaxed SDR requirement during wizard setup to allow standalone UAT receiver configurations without a mandatory 1090 MHz SDR."
 }

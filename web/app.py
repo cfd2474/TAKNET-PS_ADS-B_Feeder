@@ -1293,7 +1293,8 @@ def index():
     # Check if SDR is configured by looking for serial number
     # env-template has empty SDR_1090_SERIAL, wizard sets it
     sdr_configured = False
-    if env.get('SDR_1090_SERIAL') and env.get('SDR_1090_SERIAL') != '':
+    if (env.get('SDR_1090_SERIAL') and env.get('SDR_1090_SERIAL') != '') or \
+       (env.get('SDR_978_SERIAL') and env.get('SDR_978_SERIAL') != ''):
         sdr_configured = True
     
     if not sdr_configured:
@@ -3578,11 +3579,11 @@ def api_configure_sdrs():
                 env['SDR_978_SERIAL'] = serial
                 print(f"✓ SDR {index} ({driver}) configured for 978 MHz (gain: {gain}, serial: {serial})")
         
-        # Validate we have at least 1090 MHz
-        if sdr_1090 is None:
+        # Validate we have at least one SDR configured
+        if sdr_1090 is None and sdr_978 is None:
             return jsonify({
                 'success': False,
-                'message': 'At least one SDR must be assigned to 1090 MHz'
+                'message': 'At least one SDR must be assigned'
             }), 400
         
         # Disable 978 MHz if not configured

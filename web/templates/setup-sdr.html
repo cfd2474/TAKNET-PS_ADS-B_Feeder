@@ -525,11 +525,11 @@
         }
         
         async function applySDRSettings() {
-            // Check if at least one device is configured for 1090
-            const has1090 = devices.some(d => d.useFor === '1090');
+            // Check if at least one device is configured
+            const hasConfiguredDevice = devices.some(d => d.useFor === '1090' || d.useFor === '978');
             
-            if (!has1090) {
-                alert('Please configure at least one SDR device for 1090 MHz');
+            if (!hasConfiguredDevice) {
+                alert('Please configure at least one SDR device');
                 return;
             }
             

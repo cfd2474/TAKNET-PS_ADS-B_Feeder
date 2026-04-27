@@ -1,3 +1,6 @@
+## v3.1.2 - Apr 26, 2026
+- **Bugfix: SDR Wizard Validation**: Relaxed the SDR requirement during the initial setup wizard to allow standalone 978 MHz UAT receiver configurations without mandating a 1090 MHz SDR.
+
 ## v3.1.1 - Apr 24, 2026
 - **Feature: Feeder Identity**: Added support for transmitting `FEEDER_UUID` to the Aggregator via Beast Claim Proxy, enabling stable connectivity and deduplication across dynamic IPs.
 
