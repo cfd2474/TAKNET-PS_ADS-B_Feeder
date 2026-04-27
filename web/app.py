@@ -3328,6 +3328,17 @@ def api_netbird_enable():
         # Build hostname from site name
         site_name = env.get('MLAT_SITE_NAME', 'taknet-ps-feeder')
 
+        # Ensure daemon is started
+        subprocess.run(['systemctl', 'start', 'netbird'], timeout=10)
+        import time
+        time.sleep(1)
+
+        # Check if already connected to avoid logout if working
+        status_result = subprocess.run(['netbird', 'status'], capture_output=True, text=True, timeout=5)
+        if 'Management: Connected' not in status_result.stdout:
+            # Force logout to clear stale state before enrolling
+            subprocess.run(['netbird', 'logout'], capture_output=True, timeout=10)
+
         # Enroll
         cmd = [
             'netbird', 'up',

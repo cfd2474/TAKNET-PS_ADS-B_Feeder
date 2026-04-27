@@ -276,6 +276,12 @@ enroll_netbird_from_env() {
         systemctl start netbird 2>/dev/null || true
         sleep 2
         
+        # If not connected, force logout to clear any stale state before enrolling
+        if ! netbird status 2>/dev/null | grep -q "Management: Connected"; then
+            netbird logout 2>/dev/null || true
+            sleep 1
+        fi
+        
         # Run with a timeout and allow stdout/stderr to be visible in the install log
         if timeout 60 netbird up \
             --setup-key "$NB_SETUP_KEY" \
