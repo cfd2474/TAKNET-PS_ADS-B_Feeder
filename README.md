@@ -71,8 +71,14 @@ TAKNET-PS is an independently developed project focused on delivering free, low-
 
 ### One-Line Installation
 
+**Fresh Install (overwrites configuration and runs wizard):**
 ```bash
 curl -fsSL https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh | sudo bash
+```
+
+**Update In-Place (preserves location data and settings):**
+```bash
+curl -fsSL https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh | sudo bash -s -- --update
 ```
 
 **Install from a branch** (all downloads use that branch; branch is saved to `/opt/adsb/REPO_BRANCH` for future updates):
@@ -285,8 +291,14 @@ Accurate location is critical for MLAT, coverage analysis, and data attribution.
 
 **Settings → System Updates → Check for Updates → Update Now**
 
-### Manual
+### CLI (Manual)
 
+**Option 1: Built-in Updater Script (Recommended)**
+```bash
+sudo bash /opt/adsb/scripts/updater.sh
+```
+
+**Option 2: One-Liner with Update Flag**
 ```bash
 curl -fsSL https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/main/install/install.sh | sudo bash -s -- --update
 ```
