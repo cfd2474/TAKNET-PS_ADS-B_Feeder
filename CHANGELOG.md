@@ -1,3 +1,6 @@
+## v3.1.5 - Apr 26, 2026
+- **Bugfix: NetBird Connection Pipeline**: Deferred the automated NetBird daemon registration and startup sequence until the absolute end of the installation process. This ensures all network interfaces, Nginx proxy layers, and Docker container dependencies are fully stabilized before the connection attempt is made, preventing silent timeouts on fresh installs.
+
 ## v3.1.4 - Apr 26, 2026
 - **Bugfix: NetBird Wait Time**: Increased the wait time for NetBird to report as connected during installation up to 30 seconds to accommodate slow daemon initialization.
 - **Bugfix: NetBird Enabled State**: The `NETBIRD_ENABLED` flag is now reliably set in the configuration if the enrollment command succeeds, ensuring the UI correctly displays the pending connection state rather than appearing disabled.

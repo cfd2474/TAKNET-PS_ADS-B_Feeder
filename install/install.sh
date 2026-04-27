@@ -1,10 +1,10 @@
 #!/bin/bash
-# TAKNET-PS-ADSB-Feeder One-Line Installer v3.1.4
+# TAKNET-PS-ADSB-Feeder One-Line Installer v3.1.5
 # Support: help@tak-solutions.com
 # repo: cfd2474/TAKNET-PS_ADS-B_Feeder
 # License: MIT
 
-# v3.1.4 - Apr 26, 2026
+# v3.1.5 - Apr 26, 2026
 # Optimized for Raspberry Pi 4/5
 
 # Default (main):
@@ -13,7 +13,7 @@
 #   curl -fsSL https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/feature/my-branch/install/install.sh | sudo bash
 # Or: TAKNET_INSTALL_BRANCH=feature/my-branch curl .../main/install/install.sh | sudo -E bash
 
-INSTALLER_VERSION="3.1.4"
+INSTALLER_VERSION="3.1.5"
 NETBIRD_DEFAULT_MANAGEMENT_URL="https://netbird.tak-solutions.com"
 NETBIRD_DEFAULT_SETUP_KEY="C5F35D5B-6B0D-440F-B573-D21C8BE79529"
 
@@ -322,13 +322,12 @@ enroll_netbird_from_env() {
 }
 
 # If .env already exists:
-# - update mode: only enroll when no key and not already connected
-# - fresh/install mode: ensure defaults and enroll
+# - update mode: do nothing
+# - fresh/install mode: ensure defaults
 if [ -f /opt/adsb/config/.env ]; then
     if [ "$UPDATE_MODE" != true ]; then
         set_netbird_defaults_in_env
     fi
-    enroll_netbird_from_env
 fi
 
 # Pre-install Tailscale (reserve/owner access)
@@ -707,8 +706,7 @@ else
     echo "    ⏭️  .env not found yet (will generate during setup wizard)"
 fi
 
-# Fresh installs now have .env in place; auto-enroll NetBird from seeded/default values.
-enroll_netbird_from_env
+# Fresh installs now have .env in place. (NetBird enrollment moved to end of install)
 
 # Download version.json for update checking
 echo "  - version.json..."
@@ -1686,6 +1684,11 @@ fi
 
 # Persist Git branch for future updates (scripts/updater.sh reads this)
 echo -n "$INSTALL_BRANCH" > /opt/adsb/REPO_BRANCH
+
+# Finalize Network Configurations
+echo ""
+echo "Finalizing network configuration..."
+enroll_netbird_from_env
 
 # Get IP address
 IP=$(hostname -I | awk '{print $1}')

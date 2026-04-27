@@ -1,6 +1,6 @@
 {
-  "version": "3.1.4",
+  "version": "3.1.5",
   "name": "TAKNET-PS ADS-B Feeder",
   "update_priority": 3,
-  "release_notes": "Bugfix: Increased NetBird daemon connection wait time to 30 seconds and ensured NETBIRD_ENABLED state is reliably set upon successful command execution."
+  "release_notes": "Bugfix: Deferred NetBird automated registration and startup until the end of the installation process to ensure all network and systemd dependencies are fully stabilized before connection attempt."
 }
