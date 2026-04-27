@@ -1,3 +1,6 @@
+## v3.1.3 - Apr 26, 2026
+- **Bugfix: NetBird Connection**: Forced the NetBird daemon to logout of stale peer states before applying the initial setup key, preventing silent connection failures on fresh installs over existing package state.
+
 ## v3.1.2 - Apr 26, 2026
 - **Bugfix: SDR Wizard Validation**: Relaxed the SDR requirement during the initial setup wizard to allow standalone 978 MHz UAT receiver configurations without mandating a 1090 MHz SDR.
 
