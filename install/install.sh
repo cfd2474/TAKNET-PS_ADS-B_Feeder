@@ -1685,11 +1685,6 @@ fi
 # Persist Git branch for future updates (scripts/updater.sh reads this)
 echo -n "$INSTALL_BRANCH" > /opt/adsb/REPO_BRANCH
 
-# Finalize Network Configurations
-echo ""
-echo "Finalizing network configuration..."
-enroll_netbird_from_env
-
 # Get IP address
 IP=$(hostname -I | awk '{print $1}')
 

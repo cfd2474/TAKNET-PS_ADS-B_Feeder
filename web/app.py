@@ -3090,6 +3090,40 @@ def save_config():
         # Rebuild ULTRAFEEDER_CONFIG
         rebuild_config()
         
+        # Handle automated NetBird registration (moved from install.sh)
+        try:
+            if shutil.which('netbird') and env.get('NETBIRD_SETUP_KEY'):
+                site_name = env.get('MLAT_SITE_NAME', 'taknet-ps-feeder')
+                subprocess.run(['systemctl', 'start', 'netbird'], timeout=10)
+                import time
+                time.sleep(1)
+                
+                # If we have a setup key but we aren't enabled/connected, force logout to clear stale state
+                status_result = subprocess.run(['netbird', 'status'], capture_output=True, text=True, timeout=5)
+                is_connected = 'Management: Connected' in status_result.stdout
+                
+                if not is_connected and env.get('NETBIRD_ENABLED', 'false').lower() != 'true':
+                    subprocess.run(['netbird', 'logout'], capture_output=True, timeout=10)
+                
+                # Run netbird up
+                cmd = [
+                    'netbird', 'up',
+                    '--setup-key', env['NETBIRD_SETUP_KEY'],
+                    '--management-url', env.get('NETBIRD_MANAGEMENT_URL', 'https://netbird.tak-solutions.com'),
+                    '--disable-dns',
+                    '--allow-server-ssh',
+                    '--enable-ssh-root',
+                    '--hostname', site_name
+                ]
+                subprocess.run(cmd, capture_output=True, timeout=45)
+                
+                # Mark as enabled if it wasn't
+                if env.get('NETBIRD_ENABLED', 'false').lower() != 'true':
+                    env['NETBIRD_ENABLED'] = 'true'
+                    write_env(env)
+        except Exception as e:
+            print(f"NetBird auto-enroll failed: {e}")
+        
         return jsonify({'success': True, 'message': 'Configuration saved'})
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 500
