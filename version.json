@@ -1,6 +1,6 @@
 {
-  "version": "3.1.5",
+  "version": "3.1.6",
   "name": "TAKNET-PS ADS-B Feeder",
   "update_priority": 3,
-  "release_notes": "Bugfix: Deferred NetBird automated registration and startup until the end of the installation process to ensure all network and systemd dependencies are fully stabilized before connection attempt."
+  "release_notes": "Bugfix: Ensure saving configuration checks if NetBird is already connected and only initiates a reconnect if disconnected."
 }

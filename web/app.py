@@ -3102,23 +3102,23 @@ def save_config():
                 status_result = subprocess.run(['netbird', 'status'], capture_output=True, text=True, timeout=5)
                 is_connected = 'Management: Connected' in status_result.stdout
                 
-                if not is_connected and env.get('NETBIRD_ENABLED', 'false').lower() != 'true':
+                if not is_connected:
+                    # Clear any stale states before reconnecting
                     subprocess.run(['netbird', 'logout'], capture_output=True, timeout=10)
-                
-                # Run netbird up
-                cmd = [
-                    'netbird', 'up',
-                    '--setup-key', env['NETBIRD_SETUP_KEY'],
-                    '--management-url', env.get('NETBIRD_MANAGEMENT_URL', 'https://netbird.tak-solutions.com'),
-                    '--disable-dns',
-                    '--allow-server-ssh',
-                    '--enable-ssh-root',
-                    '--hostname', site_name
-                ]
-                subprocess.run(cmd, capture_output=True, timeout=45)
-                
-                # Mark as enabled if it wasn't
-                if env.get('NETBIRD_ENABLED', 'false').lower() != 'true':
+                    
+                    # Run netbird up
+                    cmd = [
+                        'netbird', 'up',
+                        '--setup-key', env['NETBIRD_SETUP_KEY'],
+                        '--management-url', env.get('NETBIRD_MANAGEMENT_URL', 'https://netbird.tak-solutions.com'),
+                        '--disable-dns',
+                        '--allow-server-ssh',
+                        '--enable-ssh-root',
+                        '--hostname', site_name
+                    ]
+                    subprocess.run(cmd, capture_output=True, timeout=45)
+                    
+                    # Mark as enabled
                     env['NETBIRD_ENABLED'] = 'true'
                     write_env(env)
         except Exception as e:
