@@ -55,7 +55,7 @@ REPO="https://raw.githubusercontent.com/cfd2474/TAKNET-PS_ADS-B_Feeder/${INSTALL
 if [ "$UPDATE_MODE" = true ]; then
     echo ""
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    echo "  TAKNET-PS UPDATE MODE"
+    echo "  TAKNET-PS-ADSB-Feeder Updater v${INSTALLER_VERSION}"
     echo "  Preserving existing configuration"
     echo "  Git branch: ${INSTALL_BRANCH}"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
