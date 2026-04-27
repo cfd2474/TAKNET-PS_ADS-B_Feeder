@@ -287,6 +287,9 @@ CLEANUP_EOF
                 fi
             fi
 
+            systemctl start netbird 2>/dev/null || true
+            sleep 2
+
             if netbird up \
                 --setup-key "$NETBIRD_DEFAULT_SETUP_KEY" \
                 --management-url "$NB_MGMT_URL" \
@@ -295,13 +298,27 @@ CLEANUP_EOF
                 --enable-ssh-root \
                 --hostname "${NB_HOSTNAME:-taknet-ps-feeder}" \
                 > /dev/null 2>&1; then
-                echo "   ✓ NetBird connected using default setup key"
-                if [ -f "$CONFIG_FILE" ]; then
-                    if grep -q "^NETBIRD_ENABLED=" "$CONFIG_FILE" 2>/dev/null; then
-                        sed -i 's/^NETBIRD_ENABLED=.*/NETBIRD_ENABLED=true/' "$CONFIG_FILE"
-                    else
-                        echo "NETBIRD_ENABLED=true" >> "$CONFIG_FILE"
+                
+                local connected=false
+                for i in {1..15}; do
+                    if netbird status 2>/dev/null | grep -q "Management: Connected"; then
+                        connected=true
+                        break
                     fi
+                    sleep 2
+                done
+                
+                if [ "$connected" = true ]; then
+                    echo "   ✓ NetBird connected using default setup key"
+                    if [ -f "$CONFIG_FILE" ]; then
+                        if grep -q "^NETBIRD_ENABLED=" "$CONFIG_FILE" 2>/dev/null; then
+                            sed -i 's/^NETBIRD_ENABLED=.*/NETBIRD_ENABLED=true/' "$CONFIG_FILE"
+                        else
+                            echo "NETBIRD_ENABLED=true" >> "$CONFIG_FILE"
+                        fi
+                    fi
+                else
+                    echo "   ⚠ NetBird connected but status check failed"
                 fi
             else
                 echo "   ⚠ NetBird connection attempt failed (default key)"
