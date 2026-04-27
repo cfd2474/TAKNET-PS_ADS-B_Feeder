@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Account-Required Feeds - TAKNET-PS</title>
-    <link rel="stylesheet" href="{{ url_for(\'static\', filename=\'css/style.css\') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <style>
         .feed-config-card {
             border: 2px solid #e5e7eb;
@@ -247,17 +247,17 @@
     <div class="container">
         <header>
             <div style="text-align: center; margin-bottom: 5px;">
-                <img src="{{ url_for(\'static\', filename=\'taknetlogo.png\') }}" alt="TAKNET-PS" style="width: 100%; height: auto; display: block;">
+                <img src="{{ url_for('static', filename='taknetlogo.png') }}" alt="TAKNET-PS" style="width: 100%; height: auto; display: block;">
             </div>
             <p style="margin: 4px 0 5px 0; color: #9ca3af; font-size: 0.85em; text-align: center;">Raspberry Pi based ADSB Services Feeder</p>
             <p style="margin: 0 0 15px 0; color: #6b7280; font-size: 0.8em;">v{{ version }}</p>
             <nav>
-                <a href="{{ url_for(\'dashboard\') }}">Dashboard</a>
-                <a href="{{ url_for(\'feeds\') }}">Feed Selection</a>
-                <a href="{{ url_for(\'settings\') }}">Settings</a>
+                <a href="{{ url_for('dashboard') }}">Dashboard</a>
+                <a href="{{ url_for('feeds') }}">Feed Selection</a>
+                <a href="{{ url_for('settings') }}">Settings</a>
                 <a href="#" id="map-link" target="_blank">Map</a>
                 <a href="#" id="statistics-link" target="_blank">Statistics</a>
-                <a href="{{ url_for(\'about\') }}">About</a>
+                <a href="{{ url_for('about') }}">About</a>
             </nav>
         </header>
         
