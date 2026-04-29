@@ -1,6 +1,6 @@
 {
-  "version": "3.1.8",
+  "version": "3.1.9",
   "name": "TAKNET-PS ADS-B Feeder",
   "update_priority": 3,
-  "release_notes": "Bugfix: Rebuilt dashboard rendering logic to fix critical Mixed Content cross-origin iframe security errors occurring when accessed remotely via the web tunnel proxy."
+  "release_notes": "Bugfix: Restored PiAware settings dashboard port mapping to port 8082, fixing settings link and cross-origin iframe security errors."
 }

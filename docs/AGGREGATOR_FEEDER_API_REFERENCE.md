@@ -81,7 +81,6 @@ Use **`X-Tunnel-Target`** when the path alone is ambiguous (e.g. you forward a s
 | `/api/status` | GET | System status: docker, feeds list, configured flag, service_states. |
 | `/api/network-status` | GET | Internet reachability, primary IP, hostname. |
 | `/api/network-quality` | GET | Ping-based quality: good/moderate/poor, packet_loss, avg_rtt_ms. |
-| `/api/power-status` | GET | Power/throttling status (current_issue, past_issue, message). |
 | `/api/dashboard/bootstrap` | GET | Aggregate JSON for dashboard load (status, network, power, SDR, TAKNET-PS). Does **not** include network-quality (loaded separately). |
 
 ### GPS
@@ -125,7 +124,7 @@ Use **`X-Tunnel-Target`** when the path alone is ambiguous (e.g. you forward a s
 | `/api/feeds/fr24/toggle` | POST | Toggle FR24. |
 | `/api/feeds/piaware/status` | GET | PiAware status. |
 | `/api/feeds/piaware/setup` | POST | PiAware setup. |
-| `/api/feeds/piaware/toggle` | POST | Toggle PiAware. |
+| `/api/feeds/piaware/toggle` | POST | PiAware toggle. |
 | `/api/feeds/adsbhub/status` | GET | ADSBHub status. |
 | `/api/feeds/adsbhub/setup` | POST | ADSBHub setup. |
 | `/api/feeds/adsbhub/toggle` | POST | Toggle ADSBHub. |

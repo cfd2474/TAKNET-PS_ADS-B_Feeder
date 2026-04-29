@@ -878,7 +878,7 @@ def build_docker_compose(env_vars):
             'restart': 'unless-stopped',
             'networks': ['adsb_net'],
             'depends_on': ['ultrafeeder'],
-            'ports': ['8081:8080'],
+            'ports': ['8081:8080', '8082:80'],
             'environment': [
                 f'TZ={feeder_tz}',  # Write actual value
                 f'FEEDER_ID={piaware_feeder_id}',  # Write actual value

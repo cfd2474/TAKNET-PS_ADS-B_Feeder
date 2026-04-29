@@ -96,6 +96,7 @@ services:
     networks:
       - adsb_net
     ports:
+      - "8081:8080"
       - "8082:80"
     environment:
       - TZ=${FEEDER_TZ}

@@ -1,3 +1,6 @@
+## v3.1.9 - Apr 28, 2026
+- **Bugfix: PiAware Settings Link**: Restored the PiAware status dashboard port mapping from 8081 back to 8082, fixing the settings link and resolving cross-origin iframe security errors occurring when accessed remotely via the web tunnel proxy. The PiAware container now correctly exposes both 8081 (for the SkyAware map) and 8082 (for the status dashboard).
+
 ## v3.1.5 - Apr 26, 2026
 - **Bugfix: NetBird Connection Pipeline**: Deferred the automated NetBird daemon registration and startup sequence until the absolute end of the installation process. This ensures all network interfaces, Nginx proxy layers, and Docker container dependencies are fully stabilized before the connection attempt is made, preventing silent timeouts on fresh installs.
 
