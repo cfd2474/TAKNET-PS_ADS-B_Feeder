@@ -717,7 +717,7 @@ cat /opt/adsb/VERSION
 
 👉 Support on Buy Me a Coffee
 Every contribution strengthens the network and helps improve aviation awareness for public safety teams.
-buymeacoffee.com/michael.leckliter
+'http://buymeacoffee.com/michael.leckliter'
 
 
 *TAKNET-PS ADS-B Feeder — Team Awareness Kit Network, Public Safety*
